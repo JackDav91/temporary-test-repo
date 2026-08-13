@@ -1065,6 +1065,29 @@ body.inner-page .kpi,
 .compact-intake-note{padding-top:10px;padding-bottom:10px}
 .pricing-recalc{margin-top:2px;opacity:.78}
 @media(max-width:620px){#stockEntryPanel.ai-integrated .grid{grid-template-columns:1fr}.product-intake-grid{gap:7px}.recognition-ready small{display:none}}
+
+/* ---------- V20.0.1 — UNIFIED AI STOCK INTAKE ---------- */
+.ai-intake-workspace{margin-top:12px;border:1px solid #356c45;border-left:4px solid #4ca766;border-radius:14px;background:linear-gradient(180deg,#081009 0%,#090909 100%);overflow:hidden}
+.ai-intake-workspace[hidden]{display:none!important}
+.ai-intake-workspace .ai-recognition-panel{margin:0;border:0;border-radius:0;background:transparent;padding:16px}
+.ai-identity-summary{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin:10px 0 12px;padding:12px;border:1px solid rgba(130,221,160,.18);border-radius:12px;background:rgba(255,255,255,.018)}
+.ai-identity-summary b{display:block;color:#f5f5f5;font-size:1.25rem;line-height:1.15}
+.ai-identity-summary span{display:block;color:#aaa;margin-top:5px;font-size:.86rem;line-height:1.4}
+.ai-verified-pill{white-space:nowrap;border:1px solid #3d8751;border-radius:999px;padding:5px 8px;color:#82dda0;font-size:.72rem;font-weight:900;letter-spacing:.06em}
+.ai-identity-details{margin:10px 0;border:1px solid #2b2f2c;border-radius:10px;background:#0a0b0a}
+.ai-identity-details summary{cursor:pointer;padding:10px 12px;color:#d7d7d7;font-weight:850}
+.ai-identity-details .ai-review-grid{padding:0 12px 12px;margin-top:0}
+.ai-identity-details .ai-review-grid input{padding:10px 11px;font-size:.92rem}
+.ai-intake-workspace #stockEntryPanel.ai-integrated{margin:0!important;padding:16px!important;border:0!important;border-top:1px solid rgba(130,221,160,.18)!important;border-radius:0!important;background:rgba(255,255,255,.01)!important;box-shadow:none!important}
+#stockEntryPanel.ai-integrated .title{font-size:1rem;letter-spacing:.08em;color:#82dda0;margin:0 0 12px}
+#stockEntryPanel.ai-integrated .grid{grid-template-columns:1fr 1fr;gap:10px}
+#stockEntryPanel.ai-integrated .intake-system-only{display:none!important}
+#stockEntryPanel.ai-integrated .intake-assigned-meta{display:block!important;grid-column:1/-1;padding:9px 11px;border:1px solid #292929;border-radius:9px;color:#999;font-size:.78rem;line-height:1.4;background:#090909}
+#stockEntryPanel:not(.ai-integrated) .intake-assigned-meta{display:none!important}
+#stockEntryPanel.ai-integrated .photo-help{font-size:.75rem;line-height:1.35}
+#stockEntryPanel.ai-integrated .actions{margin-top:14px}
+#stockEntryPanel.ai-integrated #addp{flex:1;min-width:190px}
+@media(max-width:620px){#stockEntryPanel.ai-integrated .grid{grid-template-columns:1fr}.ai-identity-summary{display:block}.ai-verified-pill{display:inline-block;margin-top:9px}}
 </style>
 <link href="gengrail-theme.css" rel="stylesheet"/>
 <link href="gengrail-gold-tabs.css" rel="stylesheet"/>
@@ -1115,22 +1138,22 @@ body.inner-page .kpi,
 </div>
 <input accept="image/*" capture="environment" id="pcamera" style="display:none" type="file"/>
 <div class="recognition-ready"><span>AI PRODUCT ENGINE</span><b>English + Japanese raw singles</b></div>
-<div class="ai-recognition-panel" id="aiRecognitionPanel" hidden></div>
+<div class="ai-intake-workspace" id="aiIntakeWorkspace" hidden><div class="ai-recognition-panel" id="aiRecognitionPanel" hidden></div></div>
 </div>
 <div class="panel" hidden id="stockEntryPanel"><div class="title" id="stockEntryTitle">PURCHASE DETAILS</div><div class="grid">
-<div><label>Card / product</label><input id="pn"/></div><div><label>Category</label><select id="pc"><option>Raw Single</option><option>Graded</option><option>Sealed</option><option>Collection</option><option>Accessory</option><option>Other</option></select></div>
+<div class="intake-system-only"><label>Card / product</label><input id="pn"/></div><div class="intake-system-only"><label>Category</label><select id="pc"><option>Raw Single</option><option>Graded</option><option>Sealed</option><option>Collection</option><option>Accessory</option><option>Other</option></select></div>
 <div><label>Purchase date</label><input id="pd" type="date"/></div><div><label>Quantity</label><input id="pq" min="1" type="number" value="1"/></div>
-<div><label>Total buy price (£)</label><input id="pp" step=".01" type="number"/></div><div><label>Source / seller</label><input id="ps"/></div>
+<div><label>Total buy price (£)</label><input id="pp" step=".01" type="number" inputmode="decimal"/></div><div><label>Source / seller</label><input id="ps"/></div>
 <div><label>Condition</label><select id="pcondition"><option>Ungraded</option><option>Graded</option><option>New</option><option>Used</option></select></div>
-<div><label>SKU</label><input id="psku" placeholder="Auto-generated from permanent SKU ledger if blank"/></div>
-<div><label>Purchase / batch ID</label><input id="ppurchaseid" placeholder="Auto-generated from permanent purchase ledger if blank"/></div>
+<div class="intake-system-only"><label>SKU</label><input id="psku" placeholder="Auto-generated from permanent SKU ledger if blank"/></div>
+<div class="intake-system-only"><label>Purchase / batch ID</label><input id="ppurchaseid" placeholder="Auto-generated from permanent purchase ledger if blank"/></div>
 <div><label>Storage location</label><select id="plocation"><option value="UNALLOCATED">UNALLOCATED</option></select></div>
-<div><label>Inventory status</label><select id="pstatus"><option value="IN_STOCK">In stock</option><option value="TO_CATALOGUE">To catalogue</option><option value="LISTED">Listed</option></select></div>
-<div><label>Target / eBay list price (£)</label><input id="plist" placeholder="Optional" step=".01" type="number"/></div>
-<div><label>eBay status</label><select id="pebaystatus"><option value="NOT_LISTED">Not listed</option><option value="DRAFT">Draft</option><option value="LISTED">Listed</option></select></div>
-
-<div class="full sequence-preview" id="sequencePreview"><div><small>NEXT SKU</small><b id="sequenceSku">—</b></div><div><small>NEXT PURCHASE ID</small><b id="sequencePurchase">—</b></div><div class="sequence-note">Sequence preview is generated from Gengrail's permanent high-water ledger. Sold or deleted historical IDs are never reused.</div></div>
-<div class="full photo-picker"><label>Product photos</label><input accept="image/*" id="pphotos" multiple="" type="file"/><div class="photo-help">Add front/back and detail photos now. Images are stored separately on this device so they do not inflate the accounting database or JSON backup.</div><div class="photo-preview" id="ppreview"></div></div>
+<div class="intake-system-only"><label>Inventory status</label><select id="pstatus"><option value="IN_STOCK">In stock</option><option value="TO_CATALOGUE">To catalogue</option><option value="LISTED">Listed</option></select></div>
+<div><label>Target sell price (£)</label><input id="plist" placeholder="Optional" step=".01" type="number" inputmode="decimal"/></div>
+<div class="intake-system-only"><label>eBay status</label><select id="pebaystatus"><option value="NOT_LISTED">Not listed</option><option value="DRAFT">Draft</option><option value="LISTED">Listed</option></select></div>
+<div class="intake-assigned-meta">SKU and Purchase ID are assigned from the permanent ledgers when this purchase is saved. Historical IDs are never reused.</div>
+<div class="full sequence-preview intake-system-only" id="sequencePreview"><div><small>NEXT SKU</small><b id="sequenceSku">—</b></div><div><small>NEXT PURCHASE ID</small><b id="sequencePurchase">—</b></div><div class="sequence-note">Sequence preview is generated from Gengrail's permanent high-water ledger. Sold or deleted historical IDs are never reused.</div></div>
+<div class="full photo-picker"><label>Product photos</label><input accept="image/*" id="pphotos" multiple="" type="file"/><div class="photo-help">Front/back or detail photos stay on this device and are excluded from the accounting JSON backup.</div><div class="photo-preview" id="ppreview"></div></div>
 <div class="full"><label>Notes</label><textarea id="pnotes"></textarea></div></div><div class="actions"><button class="btn" id="addp">ADD TO STOCK</button><button class="btn alt" id="cancelStockEntry" type="button">CLOSE</button></div></div>
 <div class="panel"><div class="title">CURRENT STOCK</div><div class="table"><table><thead><tr><th>Item</th><th>SKU</th><th>Purchase ID</th><th>Location</th><th>Status</th><th>Condition</th><th>Qty left</th><th>Unit cost</th><th>Target list</th><th>eBay</th><th>Photos</th><th>Source</th><th>Actions</th></tr></thead><tbody id="pbody"></tbody></table></div><div class="note">Stock is the master product record. Photos stay in dedicated on-device storage.</div></div>
 </section>
@@ -2054,43 +2077,31 @@ function aiFieldHead(label,info){
  return `<div class="ai-field-head"><label>${label}</label><span class="ai-field-state ${info.cls}">${state}</span></div>`;
 }
 function setAiRecognitionPanel(mode='idle',data=null,message=''){
- const host=$('aiRecognitionPanel'); if(!host)return;
- if(mode==='idle'){host.hidden=true;host.innerHTML='';return}
+ const host=$('aiRecognitionPanel'), workspace=$('aiIntakeWorkspace'); if(!host)return;
+ if(mode==='idle'){host.hidden=true;host.innerHTML='';if(workspace)workspace.hidden=true;return}
+ if(workspace)workspace.hidden=false;
  host.hidden=false;
  if(mode==='loading'){
    host.className='ai-recognition-panel';
-   host.innerHTML=`<div class="ai-recognition-kicker">AI PRODUCT ENGINE · V3</div><div class="ai-recognition-title"><span class="ai-spinner"></span>Recognising card…</div><div class="ai-recognition-sub">Transcribing the card's identity strip first, then verifying anchors where possible. Gengrail scores completeness separately from the model's own confidence. Nothing is saved until you approve it.</div>`;
+   host.innerHTML=`<div class="ai-recognition-kicker">AI PRODUCT ENGINE · V3</div><div class="ai-recognition-title"><span class="ai-spinner"></span>Recognising card…</div><div class="ai-recognition-sub">Identifying and verifying the exact card. Nothing is saved until you add the completed purchase to Stock.</div>`;
    return;
  }
  if(mode==='error'){
    host.className='ai-recognition-panel bad';
    const retryLabel=currentIntakeMode==='photo'?'IMPORT AGAIN':'SCAN AGAIN';
-   host.innerHTML=`<div class="ai-recognition-kicker">RECOGNITION NEEDS REVIEW</div><div class="ai-recognition-title">Could not identify this card reliably</div><div class="ai-recognition-sub">${esc(message||'Try a clearer front photo or continue manually.')}</div><div class="ai-recognition-actions"><button class="btn alt" type="button" onclick="clearAiRecognition(false)">CONTINUE MANUALLY</button><button class="btn" type="button" onclick="retryAiRecognition()">${retryLabel}</button></div>`;
+   host.innerHTML=`<div class="ai-recognition-kicker">RECOGNITION NEEDS REVIEW</div><div class="ai-recognition-title">Could not identify this card reliably</div><div class="ai-recognition-sub">${esc(message||'Try a clearer front photo or continue manually.')}</div><div class="ai-recognition-actions"><button class="btn alt" type="button" onclick="openStockEntry('manual');clearAiRecognition(false)">ENTER MANUALLY</button><button class="btn" type="button" onclick="retryAiRecognition()">${retryLabel}</button></div>`;
    return;
  }
  const r=normaliseRecognition(data||{});
  const verified=!!r.verified;
- const modelConfidence=Math.max(0,Math.min(100,Number(r.confidence||0)));
- const diag=recognitionDiagnostics(r);
- if(mode==='approved'){
-   host.className='ai-recognition-panel good';
-   const pricing=approvedMarketPricingHtml(r);
-   host.innerHTML=`<div class="ai-recognition-kicker">MATCH APPROVED</div><div class="ai-recognition-title">${esc(r.cardName||'Pokémon card')}</div><div class="ai-approved-badge">READY FOR STOCK INTAKE</div><div class="ai-recognition-grid">
-    <div class="ai-recognition-cell"><small>CARD NUMBER</small><b>${esc(printedCollectorNumber(r)||r.cardNumber||'—')}</b></div>
-    <div class="ai-recognition-cell"><small>SET</small><b>${esc(r.setName||r.setCode||'—')}</b></div>
-    <div class="ai-recognition-cell"><small>LANGUAGE</small><b>${esc(r.language||'—')}</b></div>
-    <div class="ai-recognition-cell"><small>RARITY</small><b>${esc(r.rarity||'—')}</b></div>
-   </div>${pricing}<div class="ai-recognition-sub">Choose the suggested price now or continue without one. The purchase sheet below is already pre-filled and every field remains editable before anything is saved.</div><div class="ai-approved-actions"><button class="btn alt" type="button" onclick="clearAiRecognition(false)">REMOVE MATCH</button><button class="btn ${Number($('plist')?.value||0)>0?'selected':''}" id="approvedUsePrice" type="button" onclick="useApprovedSuggestedPrice()" ${marketSuggestedPrice(r)?'':'disabled'}>${marketSuggestedPrice(r)?'USE SUGGESTED PRICE':'NO MARKET PRICE'}</button><button class="btn wide" type="button" onclick="continueApprovedIntake()">CONTINUE INTAKE</button></div>`;
-   return;
- }
- const confClass=diag.score>=80?'':diag.score>=55?'warn':'bad';
+ const diag=recognitionDiagnostics(r),f=diag.fields;
  host.className='ai-recognition-panel '+(diag.score>=80?'good':diag.score>=55?'warn':'bad');
- const f=diag.fields;
+ const no=printedCollectorNumber(r)||r.cardNumber||'—';
+ const meta=[no,r.setName||r.setCode,r.language,r.rarity].filter(Boolean).map(esc).join(' · ');
  host.innerHTML=`<div class="ai-recognition-kicker">${verified?'VERIFIED CANDIDATE':'AI CARD CANDIDATE'} · V3</div>
-   <div class="ai-recognition-title">Review before using this match</div>
-   <div class="ai-confidence ${confClass}">${diag.score}% intake confidence · ${diag.populated}/${diag.totalFields} fields</div>
-   <span class="ai-model-confidence">Model-reported confidence: ${modelConfidence||0}%${verified?` · ${esc(r.verificationStatus||'database verified')}`:''}</span>
-   <div class="ai-review-grid">
+   <div class="ai-identity-summary"><div><b>${esc(r.cardName||'Pokémon card')}</b><span>${meta}</span></div><span class="ai-verified-pill">${diag.score}% VERIFIED</span></div>
+   ${approvedMarketPricingHtml(r)}
+   <details class="ai-identity-details"><summary>Edit / view card identity</summary><div class="ai-review-grid">
     <div class="full">${aiFieldHead('CARD NAME',f.cardName)}<input id="aiReviewName" value="${esc(r.cardName||'')}"/></div>
     <div>${aiFieldHead('CARD NUMBER',f.cardNumber)}<input id="aiReviewNumber" value="${esc(r.cardNumber||'')}"/></div>
     <div>${aiFieldHead('LANGUAGE',f.language)}<input id="aiReviewLanguage" value="${esc(r.language||'')}"/></div>
@@ -2098,11 +2109,8 @@ function setAiRecognitionPanel(mode='idle',data=null,message=''){
     <div>${aiFieldHead('SET CODE',f.setCode)}<input id="aiReviewSetCode" value="${esc(r.setCode||'')}"/></div>
     <div>${aiFieldHead('RARITY',f.rarity)}<input id="aiReviewRarity" value="${esc(r.rarity||'')}"/></div>
     <div>${aiFieldHead('ILLUSTRATOR',f.illustrator)}<input id="aiReviewIllustrator" value="${esc(r.illustrator||'')}"/></div>
-   </div>
-   <div class="ai-diagnostic"><b>${diag.missing?`${diag.missing} field${diag.missing===1?'':'s'} unresolved.`:'All identity fields populated.'}</b> Intake confidence is calculated from field-level completeness and confidence, so a partial result cannot inherit an unrealistic overall model score.</div>
-   ${approvedMarketPricingHtml(r)}
-   <div class="ai-review-note">Review the verified identity and market evidence, then complete the editable purchase details directly below. Suggested price is optional; saving the purchase approves the match and adds it to Stock.</div>
-   <div class="ai-approved-actions"><button class="btn alt" type="button" onclick="clearAiRecognition(false)">DISCARD MATCH</button><button class="btn ${Number($('plist')?.value||0)>0?'selected':''}" type="button" onclick="useReviewSuggestedPrice()" ${marketSuggestedPrice(r)?'':'disabled'}>${marketSuggestedPrice(r)?'USE SUGGESTED PRICE':'NO MARKET PRICE'}</button></div>`;
+   </div></details>
+   <div class="ai-approved-actions"><button class="btn alt" type="button" onclick="clearAiRecognition(false);closeStockEntry()">DISCARD MATCH</button><button class="btn ${Number($('plist')?.value||0)>0?'selected':''}" type="button" onclick="useReviewSuggestedPrice()" ${marketSuggestedPrice(r)?'':'disabled'}>${marketSuggestedPrice(r)?'USE SUGGESTED PRICE':'NO MARKET PRICE'}</button></div>`;
 }
 function readAiReview(){
  const base=pendingRecognition||{};
@@ -2244,17 +2252,17 @@ function prepareVerifiedStockIntake(r){
  if($('plocation'))$('plocation').value='UNALLOCATED';
  refreshSequencePreview();
  showMarketPricing(r);
- if($('pnotes')&&!$('pnotes').value.trim()){
-   const bits=[`AI verified ${r.language||''} Pokémon card`.trim(),r.setCode?`set ${r.setCode}`:'',printedCollectorNumber(r)?`collector ${printedCollectorNumber(r)}`:'',r.rarity||'',r.illustrator?`illustrator ${r.illustrator}`:''].filter(Boolean);
-   $('pnotes').value=bits.join(' · ');
- }
+
 }
 function applyRecognition(r){
  currentRecognition=null;
  pendingRecognition=normaliseRecognition(r);
- if($('pn'))$('pn').value='';
+ const title=titleFromRecognition(pendingRecognition);
+ if($('pn'))$('pn').value=title;
  if($('pc'))$('pc').value='Raw Single';
  if($('pcondition'))$('pcondition').value='Ungraded';
+ prepareVerifiedStockIntake(pendingRecognition);
+ const panel=$('stockEntryPanel');if(panel)panel.hidden=false;
  setAiRecognitionPanel('review',pendingRecognition);
 }
 async function fileToRecognitionDataURL(file,max=1200,quality=0.80){
@@ -2357,22 +2365,26 @@ function openStockEntry(mode='manual'){
  currentIntakeMode=mode;
  const panel=$('stockEntryPanel'); if(!panel)return;
  const launcher=document.querySelector('.product-intake-launcher');
- const aiHost=$('aiRecognitionPanel');
- panel.hidden=false;
+ const workspace=$('aiIntakeWorkspace');
  panel.classList.toggle('ai-integrated',mode!=='manual');
  if($('stockEntryTitle'))$('stockEntryTitle').textContent=mode==='manual'?'LOG A PURCHASE':'PURCHASE DETAILS';
  if(mode==='manual'){
+   panel.hidden=false;
+   if(workspace)workspace.hidden=true;
    setAiRecognitionPanel('idle');
-   if(launcher && panel.parentElement===launcher)launcher.after(panel);
- }else if(aiHost && launcher){
-   aiHost.insertAdjacentElement('afterend',panel);
+   if(launcher)launcher.after(panel);
+ }else{
+   if(workspace){workspace.hidden=false;workspace.appendChild(panel)}
+   panel.hidden=true;
  }
- setTimeout(()=>{const target=mode==='manual'?panel:aiHost;target?.scrollIntoView({behavior:'smooth',block:'start'})},40);
+ setTimeout(()=>{const target=mode==='manual'?panel:workspace;target?.scrollIntoView({behavior:'smooth',block:'start'})},40);
 }
 function closeStockEntry(){
  const panel=$('stockEntryPanel');
  const launcher=document.querySelector('.product-intake-launcher');
- if(panel){panel.hidden=true;panel.classList.remove('ai-integrated');if(launcher&&panel.parentElement===launcher)launcher.after(panel)}
+ const workspace=$('aiIntakeWorkspace');
+ if(panel){panel.hidden=true;panel.classList.remove('ai-integrated');if(launcher)launcher.after(panel)}
+ if(workspace)workspace.hidden=true;
  pendingCameraFiles=[];currentRecognition=null;pendingRecognition=null;recognitionBusy=false;recognitionSessionId++;
  if($('pcamera'))$('pcamera').value='';
  if($('pphotos'))$('pphotos').value='';

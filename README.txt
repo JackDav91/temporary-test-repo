@@ -1,3 +1,5 @@
+Gengrail TCG v20.0.1 — Unified Stock Intake
+
 Gengrail Business Log v19.18.0 — Adaptive Buy Engine + Calculator UX Fixes
 
 - Pricing Calculator now uses an adaptive value-tier buying model by default: lower percentage hurdles on premium cards, higher absolute cash-profit hurdles, and risk-adjusted safety buffers.
