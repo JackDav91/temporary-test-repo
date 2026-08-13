@@ -1,4 +1,4 @@
-const C='gengrail-log-v19-13-0-ledger-market-v1';
+const C='gengrail-log-v19-14-0-approved-pricing-flow';
 const A=['./','./index.html','./manifest.json','./gengrail-theme.css','./gengrail-ebay.js','./icon-192.png','./icon-512.png'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(C).then(c=>c.addAll(A)));self.skipWaiting()});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==C).map(k=>caches.delete(k)))));self.clients.claim()});
