@@ -23,3 +23,6 @@ v20 UI consolidation (13 Aug 2026)
 - Duplicate Pricing Calculator shortcut removed from Tools (Buying remains its home).
 - Pricing copy streamlined and recalculation is reactive while retaining a manual refresh control.
 - Existing local database schema, permanent SKU/purchase ledgers, AI recognition, pricing and eBay data logic preserved.
+
+
+v20.1.1 final consolidation patch: fixed Channels → eBay navigation, styled mobile record actions, collapsed location-creation tools, cache bumped.
