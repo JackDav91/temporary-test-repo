@@ -1110,6 +1110,7 @@ body.inner-page .kpi,
 <div><label>Inventory status</label><select id="pstatus"><option value="IN_STOCK">In stock</option><option value="TO_CATALOGUE">To catalogue</option><option value="LISTED">Listed</option></select></div>
 <div><label>Target / eBay list price (£)</label><input id="plist" placeholder="Optional" step=".01" type="number"/></div>
 <div><label>eBay status</label><select id="pebaystatus"><option value="NOT_LISTED">Not listed</option><option value="DRAFT">Draft</option><option value="LISTED">Listed</option></select></div>
+<div class="full" id="intakeMarketPanel" hidden><div class="ai-recognition-panel good" style="margin-top:0"><div class="ai-recognition-kicker">MARKET PRICING · V1</div><div class="ai-recognition-title" id="intakeMarketTitle">Checking market evidence…</div><div class="ai-recognition-grid"><div class="ai-recognition-cell"><small>CARDMARKET TREND</small><b id="intakeMarketTrend">—</b></div><div class="ai-recognition-cell"><small>7-DAY AVERAGE</small><b id="intakeMarket7">—</b></div><div class="ai-recognition-cell"><small>30-DAY AVERAGE</small><b id="intakeMarket30">—</b></div><div class="ai-recognition-cell"><small>SUGGESTED LIST</small><b id="intakeMarketSuggested">—</b></div></div><div class="ai-recognition-sub" id="intakeMarketNote">Market evidence is guidance only. Review the exact variant and condition before listing.</div><div class="ai-recognition-actions"><button class="btn" id="useMarketPrice" type="button">USE SUGGESTED PRICE</button><button class="btn alt" id="refreshMarketPrice" type="button">REFRESH MARKET</button></div></div></div>
 <div class="full photo-picker"><label>Product photos</label><input accept="image/*" id="pphotos" multiple="" type="file"/><div class="photo-help">Add front/back and detail photos now. Images are stored separately on this device so they do not inflate the accounting database or JSON backup.</div><div class="photo-preview" id="ppreview"></div></div>
 <div class="full"><label>Notes</label><textarea id="pnotes"></textarea></div></div><div class="actions"><button class="btn" id="addp">ADD TO STOCK</button><button class="btn alt" id="cancelStockEntry" type="button">CLOSE</button></div></div>
 <div class="panel"><div class="title">CURRENT STOCK</div><div class="table"><table><thead><tr><th>Item</th><th>SKU</th><th>Purchase ID</th><th>Location</th><th>Status</th><th>Condition</th><th>Qty left</th><th>Unit cost</th><th>Target list</th><th>eBay</th><th>Photos</th><th>Source</th><th>Actions</th></tr></thead><tbody id="pbody"></tbody></table></div><div class="note">Stock is now the master product record. Photos stay on this device in dedicated browser storage; SKU, condition, target price and eBay status are stored with the stock record and can be used by the eBay integration.</div></div>
@@ -1316,7 +1317,7 @@ body.inner-page .kpi,
 </section>
 </div>
 <script>
-const K='gengrailBizV1', SAFETY_K='gengrailBizV1_lastGood', SCHEMA_VERSION=3,
+const K='gengrailBizV1', SAFETY_K='gengrailBizV1_lastGood', SCHEMA_VERSION=4,
 $=x=>document.getElementById(x),
 m=v=>new Intl.NumberFormat('en-GB',{style:'currency',currency:'GBP'}).format(v||0),
 d=()=>new Date().toISOString().slice(0,10);
@@ -1324,7 +1325,7 @@ d=()=>new Date().toISOString().slice(0,10);
 const freshDB=()=>({
  schemaVersion:SCHEMA_VERSION,
  purchases:[],sales:[],expenses:[],funding:[],dividends:[],opportunities:[],locations:[],orders:[],
- settings:{salary:57000,divUsedElsewhere:0,startupAmazonLoaded:false,aiRecognitionEndpoint:'https://gengrail-card-ai.gengrailtcg.workers.dev'}
+ settings:{salary:57000,divUsedElsewhere:0,startupAmazonLoaded:false,aiRecognitionEndpoint:'https://gengrail-card-ai.gengrailtcg.workers.dev',sequenceLedger:{GEN:0,PUR:0}}
 });
 
 function normaliseDB(input){
@@ -1378,7 +1379,24 @@ if(validDB(primary)){
 }
 
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2)}
-function nextCode(prefix,field){let max=0;db.purchases.forEach(p=>{const v=String(p[field]||'');const m=v.match(new RegExp('^'+prefix+'(\\d+)$'));if(m)max=Math.max(max,Number(m[1]))});return prefix+String(max+1).padStart(6,'0')}
+function sequenceHighWater(prefix,field){
+ let max=Number(db?.settings?.sequenceLedger?.[prefix]||0);
+ const scan=v=>{const m=String(v||'').match(new RegExp('^'+prefix+'(\\d+)$','i'));if(m)max=Math.max(max,Number(m[1]))};
+ (db.purchases||[]).forEach(p=>scan(p[field]));
+ if(prefix==='GEN')(db.orders||[]).forEach(o=>scan(o.sku));
+ return max;
+}
+function syncSequenceLedger(){
+ db.settings=db.settings||{};db.settings.sequenceLedger=db.settings.sequenceLedger||{GEN:0,PUR:0};
+ db.settings.sequenceLedger.GEN=sequenceHighWater('GEN','sku');
+ db.settings.sequenceLedger.PUR=sequenceHighWater('PUR','purchaseId');
+}
+function nextCode(prefix,field){syncSequenceLedger();return prefix+String(Number(db.settings.sequenceLedger[prefix]||0)+1).padStart(6,'0')}
+function reserveCode(prefix,field,code){
+ const m=String(code||'').match(new RegExp('^'+prefix+'(\\d+)$','i'));if(!m)return;
+ db.settings.sequenceLedger=db.settings.sequenceLedger||{GEN:0,PUR:0};
+ db.settings.sequenceLedger[prefix]=Math.max(Number(db.settings.sequenceLedger[prefix]||0),Number(m[1]));
+}
 function nextSku(){return nextCode('GEN','sku')}
 function nextPurchaseId(){return nextCode('PUR','purchaseId')}
 function migrateWarehouse(){
@@ -1401,6 +1419,7 @@ function migrateWarehouse(){
  });
 }
 migrateWarehouse();
+syncSequenceLedger();
 const PHOTO_DB='gengrailPhotosV1', PHOTO_STORE='photos', SAFETY_STORE='businessSafety', SAFETY_RECORD='lastGoodBusinessDB';
 function photoDB(){
  return new Promise((resolve,reject)=>{
@@ -2079,6 +2098,7 @@ function approveAiRecognition(){
 function clearAiRecognition(clearFields=true){
  currentRecognition=null;
  pendingRecognition=null;
+ currentMarketPricing=null;if($('intakeMarketPanel'))$('intakeMarketPanel').hidden=true;
  setAiRecognitionPanel('idle');
  if(clearFields){
    if($('pn'))$('pn').value='';
@@ -2121,6 +2141,34 @@ function titleFromRecognition(r){
  const no=printedCollectorNumber(r);
  return [r?.cardName,no,r?.setCode||r?.setName].filter(Boolean).join(' · ').replace(/\s+/g,' ').trim();
 }
+let currentMarketPricing=null;
+function marketMedian(values){const a=values.filter(v=>Number(v)>0).map(Number).sort((a,b)=>a-b);if(!a.length)return 0;const m=Math.floor(a.length/2);return a.length%2?a[m]:(a[m-1]+a[m])/2}
+async function fxToGbp(unit){
+ unit=String(unit||'EUR').toUpperCase();if(unit==='GBP')return {rate:1,date:new Date().toISOString().slice(0,10)};
+ try{const r=await fetch('https://api.frankfurter.dev/v2/rate/'+encodeURIComponent(unit)+'/GBP',{cache:'no-store'});if(!r.ok)throw 0;const j=await r.json();return {rate:Number(j.rate)||0,date:j.date||''}}catch{return {rate:0,date:''}}
+}
+function marketMoney(v){return Number(v)>0?m(v):'—'}
+async function loadRecognitionMarketPricing(r){
+ const panel=$('intakeMarketPanel');if(!panel)return;panel.hidden=false;$('intakeMarketTitle').textContent='Checking market evidence…';
+ currentMarketPricing=null;
+ try{
+   const lang=String(r?.language||'').toLowerCase().includes('japanese')?'ja':'en';
+   const ref=String(r?.referenceId||'').trim();if(!ref)throw new Error('No verified card reference available.');
+   const res=await fetch('https://api.tcgdex.net/v2/'+lang+'/cards/'+encodeURIComponent(ref),{cache:'no-store'});if(!res.ok)throw new Error('Market card lookup unavailable.');
+   const card=await res.json(),cm=card?.pricing?.cardmarket;if(!cm)throw new Error('No Cardmarket pricing is available for this card yet.');
+   const fx=await fxToGbp(cm.unit||'EUR');if(!fx.rate)throw new Error('Currency conversion is temporarily unavailable.');
+   const conv=v=>Number(v)>0?Number(v)*fx.rate:0;
+   const trend=conv(cm.trend),avg7=conv(cm.avg7),avg30=conv(cm.avg30),avg1=conv(cm.avg1),avg=conv(cm.avg);
+   const anchor=marketMedian([trend,avg7,avg30,avg1,avg]);if(!anchor)throw new Error('Market prices were returned without a usable value.');
+   const suggested=priceCeil99(anchor);
+   const evidenceCount=[trend,avg7,avg30,avg1,avg].filter(Boolean).length;
+   const confidence=evidenceCount>=4?'HIGH':evidenceCount>=2?'MEDIUM':'LOW';
+   currentMarketPricing={source:'TCGdex / Cardmarket',sourceUnit:cm.unit||'EUR',fxRate:fx.rate,fxDate:fx.date,updated:cm.updated||'',trend,avg7,avg30,avg1,avg,marketAnchor:anchor,suggested,confidence,referenceId:ref};
+   $('intakeMarketTitle').textContent=`${confidence} CONFIDENCE · ${marketMoney(suggested)} suggested`;
+   $('intakeMarketTrend').textContent=marketMoney(trend);$('intakeMarket7').textContent=marketMoney(avg7);$('intakeMarket30').textContent=marketMoney(avg30);$('intakeMarketSuggested').textContent=marketMoney(suggested);
+   $('intakeMarketNote').textContent=`Source: Cardmarket via TCGdex${cm.updated?' · market updated '+String(cm.updated).slice(0,10):''} · ${cm.unit||'EUR'}→GBP ${fx.rate.toFixed(4)}${fx.date?' ('+fx.date+')':''}. Suggested price uses the median of available trend/average evidence and rounds to a .99 list price. Guidance only; condition and UK marketplace demand still require review.`;
+ }catch(e){$('intakeMarketTitle').textContent='Market price unavailable';$('intakeMarketTrend').textContent='—';$('intakeMarket7').textContent='—';$('intakeMarket30').textContent='—';$('intakeMarketSuggested').textContent='—';$('intakeMarketNote').textContent=String(e?.message||e||'No market evidence available. Set the price manually.');}
+}
 function prepareVerifiedStockIntake(r){
  const sku=nextSku(),purchaseId=nextPurchaseId();
  if($('psku'))$('psku').value=sku;
@@ -2129,6 +2177,7 @@ function prepareVerifiedStockIntake(r){
  if($('pq'))$('pq').value=1;
  if($('pstatus'))$('pstatus').value='IN_STOCK';
  if($('plocation'))$('plocation').value='UNALLOCATED';
+ loadRecognitionMarketPricing(r);
  if($('pnotes')&&!$('pnotes').value.trim()){
    const bits=[`AI verified ${r.language||''} Pokémon card`.trim(),r.setCode?`set ${r.setCode}`:'',printedCollectorNumber(r)?`collector ${printedCollectorNumber(r)}`:'',r.rarity||'',r.illustrator?`illustrator ${r.illustrator}`:''].filter(Boolean);
    $('pnotes').value=bits.join(' · ');
@@ -2318,6 +2367,8 @@ if($('pphotos'))$('pphotos').onchange=()=>{
  if(currentIntakeMode==='photo' && files[0])recogniseCardFile(files[0]);
 };
 if($('cancelStockEntry'))$('cancelStockEntry').onclick=()=>closeStockEntry();
+if($('useMarketPrice'))$('useMarketPrice').onclick=()=>{if(!currentMarketPricing?.suggested)return alert('No suggested market price is available yet.');$('plist').value=currentMarketPricing.suggested.toFixed(2)};
+if($('refreshMarketPrice'))$('refreshMarketPrice').onclick=()=>{if(currentRecognition)loadRecognitionMarketPricing(currentRecognition)};
 
 $('addp').onclick=async()=>{
  if(pendingRecognition && !currentRecognition)return alert('Review the AI candidate and choose APPROVE & PREFILL, or DISCARD MATCH, before adding this item to Stock.');
@@ -2325,7 +2376,9 @@ $('addp').onclick=async()=>{
  const pid=id(), files=currentIntakeFiles();
  const sku=$('psku').value.trim()||nextSku();
  const purchaseId=$('ppurchaseid').value.trim()||nextPurchaseId();
- const p={id:pid,name:$('pn').value.trim(),cat:$('pc').value,date:$('pd').value,q:Math.max(1,Math.floor(n('pq'))),cost:n('pp'),source:$('ps').value.trim(),condition:$('pcondition').value,sku,purchaseId,location:$('plocation').value||'UNALLOCATED',inventoryStatus:$('pstatus').value||'IN_STOCK',qrData:'GENGRAIL:SKU:'+sku,listPrice:n('plist'),ebayStatus:$('pebaystatus').value,ebayItemId:'',ebayUrl:'',photoCount:0,notes:$('pnotes').value,productMeta:currentRecognition?{game:currentRecognition.game||'Pokémon TCG',cardName:currentRecognition.cardName||'',cardNumber:printedCollectorNumber(currentRecognition),normalisedCardNumber:currentRecognition.cardNumber||'',setName:currentRecognition.setName||'',setCode:currentRecognition.setCode||'',language:currentRecognition.language||'',rarity:currentRecognition.rarity||'',illustrator:currentRecognition.illustrator||'',recognitionConfidence:Number(currentRecognition.confidence||0),intakeConfidence:Number((currentRecognition.reviewDiagnostics||recognitionDiagnostics(currentRecognition)).score||0),recognitionVerified:!!currentRecognition.verified,verificationStatus:currentRecognition.verificationStatus||'',recognitionReviewed:!!currentRecognition.reviewed,recognitionApprovedAt:currentRecognition.approvedAt||'',recognitionSource:'workers_ai',fieldConfidences:currentRecognition.fieldConfidences||{},fieldSources:currentRecognition.fieldSources||{},reviewDiagnostics:currentRecognition.reviewDiagnostics||recognitionDiagnostics(currentRecognition),recognitionVersion:3,intakeVersion:1}:null};
+ const p={id:pid,name:$('pn').value.trim(),cat:$('pc').value,date:$('pd').value,q:Math.max(1,Math.floor(n('pq'))),cost:n('pp'),source:$('ps').value.trim(),condition:$('pcondition').value,sku,purchaseId,location:$('plocation').value||'UNALLOCATED',inventoryStatus:$('pstatus').value||'IN_STOCK',qrData:'GENGRAIL:SKU:'+sku,listPrice:n('plist'),ebayStatus:$('pebaystatus').value,ebayItemId:'',ebayUrl:'',photoCount:0,notes:$('pnotes').value,productMeta:currentRecognition?{game:currentRecognition.game||'Pokémon TCG',cardName:currentRecognition.cardName||'',cardNumber:printedCollectorNumber(currentRecognition),normalisedCardNumber:currentRecognition.cardNumber||'',setName:currentRecognition.setName||'',setCode:currentRecognition.setCode||'',language:currentRecognition.language||'',rarity:currentRecognition.rarity||'',illustrator:currentRecognition.illustrator||'',recognitionConfidence:Number(currentRecognition.confidence||0),intakeConfidence:Number((currentRecognition.reviewDiagnostics||recognitionDiagnostics(currentRecognition)).score||0),recognitionVerified:!!currentRecognition.verified,verificationStatus:currentRecognition.verificationStatus||'',recognitionReviewed:!!currentRecognition.reviewed,recognitionApprovedAt:currentRecognition.approvedAt||'',recognitionSource:'workers_ai',fieldConfidences:currentRecognition.fieldConfidences||{},fieldSources:currentRecognition.fieldSources||{},reviewDiagnostics:currentRecognition.reviewDiagnostics||recognitionDiagnostics(currentRecognition),recognitionVersion:3,intakeVersion:2}:null};
+ reserveCode('GEN','sku',sku);reserveCode('PUR','purchaseId',purchaseId);
+ if(currentMarketPricing){p.productMeta=p.productMeta||{};p.productMeta.marketPricing={...currentMarketPricing,selectedListPrice:n('plist'),capturedAt:new Date().toISOString(),pricingVersion:1};}
  db.purchases.push(p);
  try{p.photoCount=await addPhotos(pid,files)}catch(e){console.error(e);alert('Stock was saved, but one or more photos could not be stored on this device.');}
  ['pn','pp','ps','psku','ppurchaseid','plist','pnotes'].forEach(x=>$(x).value='');$('pq').value=1;$('pcondition').value='Ungraded';$('pebaystatus').value='NOT_LISTED';$('pphotos').value='';if($('pcamera'))$('pcamera').value='';pendingCameraFiles=[];currentRecognition=null;pendingRecognition=null;$('ppreview').innerHTML='';save();closeStockEntry();
