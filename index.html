@@ -8,7 +8,7 @@
 <meta content="Gengrail TCG" name="apple-mobile-web-app-title"/>
 <link href="manifest.json" rel="manifest"/>
 <link href="icon-512.png" rel="apple-touch-icon" sizes="512x512"/><title>Gengrail TCG Business Log</title>
-<meta content="v19.18.0-pricing-page-fix" name="gengrail-build"/>
+<meta content="v20.1.0-consolidation" name="gengrail-build"/>
 <style>
 /* GENGRAIL CROWN-GOLD ACTIVE TABS */
 
@@ -1088,6 +1088,10 @@ body.inner-page .kpi,
 #stockEntryPanel.ai-integrated .actions{margin-top:14px}
 #stockEntryPanel.ai-integrated #addp{flex:1;min-width:190px}
 @media(max-width:620px){#stockEntryPanel.ai-integrated .grid{grid-template-columns:1fr}.ai-identity-summary{display:block}.ai-verified-pill{display:inline-block;margin-top:9px}}
+
+/* ---------- v20.1 CONSOLIDATION ---------- */
+.compact-help,.compact-intake-note{color:#9e9e9e;font-size:13px;line-height:1.45;margin:6px 0 12px}.compact-engine{padding:10px 12px;margin-top:12px}.compact-engine span{font-size:9px}.compact-engine b{font-size:15px}.compact-details,.settings-details,.history-details,.danger-zone{margin-top:12px;border:1px solid #303030;border-radius:12px;background:#0b0b0b;overflow:hidden}.compact-details summary,.settings-details summary,.history-details summary,.danger-zone summary{cursor:pointer;padding:12px 14px;font-weight:900;color:#ddd;list-style:none}.compact-details summary::-webkit-details-marker,.settings-details summary::-webkit-details-marker,.history-details summary::-webkit-details-marker,.danger-zone summary::-webkit-details-marker{display:none}.compact-details summary:before,.settings-details summary:before,.history-details summary:before,.danger-zone summary:before{content:'›';display:inline-block;margin-right:8px;color:var(--y);transition:.15s}.compact-details[open] summary:before,.settings-details[open] summary:before,.history-details[open] summary:before,.danger-zone[open] summary:before{transform:rotate(90deg)}.compact-details .note,.settings-details .note{margin:0 12px 12px}.settings-status-row{display:flex;justify-content:space-between;gap:12px;align-items:center;border:1px solid #303030;border-radius:12px;background:#0b0b0b;padding:12px}.settings-status-row b,.settings-status-row small{display:block}.settings-status-row small{color:#888;margin-top:3px}.settings-ok{border:1px solid #3d8751;background:#0d1a11;color:#82dda0;border-radius:999px;padding:5px 8px;font-size:10px;font-weight:900}.danger-zone{border-color:#5c3030}.danger-zone summary{color:#ff9b9b}.postage-setting details{border:0}.postage-setting summary{display:flex;justify-content:space-between;gap:10px;align-items:center;cursor:pointer;list-style:none}.postage-setting summary::-webkit-details-marker{display:none}.postage-setting .pf-summary-copy b,.postage-setting .pf-summary-copy small{display:block}.postage-setting .pf-summary-copy small{color:#888;margin-top:4px}.postage-setting .pf-summary-range{font-size:11px;color:#d6b649;text-align:right}.postage-setting .pf-edit{margin-top:12px;padding-top:12px;border-top:1px solid #252525}.mobile-record-cards{display:none}.record-card{border:1px solid #303030;border-radius:14px;background:#0b0b0b;padding:13px;margin-top:10px}.record-card-top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.record-card-title{font-weight:950;font-size:17px;line-height:1.2}.record-card-sub{font-size:11px;color:#999;margin-top:4px}.record-card-meta{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:12px}.record-card-meta>div{border:1px solid #252525;border-radius:9px;padding:9px}.record-card-meta small{display:block;color:#777;font-size:9px;font-weight:900;text-transform:uppercase}.record-card-meta b{display:block;margin-top:3px;font-size:13px}.record-card-actions{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}.record-card-actions button{flex:1 1 115px}.history-details{margin-top:14px}.history-details summary{display:flex;justify-content:space-between}.pricing-purpose{margin-top:0}.pricing-recalc{opacity:1}.pricing-decision.await{display:none!important}.postage-profile-summary>small{display:none}.ai-approved-market .market-price-grid{margin-bottom:0}
+@media(max-width:700px){.desktop-record-table{display:none!important}.mobile-record-cards{display:block}.orders-table-wrap{display:none!important}.pricing-hero{padding:12px}.pricing-price{font-size:34px}.pricing-hero small{font-size:10px}.pricing-ai-market b{font-size:1.45rem}.record-card-actions .stock-ebay-btn{flex-basis:100%}}
 </style>
 <link href="gengrail-theme.css" rel="stylesheet"/>
 <link href="gengrail-gold-tabs.css" rel="stylesheet"/>
@@ -1112,7 +1116,8 @@ body.inner-page .kpi,
 <div class="command-group" data-group-screen="finance" id="group-finance"><div class="command-group-head"><button aria-label="Back to Command Centre" class="page-back group-back" type="button">←</button><div class="command-group-copy"><h2>Finance</h2><p>Understand and control the business</p></div></div><div class="group-menu"><button data-go="dash" type="button"><span class="gicon"><svg aria-hidden="true" viewbox="0 0 24 24"><rect height="8" rx="1" width="8" x="3" y="3"></rect><rect height="5" rx="1" width="8" x="13" y="3"></rect><rect height="11" rx="1" width="8" x="13" y="10"></rect><rect height="8" rx="1" width="8" x="3" y="13"></rect></svg></span><span><span class="glabel">Dashboard</span><span class="gsub">Revenue, profit, cash and stock overview</span></span><span class="garrow">›</span></button><button data-go="exp" type="button"><span class="gicon"><svg aria-hidden="true" viewbox="0 0 24 24"><path d="M6 3h12v18l-2-1.5L14 21l-2-1.5L10 21l-2-1.5L6 21V3Z"></path><path d="M9 7h6"></path><path d="M9 11h6"></path><path d="M9 15h4"></path></svg></span><span><span class="glabel">Expenses</span><span class="gsub">Log and review business expenditure</span></span><span class="garrow">›</span></button><button data-go="owner" type="button"><span class="gicon"><svg aria-hidden="true" viewbox="0 0 24 24"><circle cx="12" cy="8" r="3"></circle><path d="M5 21a7 7 0 0 1 14 0"></path><path d="M12 2v2"></path></svg></span><span><span class="glabel">Owner</span><span class="gsub">Funding, contributions and dividends</span></span><span class="garrow">›</span></button><button data-go="tax" type="button"><span class="gicon"><svg aria-hidden="true" viewbox="0 0 24 24"><rect height="18" rx="2" width="16" x="4" y="3"></rect><path d="M7 7h10"></path><path d="M8 11h1"></path><path d="M12 11h1"></path><path d="M16 11h1"></path><path d="M8 15h1"></path><path d="M12 15h1"></path><path d="M16 15h1"></path><path d="M8 18h1"></path><path d="M12 18h5"></path></svg></span><span><span class="glabel">Tax</span><span class="gsub">Corporation tax and reserve tools</span></span><span class="garrow">›</span></button></div></div>
 <div class="command-group" data-group-screen="tools" id="group-tools"><div class="command-group-head"><button aria-label="Back to Command Centre" class="page-back group-back" type="button">←</button><div class="command-group-copy"><h2>Tools</h2><p>Fast utilities for everyday work</p></div></div><div class="group-menu"><button data-go="lookup" data-focus="productLookupInput" type="button"><span class="gicon"><svg aria-hidden="true" viewbox="0 0 24 24"><path d="M4 8V4h4"></path><path d="M16 4h4v4"></path><path d="M20 16v4h-4"></path><path d="M8 20H4v-4"></path><path d="M8 9v6"></path><path d="M11 9v6"></path><path d="M14 9v6"></path><path d="M17 9v6"></path></svg></span><span><span class="glabel">Stock Lookup</span><span class="gsub">Find an item, then act on it</span></span><span class="garrow">›</span></button></div></div>
 </section>
-<section class="sec" id="channels"><div class="panel"><div class="title">SALES CHANNELS</div><div class="channel-hub-card"><div class="channel-hub-head"><div><b>eBay</b><small>Production marketplace integration</small></div><span class="channel-status-live">ACTIVE</span></div><p>Manage drafts, live listings, publishing setup and eBay sales sync through the existing proven eBay channel.</p><button class="btn" id="openEbayChannel" type="button">OPEN EBAY CHANNEL</button></div><div class="note">Gengrail is now organised so marketplace integrations sit behind a common Channels layer. Shopify and TikTok Shop can be added here later without changing the core Stock, Orders or Finance workflow.</div></div></section>
+<section class="sec" id="channels"><div class="panel"><div class="title">SALES CHANNELS</div><div class="channel-hub-card"><div class="channel-hub-head"><div><b>eBay</b><small>Production marketplace integration</small></div><span class="channel-status-live">ACTIVE</span></div><p>Drafts, live listings, publishing setup and sales sync.</p><button class="btn" id="openEbayChannel" type="button">OPEN EBAY CHANNEL</button></div></div></section>
+<section class="sec" id="ebayChannel"><div id="ebayChannelMount"></div></section>
 <section class="sec" id="dash"><div class="panel"><div class="title">BUSINESS DASHBOARD</div><div class="kpis">
 <div class="kpi"><small>Sales revenue</small><b id="rev">£0</b></div>
 <div class="kpi"><small>Cost of stock sold</small><b id="cogskpi">£0</b></div>
@@ -1126,18 +1131,18 @@ body.inner-page .kpi,
 <div class="kpi"><small>Startup expenditure</small><b id="startupSpend">£0</b></div>
 <div class="kpi"><small>Retained after-tax profit</small><b id="retained">£0</b></div>
 <div class="kpi"><small>Available buying capital</small><b id="buycap">£0</b></div>
-</div><div class="note" id="cashnote"></div></div></section>
+</div><details class="compact-details"><summary>How the dashboard is calculated</summary><div class="note" id="cashnote"></div></details></div></section>
 <section class="sec" id="stock">
 <div class="panel product-intake-launcher">
 <div class="title">ADD CARD / PRODUCT</div>
-<div class="note compact-intake-note" style="margin-top:0">Scan, import or enter manually. Nothing is added until you save the reviewed purchase.</div>
+<div class="compact-intake-note">Scan, import or enter manually.</div>
 <div class="product-intake-grid">
 <button class="intake-action" id="startCameraIntake" type="button"><span class="intake-icon">⌁</span><b>SCAN CARD</b><small>Use the iPhone camera</small></button>
 <button class="intake-action" id="startPhotoIntake" type="button"><span class="intake-icon">▧</span><b>IMPORT PHOTO</b><small>Choose an existing card image</small></button>
 <button class="intake-action" id="startManualIntake" type="button"><span class="intake-icon">＋</span><b>ENTER MANUALLY</b><small>Open the full stock sheet</small></button>
 </div>
 <input accept="image/*" capture="environment" id="pcamera" style="display:none" type="file"/>
-<div class="recognition-ready"><span>AI PRODUCT ENGINE</span><b>English + Japanese raw singles</b></div>
+<div class="recognition-ready compact-engine"><span>AI READY</span><b>English + Japanese raw singles</b></div>
 <div class="ai-intake-workspace" id="aiIntakeWorkspace" hidden><div class="ai-recognition-panel" id="aiRecognitionPanel" hidden></div></div>
 </div>
 <div class="panel" hidden id="stockEntryPanel"><div class="title" id="stockEntryTitle">PURCHASE DETAILS</div><div class="grid">
@@ -1151,16 +1156,16 @@ body.inner-page .kpi,
 <div class="intake-system-only"><label>Inventory status</label><select id="pstatus"><option value="IN_STOCK">In stock</option><option value="TO_CATALOGUE">To catalogue</option><option value="LISTED">Listed</option></select></div>
 <div><label>Target sell price (£)</label><input id="plist" placeholder="Optional" step=".01" type="number" inputmode="decimal"/></div>
 <div class="intake-system-only"><label>eBay status</label><select id="pebaystatus"><option value="NOT_LISTED">Not listed</option><option value="DRAFT">Draft</option><option value="LISTED">Listed</option></select></div>
-<div class="intake-assigned-meta">SKU and Purchase ID are assigned from the permanent ledgers when this purchase is saved. Historical IDs are never reused.</div>
+<div class="intake-assigned-meta">SKU + Purchase ID assigned automatically on save.</div>
 <div class="full sequence-preview intake-system-only" id="sequencePreview"><div><small>NEXT SKU</small><b id="sequenceSku">—</b></div><div><small>NEXT PURCHASE ID</small><b id="sequencePurchase">—</b></div><div class="sequence-note">Sequence preview is generated from Gengrail's permanent high-water ledger. Sold or deleted historical IDs are never reused.</div></div>
 <div class="full photo-picker"><label>Product photos</label><input accept="image/*" id="pphotos" multiple="" type="file"/><div class="photo-help">Front/back or detail photos stay on this device and are excluded from the accounting JSON backup.</div><div class="photo-preview" id="ppreview"></div></div>
 <div class="full"><label>Notes</label><textarea id="pnotes"></textarea></div></div><div class="actions"><button class="btn" id="addp">ADD TO STOCK</button><button class="btn alt" id="cancelStockEntry" type="button">CLOSE</button></div></div>
-<div class="panel"><div class="title">CURRENT STOCK</div><div class="table"><table><thead><tr><th>Item</th><th>SKU</th><th>Purchase ID</th><th>Location</th><th>Status</th><th>Condition</th><th>Qty left</th><th>Unit cost</th><th>Target list</th><th>eBay</th><th>Photos</th><th>Source</th><th>Actions</th></tr></thead><tbody id="pbody"></tbody></table></div><div class="note">Stock is the master product record. Photos stay in dedicated on-device storage.</div></div>
+<div class="panel"><div class="title">CURRENT STOCK</div><div class="table desktop-record-table"><table><thead><tr><th>Item</th><th>SKU</th><th>Purchase ID</th><th>Location</th><th>Status</th><th>Condition</th><th>Qty left</th><th>Unit cost</th><th>Target list</th><th>eBay</th><th>Photos</th><th>Source</th><th>Actions</th></tr></thead><tbody id="pbody"></tbody></table></div><div class="mobile-record-cards" id="stockCards"></div></div>
 </section>
 <section class="sec" id="lookup">
 <div class="panel">
 <div class="title">STOCK LOOKUP</div>
-<div class="note" style="margin-top:0">Scan or enter a Gengrail SKU to open the product record. Location actions only appear when they are relevant.</div>
+
 <div class="scan-box product-lookup-box">
 <label>SKU or scan data</label>
 <input class="mono" id="productLookupInput" placeholder="GEN000001 or GENGRAIL:SKU:GEN000001"/>
@@ -1183,16 +1188,16 @@ body.inner-page .kpi,
 <div class="note">A standard 3-row Gengrail box creates 24 locations automatically: row 1 = 01–08, row 2 = 09–16, row 3 = 17–24. Example: Box A creates A01–A24.</div></div>
 <div class="panel"><div class="title">CUSTOM LOCATION</div><div class="grid"><div><label>Location code</label><input id="newLocCode" placeholder="Q01"/></div><div class="full"><label>Description</label><input id="newLocDesc" placeholder="Quarantine / grading / special storage"/></div></div><button class="btn" id="addLocation">CREATE LOCATION</button><div class="note">Use custom locations only when the standard A01–A24 box structure does not fit the physical storage.</div></div>
 <div class="panel"><div class="title">PUT AWAY / MOVE STOCK</div><div class="grid"><div class="full"><label>Stock item</label><select id="moveSku"></select></div><div><label>New location</label><select id="moveLocation"></select></div><div><label>New status</label><select id="moveStatus"><option value="IN_STOCK">In stock</option><option value="TO_CATALOGUE">To catalogue</option><option value="LISTED">Listed</option></select></div></div><button class="btn" id="moveStock">SAVE LOCATION</button></div>
-<div class="panel"><div class="title">SCAN / LOOKUP</div><div class="scan-box"><label>SKU or scan data</label><input class="mono" id="scanInput" placeholder="GEN000001 or GENGRAIL:SKU:GEN000001"/><button class="btn" id="scanLookup">LOOK UP ITEM</button><div class="scan-result" id="scanResult">Ready.</div></div></div>
+
 </section>
 <section class="sec" id="orders">
 <div class="panel"><div class="title">FULFILMENT QUEUE</div><div class="kpis"><div class="kpi"><small>Pick required</small><b id="orderPick">0</b></div><div class="kpi"><small>Picked</small><b id="orderPicked">0</b></div><div class="kpi"><small>Packed</small><b id="orderPacked">0</b></div><div class="kpi"><small>Dispatched</small><b id="orderDispatched">0</b></div></div></div>
-<div class="panel"><div class="title">ORDERS</div><div class="orders-table-wrap"><div class="table"><table><thead><tr><th>Order</th><th>Item</th><th>SKU</th><th>Location</th><th>Channel</th><th>Status</th><th>Next action</th></tr></thead><tbody id="orderBody"></tbody></table></div></div><div class="order-cards" id="orderCards"></div><div class="actions" style="margin-top:12px"><button class="btn alt" onclick="cleanOrphanOrders()" type="button">CLEAN ORPHANED ORDERS</button></div><div class="note">Manual sales create a fulfilment task automatically. Once the eBay API is live, eBay orders can feed this same queue. The cleanup tool only removes orders whose linked sale no longer exists.</div></div>
+<div class="panel"><div class="title">ACTIVE ORDERS</div><div class="orders-table-wrap"><div class="table"><table><thead><tr><th>Order</th><th>Item</th><th>SKU</th><th>Location</th><th>Channel</th><th>Status</th><th>Next action</th></tr></thead><tbody id="orderBody"></tbody></table></div></div><div class="order-cards" id="orderCards"></div><details class="history-details" id="orderHistoryDetails"><summary>DISPATCHED HISTORY <span id="orderHistoryCount">0</span></summary><div class="order-cards" id="orderHistoryCards"></div></details></div>
 </section>
 <section class="sec" id="sales">
 <div class="panel manual-sale-launch">
 <button class="btn" id="toggleManualSale" style="margin-top:0" type="button">+ ADD MANUAL SALE</button>
-<div class="note">Use manual entry only for sales made outside the automatic eBay channel — for example Direct, Facebook Marketplace, card shows, Vinted or Cardmarket.</div>
+<div class="compact-help">For Direct, Facebook, card shows, Vinted, Cardmarket or other off-channel sales.</div>
 </div>
 <div class="panel" hidden="" id="manualSaleForm">
 <div class="title">ADD MANUAL SALE</div><div class="grid">
@@ -1202,7 +1207,7 @@ body.inner-page .kpi,
 <div><label>Packaging allocation (£)</label><input id="spa" step=".01" type="number" value="0"/></div><div><label>Other sale costs (£)</label><input id="so" step=".01" type="number" value="0"/></div>
 <div class="full"><label>Notes</label><textarea id="snotes"></textarea></div></div><button class="btn" id="adds">SAVE MANUAL SALE</button>
 <div class="note">Packaging allocation is used for per-sale margin analysis. If you also record the actual purchase of sleeves, envelopes, labels etc. in Expenses, this allocation is not deducted again from accounting profit or cash, avoiding double-counting.</div></div>
-<div class="panel"><div class="title">SALES LOG</div><div class="table"><table><thead><tr><th>Date</th><th>Item</th><th>Source</th><th>Platform</th><th>Revenue</th><th>COGS</th><th>Fees</th><th>Postage/Other</th><th>Pack alloc.</th><th>Contribution</th><th>Margin</th><th></th></tr></thead><tbody id="sbody"></tbody></table></div></div>
+<div class="panel"><div class="title">SALES LOG</div><div class="table desktop-record-table"><table><thead><tr><th>Date</th><th>Item</th><th>Source</th><th>Platform</th><th>Revenue</th><th>COGS</th><th>Fees</th><th>Postage/Other</th><th>Pack alloc.</th><th>Contribution</th><th>Margin</th><th></th></tr></thead><tbody id="sbody"></tbody></table></div><div class="mobile-record-cards" id="salesCards"></div></div>
 </section>
 <section class="sec" id="exp">
 <div class="panel"><div class="title">EXPENSE SUMMARY</div><div class="kpis">
@@ -1222,13 +1227,13 @@ body.inner-page .kpi,
 <div><label>Startup expenditure?</label><select id="estartup"><option value="false">No</option><option value="true">Yes</option></select></div>
 <div class="full"><label>Notes / receipt reference</label><textarea id="en"></textarea></div>
 </div><button class="btn" id="adde">ADD EXPENSE</button></div>
-<div class="panel"><div class="title">EXPENSE LOG</div><div class="table"><table><thead><tr><th>Date</th><th>Supplier</th><th>Category</th><th>Class</th><th>Description</th><th>Qty</th><th>Amount</th><th>Startup</th><th>Notes</th><th></th></tr></thead><tbody id="ebody"></tbody></table></div></div>
+<div class="panel"><div class="title">EXPENSE LOG</div><div class="table desktop-record-table"><table><thead><tr><th>Date</th><th>Supplier</th><th>Category</th><th>Class</th><th>Description</th><th>Qty</th><th>Amount</th><th>Startup</th><th>Notes</th><th></th></tr></thead><tbody id="ebody"></tbody></table></div><div class="mobile-record-cards" id="expenseCards"></div></div>
 </section>
 <section class="sec" id="owner">
 <div class="panel"><div class="title">OWNER &amp; FUNDING</div>
 <div class="grid"><div><label>Annual PAYE employment salary (£)</label><input id="salary" step="100" type="number" value="57000"/></div>
 <div><label>Dividend allowance used elsewhere (£)</label><input id="divUsedElsewhere" step=".01" type="number" value="0"/></div></div>
-<div class="note">Your salary does not change the company's Corporation Tax rate. It matters when company profits are extracted personally, particularly as dividends.</div></div>
+<details class="compact-details"><summary>Why these details matter</summary><div class="note">Your salary is used for personal extraction/dividend estimates; it does not change the company Corporation Tax rate.</div></details></div>
 <div class="panel"><div class="title">CAPITAL INTRODUCED</div><div class="grid">
 <div><label>Date</label><input id="fd" type="date"/></div><div><label>Amount paid into company (£)</label><input id="fa" step=".01" type="number"/></div>
 <div class="full"><label>Note</label><input id="fn" placeholder="e.g. initial owner funding"/></div></div><button class="btn" id="addfund">LOG FUNDING</button>
@@ -1238,34 +1243,31 @@ body.inner-page .kpi,
 <div class="full"><label>Note</label><input id="dn" placeholder="e.g. interim dividend"/></div></div><button class="btn" id="adddiv">LOG DIVIDEND</button>
 <div class="kpis" style="margin-top:12px"><div class="kpi"><small>Total dividends</small><b id="totdiv">£0</b></div><div class="kpi"><small>Est. personal dividend tax</small><b id="divtax">£0</b></div><div class="kpi"><small>Net dividends after est. tax</small><b id="divnet">£0</b></div><div class="kpi"><small>Unused £500 allowance</small><b id="divallow">£500</b></div></div>
 <div class="table" style="margin-top:12px"><table><thead><tr><th>Date</th><th>Dividend</th><th>Note</th><th></th></tr></thead><tbody id="dbody"></tbody></table></div>
-<div class="note">Personal dividend tax is an estimate only and depends on your full tax position.</div></div>
+<details class="compact-details"><summary>Dividend estimate note</summary><div class="note">Personal dividend tax is an estimate and depends on your full tax position.</div></details></div>
 </section>
 <section class="sec" id="tax">
 <div class="panel"><div class="title">UK LIMITED COMPANY TAX ESTIMATE</div><div class="kpis">
 <div class="kpi"><small>Accounting profit</small><b id="tp">£0</b></div><div class="kpi"><small>Estimated CT</small><b id="tct">£0</b></div><div class="kpi"><small>Effective CT rate</small><b id="tr">0%</b></div><div class="kpi"><small>After-tax profit</small><b id="tn">£0</b></div>
-</div><div class="note">Uses the tax-rate assumptions already configured in this app. This remains a management estimate, not a Corporation Tax return; capital allowances, disallowable expenditure, associated companies and accounting-period rules can alter taxable profit and tax due.</div></div>
+</div><details class="compact-details"><summary>About this estimate</summary><div class="note">Management estimate only. Accounting adjustments and period rules can change taxable profit and tax due.</div></details></div>
 <div class="panel"><div class="title">CASH &amp; REINVESTMENT</div><div class="kpis">
 <div class="kpi"><small>Company cash estimate</small><b id="cash">£0</b></div><div class="kpi"><small>CT reserve</small><b id="taxreserve">£0</b></div><div class="kpi"><small>Available buying capital</small><b id="avail">£0</b></div><div class="kpi"><small>Retained profit after dividends</small><b id="ret2">£0</b></div>
-</div><div class="note" id="capnote"></div></div>
+</div><details class="compact-details"><summary>Retained profit detail</summary><div class="note" id="capnote"></div></details></div>
 <div class="panel"><div class="title">VAT THRESHOLD MONITOR</div><p>Recorded turnover: <b id="vat">£0</b> / £90,000</p><div class="bar"><i id="vbar"></i></div><div class="note" id="vtxt"></div></div>
 
 </section>
 <section class="sec" id="settings">
 <div class="panel"><div class="title">AI CARD RECOGNITION</div>
-<div class="note" style="margin-top:0">Raw Pokémon singles only in this release. Recognition runs through a private Cloudflare Workers AI endpoint; no AI credential is stored in the app.</div>
-<div class="grid" style="margin-top:12px"><div class="full"><label>Recognition backend URL</label><input id="aiRecognitionEndpoint" placeholder="https://gengrail-card-ai.gengrailtcg.workers.dev"/></div></div>
-<div class="actions"><button class="btn alt" id="testAiRecognition" type="button">TEST AI CONNECTION</button></div><div class="ai-settings-status" id="aiRecognitionStatus">Not tested yet.</div></div>
+<div class="settings-status-row"><div><b>AI Recognition</b><small>English + Japanese raw Pokémon singles</small></div><span class="settings-ok">CONFIGURED</span></div>
+<details class="settings-details"><summary>Advanced AI diagnostics</summary><div class="grid" style="margin-top:12px"><div class="full"><label>Recognition backend URL</label><input id="aiRecognitionEndpoint" placeholder="https://gengrail-card-ai.gengrailtcg.workers.dev"/></div></div><div class="actions"><button class="btn alt" id="testAiRecognition" type="button">TEST AI CONNECTION</button></div><div class="ai-settings-status" id="aiRecognitionStatus">Not tested yet.</div></details></div>
 <div class="panel"><div class="title">POSTAGE PROFILES</div>
-<div class="note" style="margin-top:0">Shared fulfilment assumptions used by Pricing Calculator and eBay listing preparation. Gengrail chooses a profile by item type/value; all costs remain editable.</div>
+<div class="compact-help">Shared by Pricing Calculator and eBay listing preparation.</div>
 <div id="postageProfileSettings" class="postage-settings-grid"></div>
 <div class="actions"><button class="btn alt" id="resetPostageProfiles" type="button">RESET POSTAGE DEFAULTS</button></div></div>
-<div class="panel"><div class="title">BACKUP &amp; EXPORT</div><div class="actions"><button class="btn alt" id="csv">EXPORT CSV</button><button class="btn alt" id="json">BACKUP JSON</button><label class="btn alt">RESTORE JSON<input accept=".json" id="imp" style="display:none" type="file"/></label><button class="btn red" id="wipe">ERASE ALL</button></div><div class="note"><b>Protect the business data.</b> Core records are stored locally in this browser/device, so create a JSON backup before major app updates and regularly during normal use. Product photos remain in dedicated on-device photo storage and are not included in the JSON backup.</div></div>
-<div class="panel"><div class="title">APP DATA</div><div class="note">Export CSV creates a readable business-data export. Backup JSON is the portable, restorable Gengrail backup and also includes supported app preferences and eBay module data. <b>Automatic Safety Vault:</b> Gengrail now also maintains an independent last-good database copy in IndexedDB on this device. If an app update ever opens with its main local database missing, Gengrail checks this vault before allowing an empty database to become the new state. Product photos remain in their dedicated IndexedDB store. ERASE ALL remains a deliberate destructive action and does not overwrite the last-good safety vault.</div></div>
+<div class="panel"><div class="title">BACKUP &amp; EXPORT</div><div class="settings-status-row"><div><b>Data protection</b><small>Automatic Safety Vault active on this device</small></div><span class="settings-ok">ACTIVE ✓</span></div><div class="actions"><button class="btn alt" id="csv">EXPORT CSV</button><button class="btn alt" id="json">BACKUP JSON</button><label class="btn alt">RESTORE JSON<input accept=".json" id="imp" style="display:none" type="file"/></label></div><div class="compact-help">Create a JSON backup before major updates. Product photos are stored separately on this device.</div><details class="danger-zone"><summary>Advanced data maintenance</summary><div class="actions"><button class="btn alt" onclick="cleanOrphanOrders()" type="button">CLEAN ORPHANED ORDERS</button><button class="btn red" id="wipe">ERASE ALL DATA</button></div></details></div>
 </section>
 <section class="sec" id="pricing">
 <div class="panel">
-<div class="title">PRICING CALCULATOR</div>
-<div class="note" style="margin-bottom:12px">Identify, value and test a raw Pokémon single. Pricing only — Stock and listings are never changed here.</div>
+<div class="compact-help pricing-purpose">Identify, value and test a raw Pokémon single. No Stock or listing changes.</div>
 <div class="pricing-ai-tools">
   <label class="btn alt">IMPORT CARD PHOTO<input accept="image/*" id="pricingAiPhoto" style="display:none" type="file"/></label>
   <button class="btn alt" id="pricingAiClear" type="button">CLEAR CARD</button>
@@ -1277,12 +1279,12 @@ body.inner-page .kpi,
 <button class="pricing-tab" data-price-platform="cardmarket" type="button">Cardmarket</button>
 </div>
 <div class="grid pricing-core-grid">
-<div><label>Your buy cost (£)</label><input id="priceCost" inputmode="decimal" min="0" step=".01" type="number" placeholder="Enter seller asking price"/></div>
+<div><label>Seller asking price (£)</label><input id="priceCost" inputmode="decimal" min="0" step=".01" type="number" placeholder="Enter seller asking price"/></div>
 <div><label>Verified market value (£)</label><input id="priceMarketValue" inputmode="decimal" min="0" step=".01" type="number" value="0"/></div>
 <div class="full"><label>Recommended delivery profile</label><select id="pricePostageProfile"></select></div>
 </div>
 <div class="postage-profile-summary" id="pricePostageSummary"></div>
-<button class="btn pricing-recalc" id="priceCalcBtn" type="button">RECALCULATE</button>
+<button class="btn pricing-recalc" id="priceCalcBtn" type="button">CALCULATE</button>
 <div class="pricing-result" id="priceResult">
 <div class="pricing-hero">
 <small id="pricePlatformLabel">GUIDED SELL PRICE</small>
@@ -1782,6 +1784,7 @@ function render(){
  $('cashnote').innerHTML=`Confirmed startup expenses currently recorded: <b>${m(startupExps())}</b>. Estimated company cash: <b>${m(cash)}</b>. After reserving <b>${m(ct)}</b> for Corporation Tax, estimated buying capital is <b>${m(avail)}</b>. Packaging allocations recorded against individual sales total <b>${m(packagingAlloc())}</b> but are not deducted again from accounting profit because actual packaging purchases are recorded in Expenses.`;
 
  $('pbody').innerHTML=db.purchases.filter(p=>left(p)>0).map(p=>`<tr><td>${esc(p.name)}</td><td class="mono">${esc(p.sku||'')}</td><td class="mono">${esc(p.purchaseId||'')}</td><td><b>${esc(p.location||'UNALLOCATED')}</b></td><td><span class="status-pill ${p.inventoryStatus==='IN_STOCK'?'stock':p.inventoryStatus==='PICK_REQUIRED'?'pick':'done'}">${esc((p.inventoryStatus||'IN_STOCK').replaceAll('_',' '))}</span></td><td>${esc(p.condition||'Ungraded')}</td><td>${left(p)}</td><td>${m(uc(p))}</td><td>${p.listPrice?m(p.listPrice):'—'}</td><td><div class="stock-badges"><span class="badge ebay">${esc((p.ebayStatus||'NOT_LISTED').replace('_',' '))}</span><button class="stock-ebay-btn ${p.ebayStatus==='DRAFT'?'alt':''}" onclick="prepareEbayFromStock('${p.id}')">${p.ebayStatus==='DRAFT'?'EDIT DRAFT':'LIST ON EBAY'}</button></div></td><td><button onclick="managePhotos('${p.id}')">${p.photoCount||0} photo${(p.photoCount||0)===1?'':'s'}</button></td><td>${esc(p.source)}</td><td><button onclick="quickMove('${p.id}')">MOVE</button> <button onclick="printStockLabel('${p.id}')">LABEL</button> <button onclick="dp('${p.id}')">DELETE</button></td></tr>`).join('');
+ if($('stockCards'))$('stockCards').innerHTML=db.purchases.filter(p=>left(p)>0).map(p=>`<article class="record-card"><div class="record-card-top"><div><div class="record-card-title">${esc(p.name)}</div><div class="record-card-sub mono">${esc(p.sku||'')} · ${esc(p.purchaseId||'')}</div></div><span class="status-pill ${p.inventoryStatus==='IN_STOCK'?'stock':p.inventoryStatus==='PICK_REQUIRED'?'pick':'done'}">${esc((p.inventoryStatus||'IN_STOCK').replaceAll('_',' '))}</span></div><div class="record-card-meta"><div><small>Location</small><b>${esc(p.location||'UNALLOCATED')}</b></div><div><small>Condition</small><b>${esc(p.condition||'Ungraded')}</b></div><div><small>Qty left</small><b>${left(p)}</b></div><div><small>Unit cost</small><b>${m(uc(p))}</b></div><div><small>Target sell</small><b>${p.listPrice?m(p.listPrice):'—'}</b></div><div><small>eBay</small><b>${esc((p.ebayStatus||'NOT_LISTED').replaceAll('_',' '))}</b></div></div><div class="record-card-actions"><button class="stock-ebay-btn ${p.ebayStatus==='DRAFT'?'alt':''}" onclick="prepareEbayFromStock('${p.id}')">${p.ebayStatus==='DRAFT'?'EDIT EBAY DRAFT':'LIST ON EBAY'}</button><button onclick="quickMove('${p.id}')">MOVE</button><button onclick="managePhotos('${p.id}')">PHOTOS (${p.photoCount||0})</button><button onclick="printStockLabel('${p.id}')">LABEL</button><button onclick="dp('${p.id}')">DELETE</button></div></article>`).join('');
  let av=db.purchases.filter(p=>left(p)>0);$('si').innerHTML=av.length?av.map(p=>`<option value="${p.id}">${esc(p.name)} — ${left(p)} left</option>`).join(''):'<option value="">No stock</option>';
 
 
@@ -1798,28 +1801,18 @@ function render(){
  if($('whPickCount'))$('whPickCount').textContent=db.orders.filter(o=>o.status==='PICK_REQUIRED').length;
  renderLocationBrowser();
  if($('orderBody'))$('orderBody').innerHTML=[...db.orders].reverse().map(o=>{const p=db.purchases.find(x=>x.id===o.pid);const next=o.status==='PICK_REQUIRED'?'PICK':o.status==='PICKED'?'PACK':o.status==='PACKED'?'DISPATCH':'DONE';const loc=p?p.location:o.location||'UNALLOCATED';return `<tr><td class="mono">${esc(o.orderNo)}</td><td>${esc(p?p.name:o.itemName||'')}</td><td class="mono">${esc(p?p.sku:o.sku||'')}</td><td><button class="loc-pick-btn" onclick="openLocationDetail('${esc(loc)}')" style="background:#171107;color:#f2c84b;border:1px solid #6b5112;border-radius:8px;padding:7px 10px;font-weight:950">${esc(loc)}</button></td><td>${esc(o.channel||'MANUAL')}</td><td><span class="status-pill ${o.status==='PICK_REQUIRED'?'pick':o.status==='DISPATCHED'?'done':'stock'}">${esc(o.status.replaceAll('_',' '))}</span></td><td>${next==='DONE'?'—':`<button onclick="advanceOrder('${o.id}')">${next}</button>`}</td></tr>`}).join('');
- if($('orderCards'))$('orderCards').innerHTML=[...db.orders].reverse().map(o=>{
+ if($('orderCards'))$('orderCards').innerHTML=[...db.orders].filter(o=>o.status!=='DISPATCHED').reverse().map(o=>{
    const p=db.purchases.find(x=>x.id===o.pid);
    const next=o.status==='PICK_REQUIRED'?'PICK':o.status==='PICKED'?'PACK':o.status==='PACKED'?'DISPATCH':'DONE';
    const loc=p?p.location:(o.location||'UNALLOCATED');
-   const statusClass=o.status==='PICK_REQUIRED'?'pick':o.status==='DISPATCHED'?'done':'stock';
+   const statusClass=o.status==='PICK_REQUIRED'?'pick':'stock';
    const created=o.created?new Date(o.created):null;
    const dateLabel=created&&!isNaN(created)?created.toLocaleDateString('en-GB'):'—';
-   return `<article class="order-card" data-order-card="${esc(o.id)}">
-     <div class="order-card-top">
-       <div><div class="order-card-no">${esc(o.orderNo||'ORDER')}</div><div class="order-card-item">${esc(p?p.name:o.itemName||'')}</div><div class="order-card-sku mono">${esc(p?p.sku:o.sku||'')}</div></div>
-       <span class="status-pill ${statusClass}">${esc((o.status||'').replaceAll('_',' '))}</span>
-     </div>
-     <div class="order-card-meta">
-       <div><small>Location</small><b>${esc(loc)}</b></div>
-       <div><small>Channel</small><b>${esc(o.channel||'MANUAL')}</b></div>
-       <div><small>Date</small><b>${esc(dateLabel)}</b></div>
-     </div>
-     ${next==='DONE'
-       ? `<div class="order-complete">✓ Dispatched and complete</div>`
-       : `<div class="order-card-actions"><button class="order-location-btn" onclick="openLocationDetail('${esc(loc)}')">⌖ ${esc(loc)}</button><button class="order-action-btn" onclick="advanceOrderAnimated('${esc(o.id)}')">${next}</button></div>`}
-   </article>`;
- }).join('');
+   return `<article class="order-card" data-order-card="${esc(o.id)}"><div class="order-card-top"><div><div class="order-card-no">${esc(o.orderNo||'ORDER')}</div><div class="order-card-item">${esc(p?p.name:o.itemName||'')}</div><div class="order-card-sku mono">${esc(p?p.sku:o.sku||'')}</div></div><span class="status-pill ${statusClass}">${esc((o.status||'').replaceAll('_',' '))}</span></div><div class="order-card-meta"><div><small>Location</small><b>${esc(loc)}</b></div><div><small>Channel</small><b>${esc(o.channel||'MANUAL')}</b></div><div><small>Date</small><b>${esc(dateLabel)}</b></div></div><div class="order-card-actions"><button class="order-location-btn" onclick="openLocationDetail('${esc(loc)}')">⌖ ${esc(loc)}</button><button class="order-action-btn" onclick="advanceOrderAnimated('${esc(o.id)}')">${next}</button></div></article>`;
+ }).join('') || '<div class="product-empty-state compact-empty"><b>Nothing waiting</b><span>All current orders are dispatched.</span></div>';
+ const dispatched=[...db.orders].filter(o=>o.status==='DISPATCHED').reverse();
+ if($('orderHistoryCount'))$('orderHistoryCount').textContent=dispatched.length;
+ if($('orderHistoryCards'))$('orderHistoryCards').innerHTML=dispatched.map(o=>{const p=db.purchases.find(x=>x.id===o.pid);const loc=p?p.location:(o.location||'UNALLOCATED');const created=o.created?new Date(o.created):null;const dateLabel=created&&!isNaN(created)?created.toLocaleDateString('en-GB'):'—';return `<article class="order-card compact-order"><div class="order-card-top"><div><div class="order-card-no">${esc(o.orderNo||'ORDER')}</div><div class="order-card-item">${esc(p?p.name:o.itemName||'')}</div><div class="order-card-sku mono">${esc(p?p.sku:o.sku||'')}</div></div><span class="status-pill done">DISPATCHED</span></div><div class="order-card-meta"><div><small>Location</small><b>${esc(loc)}</b></div><div><small>Channel</small><b>${esc(o.channel||'MANUAL')}</b></div><div><small>Date</small><b>${esc(dateLabel)}</b></div></div></article>`}).join('');
 
  if($('orderPick'))$('orderPick').textContent=db.orders.filter(o=>o.status==='PICK_REQUIRED').length;
  if($('orderPicked'))$('orderPicked').textContent=db.orders.filter(o=>o.status==='PICKED').length;
@@ -1830,8 +1823,10 @@ function render(){
   let p=db.purchases.find(x=>x.id===s.pid),con=saleContribution(s),mar=s.price?con/s.price*100:0;
   return `<tr><td>${s.date}</td><td>${esc(p?p.name:'Deleted')}</td><td><span class="badge ${s.source==='EBAY'?'ebay':''}">${s.source==='EBAY'?'EBAY':'MANUAL'}</span></td><td>${esc(s.pl)}</td><td>${m(s.price)}</td><td>${m(cogs(s))}</td><td>${m(s.fee)}</td><td>${m(s.post+s.other)}</td><td>${m(s.pack)}</td><td class="${con>=0?'good':'bad'}">${m(con)}</td><td>${mar.toFixed(1)}%</td><td><button onclick="ds('${s.id}')">Delete</button></td></tr>`
  }).join('');
+ if($('salesCards'))$('salesCards').innerHTML=[...db.sales].reverse().map(s=>{const p=db.purchases.find(x=>x.id===s.pid),con=saleContribution(s),mar=s.price?con/s.price*100:0;return `<article class="record-card"><div class="record-card-top"><div><div class="record-card-title">${esc(p?p.name:'Deleted item')}</div><div class="record-card-sub">${esc(s.date)} · ${esc(s.pl||s.source||'Manual')}</div></div><span class="badge ${s.source==='EBAY'?'ebay':''}">${s.source==='EBAY'?'EBAY':'MANUAL'}</span></div><div class="record-card-meta"><div><small>Revenue</small><b>${m(s.price)}</b></div><div><small>COGS</small><b>${m(cogs(s))}</b></div><div><small>Contribution</small><b class="${con>=0?'good':'bad'}">${m(con)}</b></div><div><small>Margin</small><b>${mar.toFixed(1)}%</b></div></div><div class="record-card-actions"><button onclick="ds('${s.id}')">DELETE</button></div></article>`}).join('');
 
  $('ebody').innerHTML=[...db.expenses].reverse().map(e=>`<tr><td>${e.date}</td><td>${esc(e.supplier||'')}</td><td>${esc(e.cat)}</td><td>${esc(e.class||'Service')}</td><td>${esc(e.desc)}</td><td>${e.qty||1}</td><td class="${e.amount<0?'good':''}">${m(e.amount)}</td><td>${(e.startup===true||e.startup==='true')?'Yes':'No'}</td><td>${esc(e.notes)}</td><td><button onclick="de('${e.id}')">Delete</button></td></tr>`).join('');
+ if($('expenseCards'))$('expenseCards').innerHTML=[...db.expenses].reverse().map(e=>`<article class="record-card"><div class="record-card-top"><div><div class="record-card-title">${esc(e.supplier||e.cat||'Expense')}</div><div class="record-card-sub">${esc(e.date)} · ${esc(e.cat)}</div></div><b class="${e.amount<0?'good':''}">${m(e.amount)}</b></div><div class="record-card-meta"><div><small>Classification</small><b>${esc(e.class||'Service')}</b></div><div><small>Startup</small><b>${(e.startup===true||e.startup==='true')?'YES':'NO'}</b></div></div>${e.desc?`<div class="compact-help">${esc(e.desc)}</div>`:''}<div class="record-card-actions"><button onclick="de('${e.id}')">DELETE</button></div></article>`).join('');
  $('expTotal').textContent=m(exps());$('expStartup').textContent=m(startupExps());$('expConsumables').textContent=m(classExps('Consumable'));$('expEquipment').textContent=m(classExps('Equipment'));
 
  $('fbody').innerHTML=[...db.funding].reverse().map(f=>`<tr><td>${f.date}</td><td>${m(f.amount)}</td><td>${esc(f.note)}</td><td><button onclick="df('${f.id}')">Delete</button></td></tr>`).join('');
@@ -1847,7 +1842,7 @@ function render(){
 }
 
 const PAGE_TITLES={
- dash:'Dashboard',stock:'Stock',storage:'Locations',orders:'Orders',sales:'Sales',channels:'Channels',exp:'Expenses',
+ dash:'Dashboard',stock:'Stock',storage:'Locations',orders:'Orders',sales:'Sales',channels:'Channels',ebayChannel:'eBay Channel',exp:'Expenses',
  owner:'Owner & Funding',tax:'Tax',settings:'Settings',pricing:'Pricing Calculator',opps:'Opportunity Finder',lookup:'Stock Lookup'
 };
 const PAGE_SUBTITLES={
@@ -1857,6 +1852,7 @@ const PAGE_SUBTITLES={
  orders:'Pick, pack & dispatch',
  sales:'Sales history & manual sales',
  channels:'Marketplace connections',
+ ebayChannel:'Listings, drafts & marketplace sync',
  exp:'Log business costs',
  owner:'Funding & dividends',
  tax:'Corporation tax tools',
@@ -1867,7 +1863,7 @@ const PAGE_SUBTITLES={
 };
 const PAGE_GROUPS={
  stock:'operations',storage:'operations',orders:'operations',
- sales:'sales',channels:'sales',
+ sales:'sales',channels:'sales',ebayChannel:'sales',
  dash:'finance',exp:'finance',owner:'finance',tax:'finance',
  settings:'',pricing:'buying',opps:'buying',lookup:'tools'
 };
@@ -1979,6 +1975,8 @@ document.querySelectorAll('.home-menu [data-go],.group-menu [data-go]').forEach(
   if(focusId){setTimeout(()=>{const el=$(focusId);if(el){el.scrollIntoView({behavior:'smooth',block:'center'});try{el.focus({preventScroll:true})}catch{el.focus()}}},120)}
  };
 });
+
+if($('openEbayChannel'))$('openEbayChannel').onclick=()=>{currentCommandGroup='sales';setActiveTab('ebayChannel',true)};
 
 window.addEventListener('popstate',()=>{
  const route=(location.hash||'#home').slice(1);
@@ -2225,7 +2223,7 @@ function approvedMarketPricingHtml(r){
  const dispersion=Number(mp.dispersionPct||0);
  const validation=mp.referenceCardId?`Exact card ${esc(mp.referenceCardId)}`:'Exact verified card';
  const qualityBits=[validation,mp.evidenceCount?`${mp.evidenceCount} market signals`:'',dispersion?`${dispersion.toFixed(1)}% signal spread`:''].filter(Boolean).join(' · ');
- return `<div class="market-price-card on ai-approved-market"><div class="market-price-head"><div><div class="market-price-kicker">MARKET PRICING · V2</div><div class="market-price-main">${m(sug)} suggested</div></div><span class="market-price-confidence">${esc(marketEvidenceLabel(mp))}</span></div><div class="market-price-grid"><div><small>CARDMARKET TREND</small><b>${gbp.trend?m(gbp.trend):'—'}</b></div><div><small>7-DAY AVG</small><b>${gbp.avg7?m(gbp.avg7):'—'}</b></div><div><small>30-DAY AVG</small><b>${gbp.avg30?m(gbp.avg30):'—'}</b></div><div><small>MARKET LOW</small><b>${gbp.low?m(gbp.low):'—'}</b></div></div><div class="market-price-note">${esc(mp.source||'TCGdex / Cardmarket')} · ${esc(qualityBits)} · market updated ${esc(updated)} · EUR→GBP ${Number(mp.fxRate||0).toFixed(4)}. Suggested price is guidance and remains editable.</div><div class="ai-approved-market-choice ${Number($('plist')?.value||0)>0?'':'off'}" id="approvedPriceChoice">${Number($('plist')?.value||0)>0?`Selected target price: ${m(Number($('plist').value))}`:'No target price selected yet.'}</div></div>`;
+ return `<div class="market-price-card on ai-approved-market"><div class="market-price-head"><div><div class="market-price-kicker">MARKET PRICING · V2</div><div class="market-price-main">${m(sug)} suggested</div></div><span class="market-price-confidence">${esc(marketEvidenceLabel(mp))}</span></div><div class="market-price-grid"><div><small>CARDMARKET TREND</small><b>${gbp.trend?m(gbp.trend):'—'}</b></div><div><small>7-DAY AVG</small><b>${gbp.avg7?m(gbp.avg7):'—'}</b></div><div><small>30-DAY AVG</small><b>${gbp.avg30?m(gbp.avg30):'—'}</b></div><div><small>MARKET LOW</small><b>${gbp.low?m(gbp.low):'—'}</b></div></div></div>`;
 }
 function useApprovedSuggestedPrice(){
  const v=marketSuggestedPrice(currentRecognition);if(!v)return alert('No automated market price is available for this card.');
@@ -2696,10 +2694,10 @@ function savePostageProfiles(rows){localStorage.setItem(POSTAGE_PROFILE_KEY,JSON
 function postageAutoSelect({category='Raw Single',value=0}={}){const rows=postageProfiles(),cat=/graded|slab/i.test(category)?'slab':'raw';return rows.find(x=>x.category===cat&&Number(value)>=Number(x.minValue||0)&&Number(value)<=Number(x.maxValue??999999))||rows.find(x=>x.category===cat)||rows[0]}
 function postageById(id){return postageProfiles().find(x=>x.id===id)||postageProfiles()[0]}
 window.GengrailPostage={profiles:postageProfiles,autoSelect:postageAutoSelect,byId:postageById,save:savePostageProfiles};
-function renderPostageProfileSettings(){const host=$('postageProfileSettings');if(!host)return;const rows=postageProfiles();host.innerHTML=rows.map((x,i)=>`<div class="postage-setting" data-postage-index="${i}"><h4>${esc(x.name)}</h4><div class="grid"><div class="full"><label>Service label</label><input data-pf="service" value="${esc(x.service)}"></div><div><label>Your postage cost (£)</label><input data-pf="postCost" type="number" min="0" step=".01" value="${Number(x.postCost).toFixed(2)}"></div><div><label>Packaging (£)</label><input data-pf="packCost" type="number" min="0" step=".01" value="${Number(x.packCost).toFixed(2)}"></div><div><label>Buyer postage (£)</label><input data-pf="buyerPost" type="number" min="0" step=".01" value="${Number(x.buyerPost).toFixed(2)}"></div><div><label>Auto from value (£)</label><input data-pf="minValue" type="number" min="0" step=".01" value="${Number(x.minValue).toFixed(2)}"></div><div><label>Auto to value (£)</label><input data-pf="maxValue" type="number" min="0" step=".01" value="${Number(x.maxValue).toFixed(2)}"></div></div></div>`).join('');host.querySelectorAll('input').forEach(inp=>inp.addEventListener('change',()=>{const idx=Number(inp.closest('[data-postage-index]').dataset.postageIndex),all=postageProfiles(),k=inp.dataset.pf;all[idx][k]=k==='service'?inp.value:Number(inp.value||0);savePostageProfiles(all);pricePopulatePostageProfiles();priceCalc()}))}
+function renderPostageProfileSettings(){const host=$('postageProfileSettings');if(!host)return;const rows=postageProfiles();host.innerHTML=rows.map((x,i)=>`<div class="postage-setting" data-postage-index="${i}"><details><summary><div class="pf-summary-copy"><b>${esc(x.name)}</b><small>${esc(x.service)} · cost ${m(Number(x.postCost||0)+Number(x.packCost||0))} · buyer ${m(x.buyerPost||0)}</small></div><span class="pf-summary-range">${m(x.minValue||0)}–${Number(x.maxValue)>=999999?'∞':m(x.maxValue||0)}</span></summary><div class="pf-edit grid"><div class="full"><label>Service label</label><input data-pf="service" value="${esc(x.service)}"></div><div><label>Your postage cost (£)</label><input data-pf="postCost" type="number" min="0" step=".01" value="${Number(x.postCost).toFixed(2)}"></div><div><label>Packaging (£)</label><input data-pf="packCost" type="number" min="0" step=".01" value="${Number(x.packCost).toFixed(2)}"></div><div><label>Buyer postage (£)</label><input data-pf="buyerPost" type="number" min="0" step=".01" value="${Number(x.buyerPost).toFixed(2)}"></div><div><label>Auto from value (£)</label><input data-pf="minValue" type="number" min="0" step=".01" value="${Number(x.minValue).toFixed(2)}"></div><div><label>Auto to value (£)</label><input data-pf="maxValue" type="number" min="0" step=".01" value="${Number(x.maxValue).toFixed(2)}"></div></div></details></div>`).join('');host.querySelectorAll('input').forEach(inp=>inp.addEventListener('change',()=>{const idx=Number(inp.closest('[data-postage-index]').dataset.postageIndex),all=postageProfiles(),k=inp.dataset.pf;all[idx][k]=k==='service'?inp.value:Number(inp.value||0);savePostageProfiles(all);renderPostageProfileSettings();pricePopulatePostageProfiles();priceCalc()}))}
 function pricePopulatePostageProfiles(forceAuto=false){const sel=$('pricePostageProfile');if(!sel)return;const rows=postageProfiles(),market=priceNum('priceMarketValue'),auto=postageAutoSelect({category:'Raw Single',value:market});const previous=sel.value;sel.innerHTML=rows.map(x=>`<option value="${esc(x.id)}">${esc(x.name)} — ${esc(x.service)}</option>`).join('');sel.value=(!forceAuto&&previous&&rows.some(x=>x.id===previous))?previous:auto.id;if(!sel.value)sel.value=rows[0]?.id||'';if(forceAuto||!previous)priceApplyPostageProfile(sel.value)}
 function priceApplyPostageProfile(id){const p=postageById(id);if(!p)return;$('pricePostCost').value=Number(p.postCost||0).toFixed(2);$('pricePack').value=Number(p.packCost||0).toFixed(2);$('priceBuyerPost').value=Number(p.buyerPost||0).toFixed(2);priceRenderPostageSummary(p)}
-function priceRenderPostageSummary(p=postageById($('pricePostageProfile')?.value)){const h=$('pricePostageSummary');if(!h||!p)return;const post=Number(p.postCost||0),pack=Number(p.packCost||0),buyer=Number(p.buyerPost||0),netDelivery=post+pack-buyer;h.innerHTML=`<div class="pps-row"><div><small>DELIVERY METHOD</small><br><b>${esc(p.service)}</b></div><div><small>YOUR FULFILMENT COST</small><br><b>${m(post+pack)}</b></div></div><small>Buyer charged separately ${m(buyer)} postage · your postage ${m(post)} · packaging ${m(pack)} · net delivery/packaging cost before marketplace fees ${m(netDelivery)}</small>`}
+function priceRenderPostageSummary(p=postageById($('pricePostageProfile')?.value)){const h=$('pricePostageSummary');if(!h||!p)return;const post=Number(p.postCost||0),pack=Number(p.packCost||0);h.innerHTML=`<div class="pps-row"><div><small>DELIVERY METHOD</small><br><b>${esc(p.service)}</b></div><div><small>FULFILMENT COST</small><br><b>${m(post+pack)}</b></div></div>`}
 function priceFeeBreakdown(itemPrice){
   const buyerPost=priceNum('priceBuyerPost'), total=itemPrice+buyerPost;let platformFee=0,adFee=0,intlFee=0,label='',detail='';
   if(pricePlatform==='ebay'){
@@ -2763,7 +2761,7 @@ function priceCalc(){
     else if(rawMax>0&&cost<=maxBuy){box.className='pricing-decision negotiate';word.textContent='CONSIDER';text.textContent=`Asking price ${m(cost)} is above the preferred buy level but still within the ${m(maxBuy)} maximum acceptable buy.`}
     else{box.className='pricing-decision pass';word.textContent='PASS';text.textContent=rawMax>0?`Asking price ${m(cost)} is above the ${m(maxBuy)} maximum acceptable buy.`:`This market value cannot satisfy every current buying target.`;const failed=[];if(margin!==null&&margin+1e-9<targetMargin*100)failed.push(`margin ${margin.toFixed(1)}% < ${(targetMargin*100).toFixed(0)}%`);if(roi!==null&&roi+1e-9<targetRoi*100)failed.push(`ROI ${roi.toFixed(1)}% < ${(targetRoi*100).toFixed(0)}%`);if(r.net+1e-9<minProfit)failed.push(`profit ${m(r.net)} < ${m(minProfit)}`);miss.textContent=failed.length?`Targets missed: ${failed.join(' · ')}.`:`Limiting target: ${limits[0][0]}.`}
   }else box.style.display='none';
-  $('priceFeeNote').textContent=r.detail+` Buyer postage ${m(priceNum('priceBuyerPost'))} is added to transaction revenue and marketplace fees are calculated on the buyer total where applicable. Your actual postage and packaging are then deducted. Recommended buy uses the resulting net proceeds, cash-profit hurdle, percentage return and risk buffer.`;
+  $('priceFeeNote').textContent=r.detail+` Fee, buyer-postage and fulfilment assumptions are included in the recommendation.`;
   priceRenderPostageSummary();
   ['priceBuyerPost','pricePostCost','pricePack','priceTargetMargin','priceTargetRoi','priceMinProfit','priceSafetyBuffer','priceEbayFvf','priceEbayReg','priceAdRate','priceIntl','priceVintedFee','priceCmFee','priceCmFx','priceVat','priceLowFee','priceBuyingStrategy'].forEach(k=>{if($(k))localStorage.setItem('gengrailPricing_'+k,$(k).value)});
 }
@@ -2864,40 +2862,7 @@ if($('oppAnalyse')){
 }
 
 
-/* Keep injected eBay Channel inside Channels without changing eBay data logic. */
-function placeEbayChannelInSales(){
-  const channels=$('channels');
-  if(!channels)return;
-
-  /* gengrail-ebay.js uses ordinary panel markup, so identify the large
-     channel panel by its visible heading/content rather than a class name. */
-  const candidates=[...document.querySelectorAll('.panel,section,div')];
-  const ebayPanel=candidates.find(node=>{
-    if(node===channels || channels.contains(node))return false;
-    const ownText=(node.textContent||'').replace(/\s+/g,' ').trim();
-    if(!/eBay\s*CHANNEL/i.test(ownText))return false;
-
-    /* Prefer the smallest container that actually holds the channel UI. */
-    const childHas=[...node.children].some(ch=>/eBay\s*CHANNEL/i.test((ch.textContent||'').replace(/\s+/g,' ').trim()));
-    return !childHas || node.classList.contains('panel');
-  });
-
-  if(ebayPanel){
-    ebayPanel.setAttribute('data-ebay-channel-main','true');
-    if(!channels.contains(ebayPanel))channels.appendChild(ebayPanel);
-  }
-
-  document.body.classList.toggle(
-    'channels-active',
-    document.querySelector('.nav button.on')?.dataset.tab==='channels'
-  );
-}
-
-const ebayVisibilityObserver=new MutationObserver(()=>placeEbayChannelInSales());
-ebayVisibilityObserver.observe(document.body,{childList:true,subtree:true});
-window.addEventListener('load',()=>setTimeout(placeEbayChannelInSales,150));
-setTimeout(placeEbayChannelInSales,300);
-
+/* eBay Channel now mounts directly in its dedicated Channels view. */
 function dl(name,text,type){let a=document.createElement('a'),b=new Blob([text],{type});a.href=URL.createObjectURL(b);a.download=name;a.click()}
 $('json').onclick=()=>{
  const prefs={};
@@ -2966,7 +2931,7 @@ $('imp').onchange=e=>{
  };
  r.readAsText(f)
 };
-$('wipe').onclick=()=>{if(confirm('Erase all data? A last-good safety snapshot will be kept on this device.')){const before=readJSON(K);if(validDB(before))localStorage.setItem(SAFETY_K,JSON.stringify(normaliseDB(before)));db=freshDB();db.settings.startupAmazonLoaded=true;$('salary').value=57000;$('divUsedElsewhere').value=0;persistDB({renderAfter:true,writeVault:false})}};
+$('wipe').onclick=()=>{if(!confirm('Erase ALL live Gengrail business data on this device?'))return;const phrase=prompt('Type ERASE to confirm. A last-good Safety Vault snapshot will remain on this device.');if(String(phrase||'').trim().toUpperCase()!=='ERASE')return;const before=readJSON(K);if(validDB(before))localStorage.setItem(SAFETY_K,JSON.stringify(normaliseDB(before)));db=freshDB();db.settings.startupAmazonLoaded=true;$('salary').value=57000;$('divUsedElsewhere').value=0;persistDB({renderAfter:true,writeVault:false})};
 
 // Hardened startup: localStorage remains the live database, but if it is
 // unexpectedly absent after an app update we check the independent IndexedDB

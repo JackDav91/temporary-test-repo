@@ -1355,7 +1355,7 @@
     if(!root){
       root=document.createElement('section');
       root.id='gengrail-ebay-channel';
-      document.getElementById('sales')?.appendChild(root) || document.querySelector('.app')?.appendChild(root) || document.body.appendChild(root);
+      document.getElementById('ebayChannelMount')?.appendChild(root) || document.getElementById('ebayChannel')?.appendChild(root) || document.querySelector('.app')?.appendChild(root) || document.body.appendChild(root);
     }
 
     const s=getSummary();
