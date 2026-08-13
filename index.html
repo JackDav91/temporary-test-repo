@@ -8,7 +8,7 @@
 <meta content="Gengrail TCG" name="apple-mobile-web-app-title"/>
 <link href="manifest.json" rel="manifest"/>
 <link href="icon-512.png" rel="apple-touch-icon" sizes="512x512"/><title>Gengrail TCG Business Log</title>
-<meta content="v19.17.1-pricing-page-fix" name="gengrail-build"/>
+<meta content="v19.18.0-pricing-page-fix" name="gengrail-build"/>
 <style>
 /* GENGRAIL CROWN-GOLD ACTIVE TABS */
 
@@ -1055,7 +1055,7 @@ body.inner-page .kpi,
 
 .pricing-ai-tools{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}.pricing-ai-card{border:1px solid var(--line,#333);border-radius:16px;padding:14px;margin-bottom:12px;background:rgba(255,255,255,.025)}.pricing-ai-title{font-size:1.15rem;font-weight:800;margin-top:4px}.pricing-ai-meta{opacity:.78;margin-top:4px}.pricing-ai-market{display:flex;align-items:end;justify-content:space-between;gap:12px;margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,.08)}.pricing-ai-market small{display:block;opacity:.7}.pricing-ai-market b{font-size:1.65rem}.pricing-ai-market span{font-size:.75rem;font-weight:800;opacity:.8}.pricing-ai-signals{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.pricing-ai-signals span{padding:6px 8px;border:1px solid rgba(255,255,255,.08);border-radius:999px;font-size:.78rem;opacity:.82}
 
-.postage-profile-summary{margin:10px 0 14px;padding:12px;border:1px solid #34563e;border-radius:12px;background:#0b120d;color:#d9e9de}.postage-profile-summary b{color:#82dda0}.postage-profile-summary .pps-row{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}.postage-profile-summary small{color:#91a397}.pricing-stats-4{grid-template-columns:repeat(4,1fr)}.pricing-stat.emphasis{border-color:#7a5b13;background:#181205}.pricing-stat.emphasis b{color:#f2c84b}.postage-settings-grid{display:grid;gap:10px;margin-top:12px}.postage-setting{border:1px solid #303030;border-radius:12px;padding:12px;background:#0b0b0b}.postage-setting h4{margin:0 0 8px;color:#82dda0}.postage-setting .grid{margin-top:0}@media(max-width:700px){.pricing-stats-4{grid-template-columns:1fr 1fr}}
+.postage-profile-summary{margin:10px 0 14px;padding:12px;border:1px solid #34563e;border-radius:12px;background:#0b120d;color:#d9e9de}.postage-profile-summary b{color:#82dda0}.postage-profile-summary .pps-row{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}.postage-profile-summary small{color:#91a397}.pricing-stats-4{grid-template-columns:repeat(4,1fr)}.pricing-stat.emphasis{border-color:#7a5b13;background:#181205}.pricing-stat.emphasis b{color:#f2c84b}.postage-settings-grid{display:grid;gap:10px;margin-top:12px}.postage-setting{border:1px solid #303030;border-radius:12px;padding:12px;background:#0b0b0b}.postage-setting h4{margin:0 0 8px;color:#82dda0}.postage-setting .grid{margin-top:0}@media(max-width:700px){.pricing-stats-4{grid-template-columns:1fr 1fr}}.pricing-policy-strip{margin-top:10px;padding:10px 12px;border:1px solid #3a3421;border-radius:10px;background:#100e08;color:#d8cfb5;font-size:.82rem;line-height:1.45}.pricing-policy-strip b{color:var(--crown-hi)}.pricing-stat.subtle{opacity:.92}.pricing-stat.na b{font-size:1rem;color:#aaa}.pricing-decision.await{border-color:#4a4a4a}.pricing-decision.await .word{color:#bbb}.pricing-miss{margin-top:8px;color:#c9bfbf;font-size:.82rem;line-height:1.4}.pricing-assumption-wrap[hidden]{display:none!important}
 </style>
 <link href="gengrail-theme.css" rel="stylesheet"/>
 <link href="gengrail-gold-tabs.css" rel="stylesheet"/>
@@ -1245,7 +1245,7 @@ body.inner-page .kpi,
 <button class="pricing-tab" data-price-platform="cardmarket" type="button">Cardmarket</button>
 </div>
 <div class="grid pricing-core-grid">
-<div><label>Your buy cost (£)</label><input id="priceCost" inputmode="decimal" min="0" step=".01" type="number" value="10"/></div>
+<div><label>Your buy cost (£)</label><input id="priceCost" inputmode="decimal" min="0" step=".01" type="number" placeholder="Enter seller asking price"/></div>
 <div><label>Verified market value (£)</label><input id="priceMarketValue" inputmode="decimal" min="0" step=".01" type="number" value="0"/></div>
 <div class="full"><label>Recommended delivery profile</label><select id="pricePostageProfile"></select></div>
 </div>
@@ -1259,24 +1259,27 @@ body.inner-page .kpi,
 </div>
 <div class="pricing-stats pricing-stats-4">
 <div class="pricing-stat emphasis"><span>RECOMMENDED BUY</span><b id="priceRecommendedBuy">£0.00</b></div>
-<div class="pricing-stat"><span>MAX BUY @ TARGET</span><b id="priceMaxBuy">£0.00</b></div>
-<div class="pricing-stat"><span>EST. ROI</span><b id="priceRoi">0%</b></div>
-<div class="pricing-stat"><span>NET MARGIN</span><b id="priceMargin">0%</b></div>
+<div class="pricing-stat"><span>MAX ACCEPTABLE BUY</span><b id="priceMaxBuy">£0.00</b></div>
+<div class="pricing-stat subtle"><span>BREAK-EVEN CEILING</span><b id="priceBreakEven">£0.00</b></div>
+<div class="pricing-stat"><span>EST. ROI</span><b id="priceRoi">—</b></div>
+<div class="pricing-stat"><span>NET MARGIN</span><b id="priceMargin">—</b></div>
 </div>
-<div class="pricing-decision" id="priceDecisionBox" style="display:none"><div class="word" id="priceDecisionWord"></div><div id="priceDecisionText"></div></div>
+<div class="pricing-policy-strip" id="pricePolicyStrip"></div>
+<div class="pricing-decision" id="priceDecisionBox" style="display:none"><div class="word" id="priceDecisionWord"></div><div id="priceDecisionText"></div><div class="pricing-miss" id="priceDecisionMiss"></div></div>
 </div>
 <details style="margin-top:14px">
 <summary>Buying & fulfilment assumptions</summary>
 <div class="grid" style="margin-top:10px">
-<div><label>Target net margin %</label><input id="priceTargetMargin" min="0" max="95" step="1" type="number" value="25"/></div>
-<div><label>Minimum ROI %</label><input id="priceTargetRoi" min="0" step="1" type="number" value="30"/></div>
-<div><label>Minimum profit (£)</label><input id="priceMinProfit" min="0" step=".50" type="number" value="5"/></div>
-<div><label>Recommended-buy safety buffer %</label><input id="priceSafetyBuffer" min="0" max="50" step="1" type="number" value="10"/></div>
+<div class="full"><label>Buying strategy</label><select id="priceBuyingStrategy"><option value="adaptive">Adaptive by card value & market risk</option><option value="manual">Manual fixed targets</option></select></div>
+<div class="pricing-assumption-wrap" data-manual-target><label>Target net margin %</label><input id="priceTargetMargin" min="0" max="95" step="1" type="number" value="25"/></div>
+<div class="pricing-assumption-wrap" data-manual-target><label>Minimum ROI %</label><input id="priceTargetRoi" min="0" step="1" type="number" value="30"/></div>
+<div class="pricing-assumption-wrap" data-manual-target><label>Minimum profit (£)</label><input id="priceMinProfit" min="0" step=".50" type="number" value="5"/></div>
+<div class="pricing-assumption-wrap" data-manual-target><label>Recommended-buy safety buffer %</label><input id="priceSafetyBuffer" min="0" max="50" step="1" type="number" value="10"/></div>
 <div><label>Buyer postage charged (£)</label><input id="priceBuyerPost" inputmode="decimal" min="0" step=".01" type="number" value="1.55"/></div>
 <div><label>Your actual postage cost (£)</label><input id="pricePostCost" inputmode="decimal" min="0" step=".01" type="number" value="1.55"/></div>
 <div><label>Packaging cost (£)</label><input id="pricePack" inputmode="decimal" min="0" step=".01" type="number" value=".30"/></div>
 </div>
-<div class="note">Gengrail selects a delivery profile deterministically from item type and value. You can override it at any time. Royal Mail costs are editable assumptions, not hard-coded listing promises.</div>
+<div class="note">Adaptive mode relaxes percentage hurdles as card value rises, while protecting minimum cash profit and adding a market-risk buffer. Manual mode restores fixed margin/ROI/profit targets. Delivery profiles remain editable.</div>
 </details>
 <details style="margin-top:10px">
 <summary>Advanced platform fee settings</summary>
@@ -2668,23 +2671,60 @@ function priceFeeBreakdown(itemPrice){
 }
 function priceNetAt(itemPrice,costOverride=null){const cost=costOverride===null?priceNum('priceCost'):Number(costOverride||0),post=priceNum('pricePostCost'),pack=priceNum('pricePack'),f=priceFeeBreakdown(itemPrice),revenue=itemPrice+priceNum('priceBuyerPost');return {net:revenue-cost-post-pack-f.totalFees,revenue,fees:f.totalFees,preCogs:revenue-post-pack-f.totalFees,...f}}
 function pricingMarketAnchor(r){return marketSuggestedPrice(r)||0}
+function adaptiveBuyTier(market){
+  const v=Number(market||0);
+  if(v<10)return {label:'MICRO VALUE',margin:.30,roi:.35,minProfit:1.50,baseBuffer:.10};
+  if(v<20)return {label:'LOW VALUE',margin:.30,roi:.35,minProfit:3,baseBuffer:.09};
+  if(v<100)return {label:'CORE VALUE',margin:.25,roi:.30,minProfit:8,baseBuffer:.07};
+  if(v<300)return {label:'HIGH VALUE',margin:.20,roi:.22,minProfit:20,baseBuffer:.05};
+  if(v<750)return {label:'PREMIUM',margin:.12,roi:.12,minProfit:50,baseBuffer:.04};
+  return {label:'GRAIL',margin:.10,roi:.10,minProfit:75,baseBuffer:.03};
+}
+function pricingRiskAdjustment(){
+  const mp=pricingRecognition?.marketPricing||null,disp=Number(mp?.dispersionPct||0),q=String(mp?.qualityStatus||mp?.confidence||'').toLowerCase();
+  let extra=0;
+  if(disp>100)extra+=.05;else if(disp>70)extra+=.03;else if(disp>40)extra+=.02;else if(disp>20)extra+=.01;
+  if(q&&q!=='validated'&&q!=='high'){extra+=q.includes('medium')?.01:.025}
+  if(!mp&&priceNum('priceMarketValue')>0)extra+=.02;
+  return {extra,disp,quality:q||'manual'};
+}
+function pricePolicy(market){
+  const strategy=$('priceBuyingStrategy')?.value||'adaptive';
+  if(strategy==='manual')return {strategy,label:'MANUAL',margin:priceNum('priceTargetMargin')/100,roi:priceNum('priceTargetRoi')/100,minProfit:priceNum('priceMinProfit'),buffer:Math.min(.5,priceNum('priceSafetyBuffer')/100),risk:{extra:0,disp:0,quality:'manual'}};
+  const tier=adaptiveBuyTier(market),risk=pricingRiskAdjustment();
+  return {...tier,strategy,buffer:Math.min(.18,tier.baseBuffer+risk.extra),risk};
+}
+function priceSetManualVisibility(){const manual=($('priceBuyingStrategy')?.value||'adaptive')==='manual';document.querySelectorAll('[data-manual-target]').forEach(el=>el.hidden=!manual)}
 function priceCalc(){
-  const cost=priceNum('priceCost'),market=priceNum('priceMarketValue');
+  const costEl=$('priceCost'),hasCost=!!costEl&&String(costEl.value).trim()!=='';
+  const cost=hasCost?Math.max(0,Number(costEl.value)||0):0,market=priceNum('priceMarketValue');
   const suggested=priceCeil99(market>0?market:Math.max(cost/.65,cost+priceNum('pricePostCost')+priceNum('pricePack')+5));
-  const r=priceNetAt(suggested),roi=cost?r.net/cost*100:0,margin=r.revenue?r.net/r.revenue*100:0;
-  const targetMargin=priceNum('priceTargetMargin')/100,targetRoi=priceNum('priceTargetRoi')/100,minProfit=priceNum('priceMinProfit'),buffer=Math.min(.5,priceNum('priceSafetyBuffer')/100);
+  const r=priceNetAt(suggested,hasCost?cost:0),policy=pricePolicy(market||suggested);
+  const targetMargin=policy.margin,targetRoi=policy.roi,minProfit=policy.minProfit,buffer=policy.buffer;
   const maxByMargin=r.preCogs-(targetMargin*r.revenue),maxByRoi=targetRoi>=0?r.preCogs/(1+targetRoi):r.preCogs,maxByProfit=r.preCogs-minProfit;
-  const maxBuy=Math.max(0,Math.min(maxByMargin,maxByRoi,maxByProfit));
-  const recommendedBuy=Math.max(0,maxBuy*(1-buffer));
+  const rawMax=Math.min(maxByMargin,maxByRoi,maxByProfit),maxBuy=Math.max(0,rawMax),recommendedBuy=Math.max(0,maxBuy*(1-buffer)),breakEven=Math.max(0,r.preCogs);
+  const roi=hasCost?(cost>0?r.net/cost*100:null):null,margin=hasCost&&r.revenue?r.net/r.revenue*100:null;
+  const limits=[['margin',maxByMargin],['ROI',maxByRoi],['cash profit',maxByProfit]].sort((a,b)=>a[1]-b[1]);
   lastSuggestedPrice=suggested;
   $('pricePlatformLabel').textContent=r.label.toUpperCase()+' GUIDED SELL PRICE';$('priceSuggested').textContent=m(suggested);
-  $('priceProfit').textContent=`At your entered buy cost: ${m(r.net)} net profit · ${margin.toFixed(1)}% margin · estimated fees ${m(r.fees)}`;
-  $('priceRecommendedBuy').textContent=m(recommendedBuy);$('priceMaxBuy').textContent=m(maxBuy);$('priceRoi').textContent=roi.toFixed(1)+'%';$('priceMargin').textContent=margin.toFixed(1)+'%';$('priceResult').style.display='block';
-  const box=$('priceDecisionBox'),word=$('priceDecisionWord'),text=$('priceDecisionText');
-  if(market>0){let decision='PASS',cls='pass',msg=`Entered buy cost is above the ${m(maxBuy)} maximum that preserves your current targets.`;if(cost<=recommendedBuy){decision='BUY';cls='buy';msg=`Within Gengrail's ${m(recommendedBuy)} recommended buy price, including the ${Math.round(buffer*100)}% safety buffer.`}else if(cost<=maxBuy){decision='CONSIDER';cls='negotiate';msg=`Profitable at target, but above the buffered recommendation. Maximum target buy is ${m(maxBuy)}.`}box.className='pricing-decision '+cls;box.style.display='block';word.textContent=decision;text.textContent=msg}else box.style.display='none';
-  $('priceFeeNote').textContent=r.detail+' Recommended buy price also includes postage, packaging, target margin, ROI, minimum profit and your safety buffer.';
+  $('priceProfit').textContent=hasCost?`At your entered buy cost: ${m(r.net)} net profit · ${margin.toFixed(1)}% margin · estimated fees ${m(r.fees)}`:`Enter the seller's asking price to calculate profit, ROI and a BUY / CONSIDER / PASS decision. Estimated fees at this sell price: ${m(r.fees)}.`;
+  $('priceRecommendedBuy').textContent=rawMax>0?m(recommendedBuy):'Not achievable';$('priceRecommendedBuy').parentElement.classList.toggle('na',rawMax<=0);
+  $('priceMaxBuy').textContent=rawMax>0?m(maxBuy):'Not achievable';$('priceMaxBuy').parentElement.classList.toggle('na',rawMax<=0);
+  $('priceBreakEven').textContent=m(breakEven);
+  $('priceRoi').textContent=!hasCost?'—':(roi===null?'N/A':roi.toFixed(1)+'%');$('priceMargin').textContent=!hasCost?'—':margin.toFixed(1)+'%';$('priceResult').style.display='block';
+  const riskText=policy.strategy==='adaptive'?` · risk buffer ${(buffer*100).toFixed(0)}%${policy.risk.disp?` (${policy.risk.disp.toFixed(1)}% market spread)`:''}`:` · safety buffer ${(buffer*100).toFixed(0)}%`;
+  $('pricePolicyStrip').innerHTML=`<b>${esc(policy.label)} BUYING PROFILE</b> · ${(targetMargin*100).toFixed(0)}% net margin · ${(targetRoi*100).toFixed(0)}% ROI · ${m(minProfit)} minimum cash profit${esc(riskText)}.`;
+  const box=$('priceDecisionBox'),word=$('priceDecisionWord'),text=$('priceDecisionText'),miss=$('priceDecisionMiss');
+  if(market>0){
+    box.style.display='block';miss.textContent='';
+    if(!hasCost){box.className='pricing-decision await';word.textContent='ENTER BUY COST';text.textContent=rawMax>0?`Gengrail recommends paying up to ${m(recommendedBuy)}; ${m(maxBuy)} is the hard ceiling for this value/risk profile.`:`This card cannot satisfy every current target even at a £0 acquisition cost.`;if(rawMax<=0)miss.textContent=`The limiting target is ${limits[0][0]}. Break-even acquisition ceiling is ${m(breakEven)}.`}
+    else if(rawMax>0&&cost<=recommendedBuy){box.className='pricing-decision buy';word.textContent='BUY';text.textContent=`Asking price ${m(cost)} is within Gengrail's risk-adjusted ${m(recommendedBuy)} recommendation.`}
+    else if(rawMax>0&&cost<=maxBuy){box.className='pricing-decision negotiate';word.textContent='CONSIDER';text.textContent=`Asking price ${m(cost)} is above the preferred buy level but still within the ${m(maxBuy)} maximum acceptable buy.`}
+    else{box.className='pricing-decision pass';word.textContent='PASS';text.textContent=rawMax>0?`Asking price ${m(cost)} is above the ${m(maxBuy)} maximum acceptable buy.`:`This market value cannot satisfy every current buying target.`;const failed=[];if(margin!==null&&margin+1e-9<targetMargin*100)failed.push(`margin ${margin.toFixed(1)}% < ${(targetMargin*100).toFixed(0)}%`);if(roi!==null&&roi+1e-9<targetRoi*100)failed.push(`ROI ${roi.toFixed(1)}% < ${(targetRoi*100).toFixed(0)}%`);if(r.net+1e-9<minProfit)failed.push(`profit ${m(r.net)} < ${m(minProfit)}`);miss.textContent=failed.length?`Targets missed: ${failed.join(' · ')}.`:`Limiting target: ${limits[0][0]}.`}
+  }else box.style.display='none';
+  $('priceFeeNote').textContent=r.detail+' Recommended buy is calculated from platform fees, fulfilment costs, cash-profit hurdle, percentage return and a risk buffer; higher-value cards use lower percentage hurdles but higher absolute-profit requirements.';
   priceRenderPostageSummary();
-  ['priceCost','priceMarketValue','priceBuyerPost','pricePostCost','pricePack','priceTargetMargin','priceTargetRoi','priceMinProfit','priceSafetyBuffer','priceEbayFvf','priceEbayReg','priceAdRate','priceIntl','priceVintedFee','priceCmFee','priceCmFx','priceVat','priceLowFee'].forEach(k=>localStorage.setItem('gengrailPricing_'+k,$(k).value));
+  ['priceBuyerPost','pricePostCost','pricePack','priceTargetMargin','priceTargetRoi','priceMinProfit','priceSafetyBuffer','priceEbayFvf','priceEbayReg','priceAdRate','priceIntl','priceVintedFee','priceCmFee','priceCmFx','priceVat','priceLowFee','priceBuyingStrategy'].forEach(k=>{if($(k))localStorage.setItem('gengrailPricing_'+k,$(k).value)});
 }
 function priceSyncPlatform(){document.querySelectorAll('.pricing-tab').forEach(b=>b.classList.toggle('on',b.dataset.pricePlatform===pricePlatform));const ebay=pricePlatform==='ebay',vinted=pricePlatform==='vinted',cm=pricePlatform==='cardmarket';['priceEbayFvfWrap','priceEbayRegWrap','priceVatWrap','priceLowWrap','priceAdWrap','priceIntlWrap'].forEach(id=>$(id).style.display=ebay?'block':'none');$('priceVintedWrap').style.display=vinted?'block':'none';$('priceCmWrap').style.display=cm?'block':'none';$('priceCmFxWrap').style.display=cm?'block':'none';localStorage.setItem('gengrailPricingPlatform',pricePlatform);priceCalc()}
 function pricingAiRender(state='idle',r=null,msg=''){
@@ -2695,19 +2735,19 @@ function pricingAiRender(state='idle',r=null,msg=''){
  host.innerHTML=`<div class="ai-recognition-kicker">${x.verified?'VERIFIED AI MATCH':'AI MATCH'} · ${diag.score}%</div><div class="pricing-ai-title">${esc(x.cardName||'Pokémon card')}</div><div class="pricing-ai-meta">${esc(printedCollectorNumber(x)||x.cardNumber||'—')} · ${esc(x.setName||'Unknown set')} · ${esc(x.language||'—')} · ${esc(x.rarity||'—')}</div>${market?`<div class="pricing-ai-market"><div><small>SUGGESTED MARKET VALUE</small><b>${m(market)}</b></div><span>${esc(marketEvidenceLabel(mp))}</span></div><div class="pricing-ai-signals"><span>Trend ${gbp.trend?m(gbp.trend):'—'}</span><span>7d ${gbp.avg7?m(gbp.avg7):'—'}</span><span>30d ${gbp.avg30?m(gbp.avg30):'—'}</span><span>Low ${gbp.low?m(gbp.low):'—'}</span></div>`:'<div class="market-price-note">No reliable automated market price was returned for this exact card. Enter market value manually.</div>'}`;
 }
 async function pricingRecogniseFile(file){
- if(!file)return;pricingAiRender('loading');
+ if(!file)return;if($('priceCost'))$('priceCost').value='';if($('priceMarketValue'))$('priceMarketValue').value='0';pricingAiRender('loading');
  try{const image=await fileToRecognitionDataURL(file,1200,.80);const c=new AbortController(),t=setTimeout(()=>c.abort(),30000);let res;try{res=await fetch(aiEndpoint()+'/api/recognise-card',{method:'POST',mode:'cors',credentials:'omit',cache:'no-store',signal:c.signal,headers:{'content-type':'text/plain;charset=UTF-8','accept':'application/json'},body:JSON.stringify({image,scope:'pokemon_raw_single',recognitionVersion:3,requestedFields:['cardName','cardNumber','language','setName','setCode','rarity','illustrator'],requireFieldConfidence:true})})}finally{clearTimeout(t)}let d=null;try{d=await res.json()}catch{}if(!res.ok||!d?.ok||!d?.identified||!d?.card?.cardName)throw new Error(d?.message||`Recognition HTTP ${res.status}`);pricingRecognition=normaliseRecognition(d.card);pricingAiRender('match',pricingRecognition);const mv=pricingMarketAnchor(pricingRecognition);if(mv>0)$('priceMarketValue').value=mv.toFixed(2);pricePopulatePostageProfiles(true);priceCalc();}
  catch(e){pricingRecognition=null;pricingAiRender('error',null,e?.name==='AbortError'?'Recognition timed out.':String(e?.message||e))}
 }
-function pricingAiClear(){pricingRecognition=null;if($('pricingAiPhoto'))$('pricingAiPhoto').value='';if($('priceMarketValue'))$('priceMarketValue').value='0';pricingAiRender('idle');priceCalc()}
+function pricingAiClear(){pricingRecognition=null;if($('pricingAiPhoto'))$('pricingAiPhoto').value='';if($('priceCost'))$('priceCost').value='';if($('priceMarketValue'))$('priceMarketValue').value='0';pricingAiRender('idle');priceCalc()}
 if($('priceCalcBtn')){
- ['priceCost','priceMarketValue','priceBuyerPost','pricePostCost','pricePack','priceTargetMargin','priceTargetRoi','priceMinProfit','priceSafetyBuffer','priceEbayFvf','priceEbayReg','priceAdRate','priceIntl','priceVintedFee','priceCmFee','priceCmFx','priceVat','priceLowFee'].forEach(k=>{const v=localStorage.getItem('gengrailPricing_'+k);if(v!==null&&$(k))$(k).value=v});
+ ['priceBuyerPost','pricePostCost','pricePack','priceTargetMargin','priceTargetRoi','priceMinProfit','priceSafetyBuffer','priceEbayFvf','priceEbayReg','priceAdRate','priceIntl','priceVintedFee','priceCmFee','priceCmFx','priceVat','priceLowFee','priceBuyingStrategy'].forEach(k=>{const v=localStorage.getItem('gengrailPricing_'+k);if(v!==null&&$(k))$(k).value=v});if($('priceCost'))$('priceCost').value='';if($('priceMarketValue'))$('priceMarketValue').value='0';priceSetManualVisibility();
  renderPostageProfileSettings();pricePopulatePostageProfiles(false);
  document.querySelectorAll('.pricing-tab').forEach(btn=>btn.onclick=()=>{pricePlatform=btn.dataset.pricePlatform;priceSyncPlatform()});
  $('priceCalcBtn').onclick=priceCalc;$('pricingAiPhoto').onchange=e=>pricingRecogniseFile(e.target.files?.[0]);$('pricingAiClear').onclick=pricingAiClear;
  $('pricePostageProfile').onchange=()=>{priceApplyPostageProfile($('pricePostageProfile').value);priceCalc()};
  $('resetPostageProfiles').onclick=()=>{if(confirm('Reset Gengrail postage profiles to the current default assumptions?')){localStorage.removeItem(POSTAGE_PROFILE_KEY);renderPostageProfileSettings();pricePopulatePostageProfiles(true);priceCalc()}};
- ['priceCost','priceMarketValue','priceBuyerPost','pricePostCost','pricePack','priceTargetMargin','priceTargetRoi','priceMinProfit','priceSafetyBuffer'].forEach(id=>$(id).addEventListener('input',priceCalc));priceSyncPlatform();
+ ['priceCost','priceMarketValue','priceBuyerPost','pricePostCost','pricePack','priceTargetMargin','priceTargetRoi','priceMinProfit','priceSafetyBuffer'].forEach(id=>$(id).addEventListener('input',priceCalc));$('priceBuyingStrategy').onchange=()=>{priceSetManualVisibility();priceCalc()};priceSyncPlatform();
 }
 
 /* ==========================
