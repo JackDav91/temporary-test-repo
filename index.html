@@ -8,7 +8,7 @@
 <meta content="Gengrail TCG" name="apple-mobile-web-app-title"/>
 <link href="manifest.json" rel="manifest"/>
 <link href="icon-512.png" rel="apple-touch-icon" sizes="512x512"/><title>Gengrail TCG Business Log</title>
-<meta content="v19.8.2-ai-transport-hardening" name="gengrail-build"/>
+<meta content="v19.10.0-recognition-v2" name="gengrail-build"/>
 <style>
 /* GENGRAIL CROWN-GOLD ACTIVE TABS */
 
@@ -1026,6 +1026,15 @@ body.inner-page .kpi,
 .ai-recognition-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:10px}.ai-recognition-cell{background:#111;border:1px solid #2b2b2b;border-radius:8px;padding:9px}.ai-recognition-cell small{display:block;color:#777;font-size:8px;font-weight:950;letter-spacing:.06em}.ai-recognition-cell b{display:block;margin-top:3px;font-size:13px;overflow-wrap:anywhere}
 .ai-recognition-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}.ai-recognition-actions button{margin-top:0;flex:1 1 140px}
 .ai-confidence{display:inline-flex;align-items:center;gap:6px;border:1px solid #3d8751;color:var(--g);border-radius:999px;padding:4px 8px;font-size:9px;font-weight:950;margin-top:8px}
+/* ---------- PRODUCT ENGINE v19.10 — FIELD-LEVEL RECOGNITION ---------- */
+.ai-confidence.warn{border-color:#8a6c25;color:#e1bd5d}.ai-confidence.bad{border-color:#7c3a3a;color:#dc8d8d}
+.ai-model-confidence{display:block;color:#737373;font-size:9px;margin-top:5px}
+.ai-field-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:5px}
+.ai-field-head label{margin:0}
+.ai-field-state{display:inline-flex;align-items:center;gap:4px;border:1px solid #333;border-radius:999px;padding:3px 6px;font-size:7px;font-weight:950;letter-spacing:.05em;white-space:nowrap}
+.ai-field-state.good{border-color:#3d8751;color:#76d08e}.ai-field-state.warn{border-color:#8a6c25;color:#e1bd5d}.ai-field-state.bad{border-color:#7c3a3a;color:#dc8d8d}
+.ai-diagnostic{margin-top:9px;background:#0d0d0d;border:1px solid #292929;border-radius:8px;padding:9px 10px;color:#a8a8a8;font-size:10px;line-height:1.45}
+.ai-diagnostic b{color:#f0f0f0}
 .ai-spinner{display:inline-block;width:13px;height:13px;border:2px solid #555;border-top-color:var(--crown-hi);border-radius:50%;animation:gengrailSpin .8s linear infinite;vertical-align:-2px;margin-right:6px}@keyframes gengrailSpin{to{transform:rotate(360deg)}}
 .ai-settings-status{margin-top:9px;font-size:11px;color:#aaa}.ai-settings-status.good{color:var(--g)}.ai-settings-status.bad{color:var(--r)}
 @media(max-width:620px){.ai-recognition-grid{grid-template-columns:1fr 1fr}}
@@ -1941,13 +1950,64 @@ function aiEndpoint(){
  const saved=String(db?.settings?.aiRecognitionEndpoint||'').trim();
  return (saved||'https://gengrail-card-ai.gengrailtcg.workers.dev').replace(/\/+$/,'');
 }
+function normaliseRecognition(raw={}){
+ const r={...raw};
+ const setObj=(raw.set&&typeof raw.set==='object')?raw.set:{};
+ r.cardName=String(raw.cardName||raw.name||raw.card||'').trim();
+ r.cardNumber=String(raw.cardNumber||raw.number||raw.cardNo||raw.collectorNumber||'').trim();
+ r.language=String(raw.language||raw.lang||'').trim();
+ r.setName=String(raw.setName||setObj.name||'').trim();
+ r.setCode=String(raw.setCode||raw.expansionCode||setObj.code||'').trim();
+ r.rarity=String(raw.rarity||raw.rarityCode||'').trim();
+ r.illustrator=String(raw.illustrator||raw.artist||'').trim();
+ const fc=raw.fieldConfidences||raw.fieldConfidence||raw.confidences||{};
+ r.fieldConfidences=(fc&&typeof fc==='object')?fc:{};
+ const fs=raw.fieldSources||raw.sources||{};
+ r.fieldSources=(fs&&typeof fs==='object')?fs:{};
+ return r;
+}
+const recognitionFieldSpecs=[
+ ['cardName','CARD NAME',24],['cardNumber','CARD NUMBER',22],['language','LANGUAGE',12],
+ ['setName','SET NAME',10],['setCode','SET CODE',14],['rarity','RARITY',10],['illustrator','ILLUSTRATOR',8]
+];
+function fieldRecognitionInfo(r,key){
+ const value=String(r?.[key]||'').trim();
+ let explicit=r?.fieldConfidences?.[key];
+ if(explicit===undefined){
+   const aliases={cardName:'name',cardNumber:'number',setName:'set',setCode:'set_code'};
+   explicit=r?.fieldConfidences?.[aliases[key]];
+ }
+ let confidence=Number(explicit);
+ if(Number.isFinite(confidence) && confidence<=1)confidence*=100;
+ if(!Number.isFinite(confidence))confidence=value?Math.max(55,Math.min(95,Number(r?.confidence||75))):0;
+ confidence=Math.max(0,Math.min(100,Math.round(confidence)));
+ let source=String(r?.fieldSources?.[key]||'').trim();
+ if(!source)source=!value?'UNRESOLVED':(r?.verified?'DB / AI':'AI READ');
+ const upper=source.toUpperCase();
+ const cls=!value?'bad':(/VERIF|DATABASE|DB/.test(upper)?'good':(confidence>=80?'good':'warn'));
+ return {value,confidence,source,cls};
+}
+function recognitionDiagnostics(r){
+ let weighted=0,total=0,populated=0;
+ const fields={};
+ recognitionFieldSpecs.forEach(([key,label,weight])=>{
+   const info=fieldRecognitionInfo(r,key);fields[key]=info;total+=weight;
+   if(info.value){weighted+=weight*(info.confidence/100);populated++}
+ });
+ const score=Math.round(total?weighted/total:0);
+ return {score,populated,totalFields:recognitionFieldSpecs.length,missing:recognitionFieldSpecs.length-populated,fields};
+}
+function aiFieldHead(label,info){
+ const state=info.value?`${esc(info.source)} · ${info.confidence}%`:'UNRESOLVED';
+ return `<div class="ai-field-head"><label>${label}</label><span class="ai-field-state ${info.cls}">${state}</span></div>`;
+}
 function setAiRecognitionPanel(mode='idle',data=null,message=''){
  const host=$('aiRecognitionPanel'); if(!host)return;
  if(mode==='idle'){host.hidden=true;host.innerHTML='';return}
  host.hidden=false;
  if(mode==='loading'){
    host.className='ai-recognition-panel';
-   host.innerHTML=`<div class="ai-recognition-kicker">AI PRODUCT ENGINE</div><div class="ai-recognition-title"><span class="ai-spinner"></span>Recognising card…</div><div class="ai-recognition-sub">Reading the card image and checking the result against Pokémon card data. Nothing will be saved until you approve the recognition result.</div>`;
+   host.innerHTML=`<div class="ai-recognition-kicker">AI PRODUCT ENGINE · V2</div><div class="ai-recognition-title"><span class="ai-spinner"></span>Recognising card…</div><div class="ai-recognition-sub">Extracting each identity field independently. Gengrail will score completeness separately from the model's own confidence. Nothing is saved until you approve it.</div>`;
    return;
  }
  if(mode==='error'){
@@ -1956,9 +2016,10 @@ function setAiRecognitionPanel(mode='idle',data=null,message=''){
    host.innerHTML=`<div class="ai-recognition-kicker">RECOGNITION NEEDS REVIEW</div><div class="ai-recognition-title">Could not identify this card reliably</div><div class="ai-recognition-sub">${esc(message||'Try a clearer front photo or continue manually.')}</div><div class="ai-recognition-actions"><button class="btn alt" type="button" onclick="clearAiRecognition(false)">CONTINUE MANUALLY</button><button class="btn" type="button" onclick="retryAiRecognition()">${retryLabel}</button></div>`;
    return;
  }
- const r=data||{};
+ const r=normaliseRecognition(data||{});
  const verified=!!r.verified;
- const confidence=Math.max(0,Math.min(100,Number(r.confidence||0)));
+ const modelConfidence=Math.max(0,Math.min(100,Number(r.confidence||0)));
+ const diag=recognitionDiagnostics(r);
  if(mode==='approved'){
    host.className='ai-recognition-panel good';
    host.innerHTML=`<div class="ai-recognition-kicker">MATCH APPROVED</div><div class="ai-recognition-title">${esc(r.cardName||'Pokémon card')}</div><div class="ai-approved-badge">READY FOR STOCK INTAKE</div><div class="ai-recognition-grid">
@@ -1966,22 +2027,26 @@ function setAiRecognitionPanel(mode='idle',data=null,message=''){
     <div class="ai-recognition-cell"><small>SET</small><b>${esc(r.setName||r.setCode||'—')}</b></div>
     <div class="ai-recognition-cell"><small>LANGUAGE</small><b>${esc(r.language||'—')}</b></div>
     <div class="ai-recognition-cell"><small>RARITY</small><b>${esc(r.rarity||'—')}</b></div>
-   </div><div class="ai-recognition-sub">Recognition metadata is attached to this intake. Add purchase details, condition and location, then save when this is a genuine stock item.</div><div class="ai-recognition-actions"><button class="btn alt" type="button" onclick="clearAiRecognition(false)">REMOVE MATCH</button><button class="btn" type="button" onclick="document.getElementById('pp')?.scrollIntoView({behavior:'smooth',block:'center'})">CONTINUE INTAKE</button></div>`;
+   </div><div class="ai-recognition-sub">Recognition metadata is attached to this intake. Add purchase details, condition and location, then save only when this is a genuine stock item.</div><div class="ai-recognition-actions"><button class="btn alt" type="button" onclick="clearAiRecognition(false)">REMOVE MATCH</button><button class="btn" type="button" onclick="document.getElementById('pp')?.scrollIntoView({behavior:'smooth',block:'center'})">CONTINUE INTAKE</button></div>`;
    return;
  }
- host.className='ai-recognition-panel '+(confidence>=85?'good':'warn');
- host.innerHTML=`<div class="ai-recognition-kicker">${verified?'VERIFIED CANDIDATE':'AI CARD CANDIDATE'}</div>
+ const confClass=diag.score>=80?'':diag.score>=55?'warn':'bad';
+ host.className='ai-recognition-panel '+(diag.score>=80?'good':diag.score>=55?'warn':'bad');
+ const f=diag.fields;
+ host.innerHTML=`<div class="ai-recognition-kicker">${verified?'VERIFIED CANDIDATE':'AI CARD CANDIDATE'} · V2</div>
    <div class="ai-recognition-title">Review before using this match</div>
-   <div class="ai-confidence">${confidence}% confidence${verified?' · database verified':''}</div>
+   <div class="ai-confidence ${confClass}">${diag.score}% intake confidence · ${diag.populated}/${diag.totalFields} fields</div>
+   <span class="ai-model-confidence">Model-reported confidence: ${modelConfidence||0}%${verified?' · database verification claimed':''}</span>
    <div class="ai-review-grid">
-    <div class="full"><label>CARD NAME</label><input id="aiReviewName" value="${esc(r.cardName||'')}"/></div>
-    <div><label>CARD NUMBER</label><input id="aiReviewNumber" value="${esc(r.cardNumber||'')}"/></div>
-    <div><label>LANGUAGE</label><input id="aiReviewLanguage" value="${esc(r.language||'')}"/></div>
-    <div><label>SET NAME</label><input id="aiReviewSet" value="${esc(r.setName||'')}"/></div>
-    <div><label>SET CODE</label><input id="aiReviewSetCode" value="${esc(r.setCode||'')}"/></div>
-    <div><label>RARITY</label><input id="aiReviewRarity" value="${esc(r.rarity||'')}"/></div>
-    <div><label>ILLUSTRATOR</label><input id="aiReviewIllustrator" value="${esc(r.illustrator||'')}"/></div>
+    <div class="full">${aiFieldHead('CARD NAME',f.cardName)}<input id="aiReviewName" value="${esc(r.cardName||'')}"/></div>
+    <div>${aiFieldHead('CARD NUMBER',f.cardNumber)}<input id="aiReviewNumber" value="${esc(r.cardNumber||'')}"/></div>
+    <div>${aiFieldHead('LANGUAGE',f.language)}<input id="aiReviewLanguage" value="${esc(r.language||'')}"/></div>
+    <div>${aiFieldHead('SET NAME',f.setName)}<input id="aiReviewSet" value="${esc(r.setName||'')}"/></div>
+    <div>${aiFieldHead('SET CODE',f.setCode)}<input id="aiReviewSetCode" value="${esc(r.setCode||'')}"/></div>
+    <div>${aiFieldHead('RARITY',f.rarity)}<input id="aiReviewRarity" value="${esc(r.rarity||'')}"/></div>
+    <div>${aiFieldHead('ILLUSTRATOR',f.illustrator)}<input id="aiReviewIllustrator" value="${esc(r.illustrator||'')}"/></div>
    </div>
+   <div class="ai-diagnostic"><b>${diag.missing?`${diag.missing} field${diag.missing===1?'':'s'} unresolved.`:'All identity fields populated.'}</b> Intake confidence is now calculated from field-level completeness and confidence, so a partial result can no longer display as 100% just because the AI model says it is certain.</div>
    <div class="ai-review-note">This is a candidate only. Correct anything that looks wrong, then approve it. Approval still does not add anything to Stock.</div>
    <div class="ai-recognition-actions"><button class="btn alt" type="button" onclick="clearAiRecognition(false)">DISCARD MATCH</button><button class="btn" type="button" onclick="approveAiRecognition()">APPROVE &amp; PREFILL</button></div>`;
 }
@@ -1999,8 +2064,9 @@ function readAiReview(){
  };
 }
 function approveAiRecognition(){
- const r=readAiReview();
- if(!r.cardName)return alert('Card name is required before approving the match.');
+ const r=normaliseRecognition(readAiReview());
+ if(!r.cardName || !r.cardNumber || !r.language)return alert('Card name, card number and language are required before approving an AI match. Complete those fields or discard the match and continue manually.');
+ r.reviewDiagnostics=recognitionDiagnostics(r);
  currentRecognition=r;
  pendingRecognition=null;
  const title=titleFromRecognition(r);
@@ -2046,7 +2112,7 @@ function titleFromRecognition(r){
 }
 function applyRecognition(r){
  currentRecognition=null;
- pendingRecognition={...r};
+ pendingRecognition=normaliseRecognition(r);
  if($('pn'))$('pn').value='';
  if($('pc'))$('pc').value='Raw Single';
  if($('pcondition'))$('pcondition').value='Ungraded';
@@ -2093,7 +2159,7 @@ async function recogniseCardFile(file){
        cache:'no-store',
        signal:controller.signal,
        headers:{'content-type':'text/plain;charset=UTF-8','accept':'application/json'},
-       body:JSON.stringify({image,scope:'pokemon_raw_single'})
+       body:JSON.stringify({image,scope:'pokemon_raw_single',recognitionVersion:2,requestedFields:['cardName','cardNumber','language','setName','setCode','rarity','illustrator'],requireFieldConfidence:true})
      });
    }finally{
      clearTimeout(timer);
@@ -2235,7 +2301,7 @@ $('addp').onclick=async()=>{
  const pid=id(), files=currentIntakeFiles();
  const sku=$('psku').value.trim()||nextSku();
  const purchaseId=$('ppurchaseid').value.trim()||nextPurchaseId();
- const p={id:pid,name:$('pn').value.trim(),cat:$('pc').value,date:$('pd').value,q:Math.max(1,Math.floor(n('pq'))),cost:n('pp'),source:$('ps').value.trim(),condition:$('pcondition').value,sku,purchaseId,location:$('plocation').value||'UNALLOCATED',inventoryStatus:$('pstatus').value||'IN_STOCK',qrData:'GENGRAIL:SKU:'+sku,listPrice:n('plist'),ebayStatus:$('pebaystatus').value,ebayItemId:'',ebayUrl:'',photoCount:0,notes:$('pnotes').value,productMeta:currentRecognition?{game:currentRecognition.game||'Pokémon TCG',cardName:currentRecognition.cardName||'',cardNumber:currentRecognition.cardNumber||'',setName:currentRecognition.setName||'',setCode:currentRecognition.setCode||'',language:currentRecognition.language||'',rarity:currentRecognition.rarity||'',illustrator:currentRecognition.illustrator||'',recognitionConfidence:Number(currentRecognition.confidence||0),recognitionVerified:!!currentRecognition.verified,recognitionReviewed:!!currentRecognition.reviewed,recognitionApprovedAt:currentRecognition.approvedAt||'',recognitionSource:'workers_ai'}:null};
+ const p={id:pid,name:$('pn').value.trim(),cat:$('pc').value,date:$('pd').value,q:Math.max(1,Math.floor(n('pq'))),cost:n('pp'),source:$('ps').value.trim(),condition:$('pcondition').value,sku,purchaseId,location:$('plocation').value||'UNALLOCATED',inventoryStatus:$('pstatus').value||'IN_STOCK',qrData:'GENGRAIL:SKU:'+sku,listPrice:n('plist'),ebayStatus:$('pebaystatus').value,ebayItemId:'',ebayUrl:'',photoCount:0,notes:$('pnotes').value,productMeta:currentRecognition?{game:currentRecognition.game||'Pokémon TCG',cardName:currentRecognition.cardName||'',cardNumber:currentRecognition.cardNumber||'',setName:currentRecognition.setName||'',setCode:currentRecognition.setCode||'',language:currentRecognition.language||'',rarity:currentRecognition.rarity||'',illustrator:currentRecognition.illustrator||'',recognitionConfidence:Number(currentRecognition.confidence||0),recognitionVerified:!!currentRecognition.verified,recognitionReviewed:!!currentRecognition.reviewed,recognitionApprovedAt:currentRecognition.approvedAt||'',recognitionSource:'workers_ai',fieldConfidences:currentRecognition.fieldConfidences||{},fieldSources:currentRecognition.fieldSources||{},reviewDiagnostics:currentRecognition.reviewDiagnostics||recognitionDiagnostics(currentRecognition),recognitionVersion:2}:null};
  db.purchases.push(p);
  try{p.photoCount=await addPhotos(pid,files)}catch(e){console.error(e);alert('Stock was saved, but one or more photos could not be stored on this device.');}
  ['pn','pp','ps','psku','ppurchaseid','plist','pnotes'].forEach(x=>$(x).value='');$('pq').value=1;$('pcondition').value='Ungraded';$('pebaystatus').value='NOT_LISTED';$('pphotos').value='';if($('pcamera'))$('pcamera').value='';pendingCameraFiles=[];currentRecognition=null;pendingRecognition=null;$('ppreview').innerHTML='';save();closeStockEntry();
