@@ -8,7 +8,7 @@
 <meta content="Gengrail TCG" name="apple-mobile-web-app-title"/>
 <link href="manifest.json" rel="manifest"/>
 <link href="icon-512.png" rel="apple-touch-icon" sizes="512x512"/><title>Gengrail TCG Business Log</title>
-<meta content="v19.10.0-recognition-v2" name="gengrail-build"/>
+<meta content="v19.11.0-recognition-v3" name="gengrail-build"/>
 <style>
 /* GENGRAIL CROWN-GOLD ACTIVE TABS */
 
@@ -1994,7 +1994,7 @@ function recognitionDiagnostics(r){
    const info=fieldRecognitionInfo(r,key);fields[key]=info;total+=weight;
    if(info.value){weighted+=weight*(info.confidence/100);populated++}
  });
- const score=Math.round(total?weighted/total:0);
+ const score=Math.round(total?(weighted/total)*100:0);
  return {score,populated,totalFields:recognitionFieldSpecs.length,missing:recognitionFieldSpecs.length-populated,fields};
 }
 function aiFieldHead(label,info){
@@ -2007,7 +2007,7 @@ function setAiRecognitionPanel(mode='idle',data=null,message=''){
  host.hidden=false;
  if(mode==='loading'){
    host.className='ai-recognition-panel';
-   host.innerHTML=`<div class="ai-recognition-kicker">AI PRODUCT ENGINE · V2</div><div class="ai-recognition-title"><span class="ai-spinner"></span>Recognising card…</div><div class="ai-recognition-sub">Extracting each identity field independently. Gengrail will score completeness separately from the model's own confidence. Nothing is saved until you approve it.</div>`;
+   host.innerHTML=`<div class="ai-recognition-kicker">AI PRODUCT ENGINE · V3</div><div class="ai-recognition-title"><span class="ai-spinner"></span>Recognising card…</div><div class="ai-recognition-sub">Transcribing the card's identity strip first, then verifying anchors where possible. Gengrail scores completeness separately from the model's own confidence. Nothing is saved until you approve it.</div>`;
    return;
  }
  if(mode==='error'){
@@ -2033,10 +2033,10 @@ function setAiRecognitionPanel(mode='idle',data=null,message=''){
  const confClass=diag.score>=80?'':diag.score>=55?'warn':'bad';
  host.className='ai-recognition-panel '+(diag.score>=80?'good':diag.score>=55?'warn':'bad');
  const f=diag.fields;
- host.innerHTML=`<div class="ai-recognition-kicker">${verified?'VERIFIED CANDIDATE':'AI CARD CANDIDATE'} · V2</div>
+ host.innerHTML=`<div class="ai-recognition-kicker">${verified?'VERIFIED CANDIDATE':'AI CARD CANDIDATE'} · V3</div>
    <div class="ai-recognition-title">Review before using this match</div>
    <div class="ai-confidence ${confClass}">${diag.score}% intake confidence · ${diag.populated}/${diag.totalFields} fields</div>
-   <span class="ai-model-confidence">Model-reported confidence: ${modelConfidence||0}%${verified?' · database verification claimed':''}</span>
+   <span class="ai-model-confidence">Model-reported confidence: ${modelConfidence||0}%${verified?` · ${esc(r.verificationStatus||'database verified')}`:''}</span>
    <div class="ai-review-grid">
     <div class="full">${aiFieldHead('CARD NAME',f.cardName)}<input id="aiReviewName" value="${esc(r.cardName||'')}"/></div>
     <div>${aiFieldHead('CARD NUMBER',f.cardNumber)}<input id="aiReviewNumber" value="${esc(r.cardNumber||'')}"/></div>
@@ -2159,7 +2159,7 @@ async function recogniseCardFile(file){
        cache:'no-store',
        signal:controller.signal,
        headers:{'content-type':'text/plain;charset=UTF-8','accept':'application/json'},
-       body:JSON.stringify({image,scope:'pokemon_raw_single',recognitionVersion:2,requestedFields:['cardName','cardNumber','language','setName','setCode','rarity','illustrator'],requireFieldConfidence:true})
+       body:JSON.stringify({image,scope:'pokemon_raw_single',recognitionVersion:3,requestedFields:['cardName','cardNumber','language','setName','setCode','rarity','illustrator'],requireFieldConfidence:true})
      });
    }finally{
      clearTimeout(timer);
@@ -2301,7 +2301,7 @@ $('addp').onclick=async()=>{
  const pid=id(), files=currentIntakeFiles();
  const sku=$('psku').value.trim()||nextSku();
  const purchaseId=$('ppurchaseid').value.trim()||nextPurchaseId();
- const p={id:pid,name:$('pn').value.trim(),cat:$('pc').value,date:$('pd').value,q:Math.max(1,Math.floor(n('pq'))),cost:n('pp'),source:$('ps').value.trim(),condition:$('pcondition').value,sku,purchaseId,location:$('plocation').value||'UNALLOCATED',inventoryStatus:$('pstatus').value||'IN_STOCK',qrData:'GENGRAIL:SKU:'+sku,listPrice:n('plist'),ebayStatus:$('pebaystatus').value,ebayItemId:'',ebayUrl:'',photoCount:0,notes:$('pnotes').value,productMeta:currentRecognition?{game:currentRecognition.game||'Pokémon TCG',cardName:currentRecognition.cardName||'',cardNumber:currentRecognition.cardNumber||'',setName:currentRecognition.setName||'',setCode:currentRecognition.setCode||'',language:currentRecognition.language||'',rarity:currentRecognition.rarity||'',illustrator:currentRecognition.illustrator||'',recognitionConfidence:Number(currentRecognition.confidence||0),recognitionVerified:!!currentRecognition.verified,recognitionReviewed:!!currentRecognition.reviewed,recognitionApprovedAt:currentRecognition.approvedAt||'',recognitionSource:'workers_ai',fieldConfidences:currentRecognition.fieldConfidences||{},fieldSources:currentRecognition.fieldSources||{},reviewDiagnostics:currentRecognition.reviewDiagnostics||recognitionDiagnostics(currentRecognition),recognitionVersion:2}:null};
+ const p={id:pid,name:$('pn').value.trim(),cat:$('pc').value,date:$('pd').value,q:Math.max(1,Math.floor(n('pq'))),cost:n('pp'),source:$('ps').value.trim(),condition:$('pcondition').value,sku,purchaseId,location:$('plocation').value||'UNALLOCATED',inventoryStatus:$('pstatus').value||'IN_STOCK',qrData:'GENGRAIL:SKU:'+sku,listPrice:n('plist'),ebayStatus:$('pebaystatus').value,ebayItemId:'',ebayUrl:'',photoCount:0,notes:$('pnotes').value,productMeta:currentRecognition?{game:currentRecognition.game||'Pokémon TCG',cardName:currentRecognition.cardName||'',cardNumber:currentRecognition.cardNumber||'',setName:currentRecognition.setName||'',setCode:currentRecognition.setCode||'',language:currentRecognition.language||'',rarity:currentRecognition.rarity||'',illustrator:currentRecognition.illustrator||'',recognitionConfidence:Number(currentRecognition.confidence||0),recognitionVerified:!!currentRecognition.verified,recognitionReviewed:!!currentRecognition.reviewed,recognitionApprovedAt:currentRecognition.approvedAt||'',recognitionSource:'workers_ai',fieldConfidences:currentRecognition.fieldConfidences||{},fieldSources:currentRecognition.fieldSources||{},reviewDiagnostics:currentRecognition.reviewDiagnostics||recognitionDiagnostics(currentRecognition),recognitionVersion:3}:null};
  db.purchases.push(p);
  try{p.photoCount=await addPhotos(pid,files)}catch(e){console.error(e);alert('Stock was saved, but one or more photos could not be stored on this device.');}
  ['pn','pp','ps','psku','ppurchaseid','plist','pnotes'].forEach(x=>$(x).value='');$('pq').value=1;$('pcondition').value='Ungraded';$('pebaystatus').value='NOT_LISTED';$('pphotos').value='';if($('pcamera'))$('pcamera').value='';pendingCameraFiles=[];currentRecognition=null;pendingRecognition=null;$('ppreview').innerHTML='';save();closeStockEntry();
