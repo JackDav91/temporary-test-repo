@@ -8,3 +8,6 @@ Gengrail Business Log v19.18.0 — Adaptive Buy Engine + Calculator UX Fixes
 - Added break-even acquisition ceiling and clearer target-failure explanations for low-value cards.
 - Manual fixed margin/ROI/profit targets remain available under Buying & fulfilment assumptions.
 - Existing postage profiles, eBay fulfilment-policy mapping, AI recognition, verified market pricing and Opportunity Finder separation are preserved.
+
+
+v19.18.1: Pricing Calculator postage-accounting clarity. Guided price is explicitly item-only; buyer postage is credited as revenue, marketplace fees use buyer total where applicable, actual postage and packaging are deducted, and the UI shows the net delivery/packaging burden before marketplace fees. No economic formula change was required because v19.18.0 already used full transaction accounting.
