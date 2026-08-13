@@ -126,13 +126,13 @@ input[type="date"]::-webkit-calendar-picker-indicator{
 
 
 /* ---------- EBAY CHANNEL VISIBILITY ---------- */
-/* Keep the full eBay Channel visually attached to Sales only. */
-body:not(.sales-active) .ebay-channel,
-body:not(.sales-active) #ebayChannel,
-body:not(.sales-active) [data-ebay-channel="main"]{
+/* Keep the full eBay Channel visually attached to Channels only. */
+body:not(.channels-active) .ebay-channel,
+body:not(.channels-active) #ebayChannel,
+body:not(.channels-active) [data-ebay-channel="main"]{
   display:none !important;
 }
-body:not(.sales-active) [data-ebay-channel-main="true"]{
+body:not(.channels-active) [data-ebay-channel-main="true"]{
   display:none !important;
 }
 
@@ -1056,6 +1056,15 @@ body.inner-page .kpi,
 .pricing-ai-tools{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}.pricing-ai-card{border:1px solid var(--line,#333);border-radius:16px;padding:14px;margin-bottom:12px;background:rgba(255,255,255,.025)}.pricing-ai-title{font-size:1.15rem;font-weight:800;margin-top:4px}.pricing-ai-meta{opacity:.78;margin-top:4px}.pricing-ai-market{display:flex;align-items:end;justify-content:space-between;gap:12px;margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,.08)}.pricing-ai-market small{display:block;opacity:.7}.pricing-ai-market b{font-size:1.65rem}.pricing-ai-market span{font-size:.75rem;font-weight:800;opacity:.8}.pricing-ai-signals{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.pricing-ai-signals span{padding:6px 8px;border:1px solid rgba(255,255,255,.08);border-radius:999px;font-size:.78rem;opacity:.82}
 
 .postage-profile-summary{margin:10px 0 14px;padding:12px;border:1px solid #34563e;border-radius:12px;background:#0b120d;color:#d9e9de}.postage-profile-summary b{color:#82dda0}.postage-profile-summary .pps-row{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}.postage-profile-summary small{color:#91a397}.pricing-stats-4{grid-template-columns:repeat(4,1fr)}.pricing-stat.emphasis{border-color:#7a5b13;background:#181205}.pricing-stat.emphasis b{color:#f2c84b}.postage-settings-grid{display:grid;gap:10px;margin-top:12px}.postage-setting{border:1px solid #303030;border-radius:12px;padding:12px;background:#0b0b0b}.postage-setting h4{margin:0 0 8px;color:#82dda0}.postage-setting .grid{margin-top:0}@media(max-width:700px){.pricing-stats-4{grid-template-columns:1fr 1fr}}.pricing-policy-strip{margin-top:10px;padding:10px 12px;border:1px solid #3a3421;border-radius:10px;background:#100e08;color:#d8cfb5;font-size:.82rem;line-height:1.45}.pricing-policy-strip b{color:var(--crown-hi)}.pricing-stat.subtle{opacity:.92}.pricing-stat.na b{font-size:1rem;color:#aaa}.pricing-decision.await{border-color:#4a4a4a}.pricing-decision.await .word{color:#bbb}.pricing-miss{margin-top:8px;color:#c9bfbf;font-size:.82rem;line-height:1.4}.pricing-assumption-wrap[hidden]{display:none!important}
+
+/* ---------- v20 UI CONSOLIDATION ---------- */
+.product-intake-launcher:has(#stockEntryPanel.ai-integrated){border-color:#356c45;background:linear-gradient(180deg,rgba(20,38,25,.42),rgba(10,10,10,.96))}
+#stockEntryPanel.ai-integrated{margin:0;padding:14px 0 0;border:0;border-top:1px solid rgba(130,221,160,.18);border-radius:0;background:transparent;box-shadow:none}
+#stockEntryPanel.ai-integrated .title{font-size:1rem;letter-spacing:.08em;color:#82dda0;margin-bottom:10px}
+#stockEntryPanel.ai-integrated .sequence-preview{background:#0b0d0b}
+.compact-intake-note{padding-top:10px;padding-bottom:10px}
+.pricing-recalc{margin-top:2px;opacity:.78}
+@media(max-width:620px){#stockEntryPanel.ai-integrated .grid{grid-template-columns:1fr}.product-intake-grid{gap:7px}.recognition-ready small{display:none}}
 </style>
 <link href="gengrail-theme.css" rel="stylesheet"/>
 <link href="gengrail-gold-tabs.css" rel="stylesheet"/>
@@ -1078,7 +1087,7 @@ body.inner-page .kpi,
 <div class="command-group" data-group-screen="operations" id="group-operations"><div class="command-group-head"><button aria-label="Back to Command Centre" class="page-back group-back" type="button">←</button><div class="command-group-copy"><h2>Operations</h2><p>Act on orders and control physical inventory</p></div></div><div class="group-menu"><button data-go="orders" id="operationsOrdersTile" type="button"><span class="gicon"><svg aria-hidden="true" viewbox="0 0 24 24"><path d="M6 4h12l2 4-8 4-8-4 2-4Z"></path><path d="M4 8v9l8 4 8-4V8"></path><path d="m9 15 2 2 4-4"></path></svg></span><span><span class="glabel">Orders</span><span class="gsub" id="operationsOrdersSub">Pick, pack and dispatch customer orders</span></span><span class="garrow">›</span></button><button data-go="stock" type="button"><span class="gicon"><svg aria-hidden="true" viewbox="0 0 24 24"><rect height="18" rx="2" width="14" x="5" y="3"></rect><path d="M8 7h8"></path><path d="M8 11h8"></path><path d="M8 15h5"></path></svg></span><span><span class="glabel">Stock</span><span class="gsub">Catalogue, view and manage inventory</span></span><span class="garrow">›</span></button><button data-go="storage" type="button"><span class="gicon"><svg aria-hidden="true" viewbox="0 0 24 24"><path d="M12 21s6-5.1 6-11a6 6 0 1 0-12 0c0 5.9 6 11 6 11Z"></path><circle cx="12" cy="10" r="2"></circle></svg></span><span><span class="glabel">Locations</span><span class="gsub">Warehouse storage and stock placement</span></span><span class="garrow">›</span></button></div></div>
 <div class="command-group" data-group-screen="sales" id="group-sales"><div class="command-group-head"><button aria-label="Back to Command Centre" class="page-back group-back" type="button">←</button><div class="command-group-copy"><h2>Sales</h2><p>Manage selling activity and connected channels</p></div></div><div class="group-menu"><button data-go="sales" type="button"><span class="gicon"><svg aria-hidden="true" viewbox="0 0 24 24"><path d="M4 6h16"></path><path d="M4 11h16"></path><path d="M4 16h10"></path><circle cx="18" cy="16" r="2"></circle></svg></span><span><span class="glabel">Sales Log</span><span class="gsub">Review sales history and add non-channel sales</span></span><span class="garrow">›</span></button><button data-go="channels" type="button"><span class="gicon"><svg aria-hidden="true" viewbox="0 0 24 24"><circle cx="7" cy="12" r="3"></circle><circle cx="17" cy="7" r="3"></circle><circle cx="17" cy="17" r="3"></circle><path d="M9.7 10.6 14.2 8.3"></path><path d="m9.7 13.4 4.5 2.3"></path></svg></span><span><span class="glabel">Channels</span><span class="gsub">Open eBay and future marketplace integrations</span></span><span class="garrow">›</span></button></div></div>
 <div class="command-group" data-group-screen="finance" id="group-finance"><div class="command-group-head"><button aria-label="Back to Command Centre" class="page-back group-back" type="button">←</button><div class="command-group-copy"><h2>Finance</h2><p>Understand and control the business</p></div></div><div class="group-menu"><button data-go="dash" type="button"><span class="gicon"><svg aria-hidden="true" viewbox="0 0 24 24"><rect height="8" rx="1" width="8" x="3" y="3"></rect><rect height="5" rx="1" width="8" x="13" y="3"></rect><rect height="11" rx="1" width="8" x="13" y="10"></rect><rect height="8" rx="1" width="8" x="3" y="13"></rect></svg></span><span><span class="glabel">Dashboard</span><span class="gsub">Revenue, profit, cash and stock overview</span></span><span class="garrow">›</span></button><button data-go="exp" type="button"><span class="gicon"><svg aria-hidden="true" viewbox="0 0 24 24"><path d="M6 3h12v18l-2-1.5L14 21l-2-1.5L10 21l-2-1.5L6 21V3Z"></path><path d="M9 7h6"></path><path d="M9 11h6"></path><path d="M9 15h4"></path></svg></span><span><span class="glabel">Expenses</span><span class="gsub">Log and review business expenditure</span></span><span class="garrow">›</span></button><button data-go="owner" type="button"><span class="gicon"><svg aria-hidden="true" viewbox="0 0 24 24"><circle cx="12" cy="8" r="3"></circle><path d="M5 21a7 7 0 0 1 14 0"></path><path d="M12 2v2"></path></svg></span><span><span class="glabel">Owner</span><span class="gsub">Funding, contributions and dividends</span></span><span class="garrow">›</span></button><button data-go="tax" type="button"><span class="gicon"><svg aria-hidden="true" viewbox="0 0 24 24"><rect height="18" rx="2" width="16" x="4" y="3"></rect><path d="M7 7h10"></path><path d="M8 11h1"></path><path d="M12 11h1"></path><path d="M16 11h1"></path><path d="M8 15h1"></path><path d="M12 15h1"></path><path d="M16 15h1"></path><path d="M8 18h1"></path><path d="M12 18h5"></path></svg></span><span><span class="glabel">Tax</span><span class="gsub">Corporation tax and reserve tools</span></span><span class="garrow">›</span></button></div></div>
-<div class="command-group" data-group-screen="tools" id="group-tools"><div class="command-group-head"><button aria-label="Back to Command Centre" class="page-back group-back" type="button">←</button><div class="command-group-copy"><h2>Tools</h2><p>Fast utilities for everyday work</p></div></div><div class="group-menu"><button data-go="pricing" type="button"><span class="gicon"><svg aria-hidden="true" viewbox="0 0 24 24"><rect height="18" rx="2" width="16" x="4" y="3"></rect><path d="M8 7h8"></path><path d="M8 11h1"></path><path d="M12 11h1"></path><path d="M16 11h1"></path><path d="M8 15h1"></path><path d="M12 15h1"></path><path d="M16 15h1"></path><path d="M8 18h9"></path></svg></span><span><span class="glabel">Pricing Calculator</span><span class="gsub">Quick margin and selling-price utility</span></span><span class="garrow">›</span></button><button data-go="lookup" data-focus="productLookupInput" type="button"><span class="gicon"><svg aria-hidden="true" viewbox="0 0 24 24"><path d="M4 8V4h4"></path><path d="M16 4h4v4"></path><path d="M20 16v4h-4"></path><path d="M8 20H4v-4"></path><path d="M8 9v6"></path><path d="M11 9v6"></path><path d="M14 9v6"></path><path d="M17 9v6"></path></svg></span><span><span class="glabel">Stock Lookup</span><span class="gsub">Find an item, then act on it</span></span><span class="garrow">›</span></button></div></div>
+<div class="command-group" data-group-screen="tools" id="group-tools"><div class="command-group-head"><button aria-label="Back to Command Centre" class="page-back group-back" type="button">←</button><div class="command-group-copy"><h2>Tools</h2><p>Fast utilities for everyday work</p></div></div><div class="group-menu"><button data-go="lookup" data-focus="productLookupInput" type="button"><span class="gicon"><svg aria-hidden="true" viewbox="0 0 24 24"><path d="M4 8V4h4"></path><path d="M16 4h4v4"></path><path d="M20 16v4h-4"></path><path d="M8 20H4v-4"></path><path d="M8 9v6"></path><path d="M11 9v6"></path><path d="M14 9v6"></path><path d="M17 9v6"></path></svg></span><span><span class="glabel">Stock Lookup</span><span class="gsub">Find an item, then act on it</span></span><span class="garrow">›</span></button></div></div>
 </section>
 <section class="sec" id="channels"><div class="panel"><div class="title">SALES CHANNELS</div><div class="channel-hub-card"><div class="channel-hub-head"><div><b>eBay</b><small>Production marketplace integration</small></div><span class="channel-status-live">ACTIVE</span></div><p>Manage drafts, live listings, publishing setup and eBay sales sync through the existing proven eBay channel.</p><button class="btn" id="openEbayChannel" type="button">OPEN EBAY CHANNEL</button></div><div class="note">Gengrail is now organised so marketplace integrations sit behind a common Channels layer. Shopify and TikTok Shop can be added here later without changing the core Stock, Orders or Finance workflow.</div></div></section>
 <section class="sec" id="dash"><div class="panel"><div class="title">BUSINESS DASHBOARD</div><div class="kpis">
@@ -1098,17 +1107,17 @@ body.inner-page .kpi,
 <section class="sec" id="stock">
 <div class="panel product-intake-launcher">
 <div class="title">ADD CARD / PRODUCT</div>
-<div class="note" style="margin-top:0">Choose how you want to start. Camera and photo intake are the foundation for Gengrail recognition; you can review every field before anything is added to Stock.</div>
+<div class="note compact-intake-note" style="margin-top:0">Scan, import or enter manually. Nothing is added until you save the reviewed purchase.</div>
 <div class="product-intake-grid">
 <button class="intake-action" id="startCameraIntake" type="button"><span class="intake-icon">⌁</span><b>SCAN CARD</b><small>Use the iPhone camera</small></button>
 <button class="intake-action" id="startPhotoIntake" type="button"><span class="intake-icon">▧</span><b>IMPORT PHOTO</b><small>Choose an existing card image</small></button>
 <button class="intake-action" id="startManualIntake" type="button"><span class="intake-icon">＋</span><b>ENTER MANUALLY</b><small>Open the full stock sheet</small></button>
 </div>
 <input accept="image/*" capture="environment" id="pcamera" style="display:none" type="file"/>
-<div class="recognition-ready"><span>AI PRODUCT ENGINE</span><b>English + Japanese raw single recognition ready</b><small>Scan or import the front of a Pokémon card. Gengrail will identify the card, detect language, verify English matches where possible and pre-fill the Stock sheet for your approval.</small></div>
+<div class="recognition-ready"><span>AI PRODUCT ENGINE</span><b>English + Japanese raw singles</b></div>
 <div class="ai-recognition-panel" id="aiRecognitionPanel" hidden></div>
 </div>
-<div class="panel" hidden id="stockEntryPanel"><div class="title">LOG A PURCHASE</div><div class="grid">
+<div class="panel" hidden id="stockEntryPanel"><div class="title" id="stockEntryTitle">PURCHASE DETAILS</div><div class="grid">
 <div><label>Card / product</label><input id="pn"/></div><div><label>Category</label><select id="pc"><option>Raw Single</option><option>Graded</option><option>Sealed</option><option>Collection</option><option>Accessory</option><option>Other</option></select></div>
 <div><label>Purchase date</label><input id="pd" type="date"/></div><div><label>Quantity</label><input id="pq" min="1" type="number" value="1"/></div>
 <div><label>Total buy price (£)</label><input id="pp" step=".01" type="number"/></div><div><label>Source / seller</label><input id="ps"/></div>
@@ -1123,7 +1132,7 @@ body.inner-page .kpi,
 <div class="full sequence-preview" id="sequencePreview"><div><small>NEXT SKU</small><b id="sequenceSku">—</b></div><div><small>NEXT PURCHASE ID</small><b id="sequencePurchase">—</b></div><div class="sequence-note">Sequence preview is generated from Gengrail's permanent high-water ledger. Sold or deleted historical IDs are never reused.</div></div>
 <div class="full photo-picker"><label>Product photos</label><input accept="image/*" id="pphotos" multiple="" type="file"/><div class="photo-help">Add front/back and detail photos now. Images are stored separately on this device so they do not inflate the accounting database or JSON backup.</div><div class="photo-preview" id="ppreview"></div></div>
 <div class="full"><label>Notes</label><textarea id="pnotes"></textarea></div></div><div class="actions"><button class="btn" id="addp">ADD TO STOCK</button><button class="btn alt" id="cancelStockEntry" type="button">CLOSE</button></div></div>
-<div class="panel"><div class="title">CURRENT STOCK</div><div class="table"><table><thead><tr><th>Item</th><th>SKU</th><th>Purchase ID</th><th>Location</th><th>Status</th><th>Condition</th><th>Qty left</th><th>Unit cost</th><th>Target list</th><th>eBay</th><th>Photos</th><th>Source</th><th>Actions</th></tr></thead><tbody id="pbody"></tbody></table></div><div class="note">Stock is now the master product record. Photos stay on this device in dedicated browser storage; SKU, condition, target price and eBay status are stored with the stock record and can be used by the eBay integration.</div></div>
+<div class="panel"><div class="title">CURRENT STOCK</div><div class="table"><table><thead><tr><th>Item</th><th>SKU</th><th>Purchase ID</th><th>Location</th><th>Status</th><th>Condition</th><th>Qty left</th><th>Unit cost</th><th>Target list</th><th>eBay</th><th>Photos</th><th>Source</th><th>Actions</th></tr></thead><tbody id="pbody"></tbody></table></div><div class="note">Stock is the master product record. Photos stay in dedicated on-device storage.</div></div>
 </section>
 <section class="sec" id="lookup">
 <div class="panel">
@@ -1233,7 +1242,7 @@ body.inner-page .kpi,
 <section class="sec" id="pricing">
 <div class="panel">
 <div class="title">PRICING CALCULATOR</div>
-<div class="note" style="margin-bottom:12px">Identify a raw Pokémon single from a photo, review its verified market evidence, then test your buy cost against Gengrail's margin assumptions. This calculator does not create listings or alter Stock.</div>
+<div class="note" style="margin-bottom:12px">Identify, value and test a raw Pokémon single. Pricing only — Stock and listings are never changed here.</div>
 <div class="pricing-ai-tools">
   <label class="btn alt">IMPORT CARD PHOTO<input accept="image/*" id="pricingAiPhoto" style="display:none" type="file"/></label>
   <button class="btn alt" id="pricingAiClear" type="button">CLEAR CARD</button>
@@ -1250,7 +1259,7 @@ body.inner-page .kpi,
 <div class="full"><label>Recommended delivery profile</label><select id="pricePostageProfile"></select></div>
 </div>
 <div class="postage-profile-summary" id="pricePostageSummary"></div>
-<button class="btn" id="priceCalcBtn" type="button">CALCULATE</button>
+<button class="btn pricing-recalc" id="priceCalcBtn" type="button">RECALCULATE</button>
 <div class="pricing-result" id="priceResult">
 <div class="pricing-hero">
 <small id="pricePlatformLabel">GUIDED SELL PRICE</small>
@@ -1888,7 +1897,7 @@ function ensurePageHeaders(){
 
 function showGroup(group,push=true,back=false){
  document.querySelectorAll('.sec').forEach(x=>x.classList.remove('on'));
- document.body.classList.remove('inner-page','sales-active');
+ document.body.classList.remove('inner-page','sales-active','channels-active');
  document.body.classList.add('home-page');
  const main=$('commandHomeMain');
  document.querySelectorAll('[data-group-screen]').forEach(x=>x.classList.remove('on'));
@@ -1918,7 +1927,8 @@ function setActiveTab(tab,push=true){
  sec.classList.add('on');
  document.body.classList.add('inner-page');
  document.body.classList.remove('home-page');
- document.body.classList.toggle('sales-active',tab==='sales');
+ document.body.classList.remove('sales-active');
+ document.body.classList.toggle('channels-active',tab==='channels');
  motionIn(sec,false);
  if(push && location.hash!==`#${tab}`)history.pushState({gengrailPage:tab},'',`#${tab}`);
  window.scrollTo({top:0,behavior:'instant'});
@@ -1956,7 +1966,7 @@ window.addEventListener('popstate',()=>{
 });
 
 const openEbayChannel=$('openEbayChannel');
-if(openEbayChannel){openEbayChannel.onclick=()=>{currentCommandGroup='sales';setActiveTab('sales',true);setTimeout(()=>{const el=document.querySelector('#gengrail-ebay-channel,[data-ebay-channel-main="true"],.ebay-channel');if(el)el.scrollIntoView({behavior:'smooth',block:'start'})},180)}}
+if(openEbayChannel){openEbayChannel.onclick=()=>{currentCommandGroup='sales';setActiveTab('channels',true);setTimeout(()=>{const el=document.querySelector('#gengrail-ebay-channel,[data-ebay-channel-main="true"],.ebay-channel');if(el)el.scrollIntoView({behavior:'smooth',block:'start'})},180)}}
 
 ensurePageHeaders();
 const initialRoute=(location.hash||'#home').slice(1);
@@ -2091,8 +2101,8 @@ function setAiRecognitionPanel(mode='idle',data=null,message=''){
    </div>
    <div class="ai-diagnostic"><b>${diag.missing?`${diag.missing} field${diag.missing===1?'':'s'} unresolved.`:'All identity fields populated.'}</b> Intake confidence is calculated from field-level completeness and confidence, so a partial result cannot inherit an unrealistic overall model score.</div>
    ${approvedMarketPricingHtml(r)}
-   <div class="ai-review-note">Review or correct the match above. Choosing the suggested price is optional. Continue Intake approves this match and pre-fills the editable purchase form; nothing is added to Stock until you save it.</div>
-   <div class="ai-approved-actions"><button class="btn alt" type="button" onclick="clearAiRecognition(false)">DISCARD MATCH</button><button class="btn ${Number($('plist')?.value||0)>0?'selected':''}" type="button" onclick="useReviewSuggestedPrice()" ${marketSuggestedPrice(r)?'':'disabled'}>${marketSuggestedPrice(r)?'USE SUGGESTED PRICE':'NO MARKET PRICE'}</button><button class="btn wide" type="button" onclick="approveAndContinueAiRecognition()">CONTINUE INTAKE</button></div>`;
+   <div class="ai-review-note">Review the verified identity and market evidence, then complete the editable purchase details directly below. Suggested price is optional; saving the purchase approves the match and adds it to Stock.</div>
+   <div class="ai-approved-actions"><button class="btn alt" type="button" onclick="clearAiRecognition(false)">DISCARD MATCH</button><button class="btn ${Number($('plist')?.value||0)>0?'selected':''}" type="button" onclick="useReviewSuggestedPrice()" ${marketSuggestedPrice(r)?'':'disabled'}>${marketSuggestedPrice(r)?'USE SUGGESTED PRICE':'NO MARKET PRICE'}</button></div>`;
 }
 function readAiReview(){
  const base=pendingRecognition||{};
@@ -2346,12 +2356,23 @@ async function testAiRecognitionConnection(){
 function openStockEntry(mode='manual'){
  currentIntakeMode=mode;
  const panel=$('stockEntryPanel'); if(!panel)return;
+ const launcher=document.querySelector('.product-intake-launcher');
+ const aiHost=$('aiRecognitionPanel');
  panel.hidden=false;
- if(mode==='manual')setAiRecognitionPanel('idle');
- setTimeout(()=>panel.scrollIntoView({behavior:'smooth',block:'start'}),40);
+ panel.classList.toggle('ai-integrated',mode!=='manual');
+ if($('stockEntryTitle'))$('stockEntryTitle').textContent=mode==='manual'?'LOG A PURCHASE':'PURCHASE DETAILS';
+ if(mode==='manual'){
+   setAiRecognitionPanel('idle');
+   if(launcher && panel.parentElement===launcher)launcher.after(panel);
+ }else if(aiHost && launcher){
+   aiHost.insertAdjacentElement('afterend',panel);
+ }
+ setTimeout(()=>{const target=mode==='manual'?panel:aiHost;target?.scrollIntoView({behavior:'smooth',block:'start'})},40);
 }
 function closeStockEntry(){
- const panel=$('stockEntryPanel'); if(panel)panel.hidden=true;
+ const panel=$('stockEntryPanel');
+ const launcher=document.querySelector('.product-intake-launcher');
+ if(panel){panel.hidden=true;panel.classList.remove('ai-integrated');if(launcher&&panel.parentElement===launcher)launcher.after(panel)}
  pendingCameraFiles=[];currentRecognition=null;pendingRecognition=null;recognitionBusy=false;recognitionSessionId++;
  if($('pcamera'))$('pcamera').value='';
  if($('pphotos'))$('pphotos').value='';
@@ -2427,7 +2448,15 @@ if($('cancelStockEntry'))$('cancelStockEntry').onclick=()=>closeStockEntry();
 refreshSequencePreview();
 
 $('addp').onclick=async()=>{
- if(pendingRecognition && !currentRecognition)return alert('Review the AI candidate and choose APPROVE & PREFILL, or DISCARD MATCH, before adding this item to Stock.');
+ if(pendingRecognition && !currentRecognition){
+   const r=normaliseRecognition(readAiReview());
+   if(!r.cardName || !r.cardNumber || !r.language)return alert('Card name, card number and language are required before saving this verified purchase.');
+   r.reviewDiagnostics=recognitionDiagnostics(r);r.reviewed=true;r.approvedAt=new Date().toISOString();
+   currentRecognition=r;pendingRecognition=null;
+   const title=titleFromRecognition(r);if(title&&$('pn'))$('pn').value=title;
+   if($('pc'))$('pc').value='Raw Single';if($('pcondition'))$('pcondition').value='Ungraded';
+   prepareVerifiedStockIntake(r);
+ }
  if(!$('pn').value.trim())return alert('Enter an item.');
  const pid=id(), files=currentIntakeFiles();
  const sku=$('psku').value.trim()||nextSku();
@@ -2823,16 +2852,16 @@ if($('oppAnalyse')){
 }
 
 
-/* Keep injected eBay Channel panel Sales-only without changing eBay data logic. */
+/* Keep injected eBay Channel inside Channels without changing eBay data logic. */
 function placeEbayChannelInSales(){
-  const sales=$('sales');
-  if(!sales)return;
+  const channels=$('channels');
+  if(!channels)return;
 
   /* gengrail-ebay.js uses ordinary panel markup, so identify the large
      channel panel by its visible heading/content rather than a class name. */
   const candidates=[...document.querySelectorAll('.panel,section,div')];
   const ebayPanel=candidates.find(node=>{
-    if(node===sales || sales.contains(node))return false;
+    if(node===channels || channels.contains(node))return false;
     const ownText=(node.textContent||'').replace(/\s+/g,' ').trim();
     if(!/eBay\s*CHANNEL/i.test(ownText))return false;
 
@@ -2843,12 +2872,12 @@ function placeEbayChannelInSales(){
 
   if(ebayPanel){
     ebayPanel.setAttribute('data-ebay-channel-main','true');
-    if(!sales.contains(ebayPanel))sales.appendChild(ebayPanel);
+    if(!channels.contains(ebayPanel))channels.appendChild(ebayPanel);
   }
 
   document.body.classList.toggle(
-    'sales-active',
-    document.querySelector('.nav button.on')?.dataset.tab==='sales'
+    'channels-active',
+    document.querySelector('.nav button.on')?.dataset.tab==='channels'
   );
 }
 

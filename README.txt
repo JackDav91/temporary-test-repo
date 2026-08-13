@@ -11,3 +11,11 @@ Gengrail Business Log v19.18.0 — Adaptive Buy Engine + Calculator UX Fixes
 
 
 v19.18.1: Pricing Calculator postage-accounting clarity. Guided price is explicitly item-only; buyer postage is credited as revenue, marketplace fees use buyer total where applicable, actual postage and packaging are deducted, and the UI shows the net delivery/packaging burden before marketplace fees. No economic formula change was required because v19.18.0 already used full transaction accounting.
+
+v20 UI consolidation (13 Aug 2026)
+- AI Stock intake now presents recognition + editable purchase details as one integrated workspace.
+- Verified AI purchase can be saved directly; save action approves reviewed identity metadata.
+- eBay Channel moved from Sales into Channels; Sales remains ledger/manual-sale focused.
+- Duplicate Pricing Calculator shortcut removed from Tools (Buying remains its home).
+- Pricing copy streamlined and recalculation is reactive while retaining a manual refresh control.
+- Existing local database schema, permanent SKU/purchase ledgers, AI recognition, pricing and eBay data logic preserved.
