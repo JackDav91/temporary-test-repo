@@ -8,7 +8,7 @@
 <meta content="Gengrail TCG" name="apple-mobile-web-app-title"/>
 <link href="manifest.json" rel="manifest"/>
 <link href="icon-512.png" rel="apple-touch-icon" sizes="512x512"/><title>Gengrail TCG Business Log</title>
-<meta content="v19.15.0-inline-pricing-flow" name="gengrail-build"/>
+<meta content="v19.16.0-inline-pricing-flow" name="gengrail-build"/>
 <style>
 /* GENGRAIL CROWN-GOLD ACTIVE TABS */
 
@@ -1052,6 +1052,8 @@ body.inner-page .kpi,
 .ai-approved-badge{display:inline-block;margin-top:8px;padding:4px 8px;border:1px solid #3d8751;border-radius:999px;color:#82dda0;font-size:9px;font-weight:950;letter-spacing:.06em}
 @media(max-width:620px){.ai-review-grid{grid-template-columns:1fr}.ai-review-grid .full{grid-column:auto}}
 
+
+.pricing-ai-tools{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}.pricing-ai-card{border:1px solid var(--line,#333);border-radius:16px;padding:14px;margin-bottom:12px;background:rgba(255,255,255,.025)}.pricing-ai-title{font-size:1.15rem;font-weight:800;margin-top:4px}.pricing-ai-meta{opacity:.78;margin-top:4px}.pricing-ai-market{display:flex;align-items:end;justify-content:space-between;gap:12px;margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,.08)}.pricing-ai-market small{display:block;opacity:.7}.pricing-ai-market b{font-size:1.65rem}.pricing-ai-market span{font-size:.75rem;font-weight:800;opacity:.8}.pricing-ai-signals{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.pricing-ai-signals span{padding:6px 8px;border:1px solid rgba(255,255,255,.08);border-radius:999px;font-size:.78rem;opacity:.82}
 </style>
 <link href="gengrail-theme.css" rel="stylesheet"/>
 <link href="gengrail-gold-tabs.css" rel="stylesheet"/>
@@ -1224,36 +1226,37 @@ body.inner-page .kpi,
 <section class="sec" id="pricing">
 <div class="panel">
 <div class="title">PRICING CALCULATOR</div>
-<div class="note" style="margin-bottom:12px">Select stock to pull its unit cost automatically, or choose Manual calculation. Platform fee assumptions are editable and the calculator keeps buyer-paid postage separate from your actual postage cost.</div>
-<div class="grid">
-<div class="full"><label>Pricing source</label><select id="priceStock"><option value="">Manual calculation</option></select></div>
+<div class="note" style="margin-bottom:12px">Identify a raw Pokémon single from a photo, review its verified market evidence, then test your buy cost against Gengrail's margin assumptions. This calculator does not create listings or alter Stock.</div>
+<div class="pricing-ai-tools">
+  <label class="btn alt">IMPORT CARD PHOTO<input accept="image/*" id="pricingAiPhoto" style="display:none" type="file"/></label>
+  <button class="btn alt" id="pricingAiClear" type="button">CLEAR CARD</button>
 </div>
+<div class="pricing-ai-card" id="pricingAiCard" hidden></div>
 <div class="pricing-tabs" style="margin-top:12px">
 <button class="pricing-tab on" data-price-platform="ebay" type="button">eBay</button>
 <button class="pricing-tab" data-price-platform="vinted" type="button">Vinted</button>
 <button class="pricing-tab" data-price-platform="cardmarket" type="button">Cardmarket</button>
 </div>
 <div class="grid">
-<div><label>Card / unit cost (£)</label><input id="priceCost" inputmode="decimal" min="0" step=".01" type="number" value="10"/></div>
+<div><label>Your buy cost (£)</label><input id="priceCost" inputmode="decimal" min="0" step=".01" type="number" value="10"/></div>
+<div><label>Market value (£)</label><input id="priceMarketValue" inputmode="decimal" min="0" step=".01" type="number" value="0"/></div>
 <div><label>Buyer postage charged (£)</label><input id="priceBuyerPost" inputmode="decimal" min="0" step=".01" type="number" value="0"/></div>
 <div><label>Your actual postage cost (£)</label><input id="pricePostCost" inputmode="decimal" min="0" step=".01" type="number" value="1.55"/></div>
 <div><label>Packaging cost (£)</label><input id="pricePack" inputmode="decimal" min="0" step=".01" type="number" value=".30"/></div>
 </div>
-<button class="btn" id="priceCalcBtn" type="button">CALCULATE SELL PRICE</button>
+<button class="btn" id="priceCalcBtn" type="button">CALCULATE</button>
 <div class="pricing-result" id="priceResult">
 <div class="pricing-hero">
-<small id="pricePlatformLabel">EBAY SUGGESTED LIST PRICE</small>
+<small id="pricePlatformLabel">SUGGESTED SELL PRICE</small>
 <div class="pricing-price" id="priceSuggested">£0.00</div>
 <div class="pricing-profit" id="priceProfit">Estimated net profit £0.00</div>
 </div>
 <div class="pricing-stats">
-<div class="pricing-stat"><span>5% NET MARGIN</span><b id="priceP5">£0.00</b></div>
-<div class="pricing-stat"><span>10% NET MARGIN</span><b id="priceP10">£0.00</b></div>
+<div class="pricing-stat"><span>MAX BUY @ TARGET</span><b id="priceMaxBuy">£0.00</b></div>
+<div class="pricing-stat"><span>MARKET VALUE</span><b id="priceMarketOut">£0.00</b></div>
 <div class="pricing-stat"><span>EST. ROI</span><b id="priceRoi">0%</b></div>
 </div>
-<div class="pricing-actions">
-<button class="btn" id="priceUseBtn" type="button">USE THIS PRICE</button>
-</div>
+<div class="pricing-decision" id="priceDecisionBox" style="display:none"><div class="word" id="priceDecisionWord"></div><div id="priceDecisionText"></div></div>
 </div>
 <details style="margin-top:14px">
 <summary>Advanced platform fee settings</summary>
@@ -1270,16 +1273,6 @@ body.inner-page .kpi,
 </div>
 <div class="note pricing-fee-note" id="priceFeeNote"></div>
 </details>
-</div>
-<div class="panel">
-<div class="title">BUY / NEGOTIATE / PASS</div>
-<div class="grid">
-<div><label>Seller's asking price (£)</label><input id="dealAsk" inputmode="decimal" min="0" step=".01" type="number" value="10"/></div>
-<div><label>Realistic market value (£)</label><input id="dealMarket" inputmode="decimal" min="0" step=".01" type="number" value="18"/></div>
-</div>
-<button class="btn" id="dealBtn" type="button">CHECK THE DEAL</button>
-<div class="pricing-decision" id="dealBox"><div class="word" id="dealWord"></div><div id="dealText"></div></div>
-<div class="note">Uses the original Gengrail sourcing rules: stronger required margins at lower values and progressively lower buy-cost ratios for higher-value, liquid cards.</div>
 </div>
 </section>
 <section class="sec" id="opps">
@@ -1735,11 +1728,6 @@ function render(){
 
  $('pbody').innerHTML=db.purchases.filter(p=>left(p)>0).map(p=>`<tr><td>${esc(p.name)}</td><td class="mono">${esc(p.sku||'')}</td><td class="mono">${esc(p.purchaseId||'')}</td><td><b>${esc(p.location||'UNALLOCATED')}</b></td><td><span class="status-pill ${p.inventoryStatus==='IN_STOCK'?'stock':p.inventoryStatus==='PICK_REQUIRED'?'pick':'done'}">${esc((p.inventoryStatus||'IN_STOCK').replaceAll('_',' '))}</span></td><td>${esc(p.condition||'Ungraded')}</td><td>${left(p)}</td><td>${m(uc(p))}</td><td>${p.listPrice?m(p.listPrice):'—'}</td><td><div class="stock-badges"><span class="badge ebay">${esc((p.ebayStatus||'NOT_LISTED').replace('_',' '))}</span><button class="stock-ebay-btn ${p.ebayStatus==='DRAFT'?'alt':''}" onclick="prepareEbayFromStock('${p.id}')">${p.ebayStatus==='DRAFT'?'EDIT DRAFT':'LIST ON EBAY'}</button></div></td><td><button onclick="managePhotos('${p.id}')">${p.photoCount||0} photo${(p.photoCount||0)===1?'':'s'}</button></td><td>${esc(p.source)}</td><td><button onclick="quickMove('${p.id}')">MOVE</button> <button onclick="printStockLabel('${p.id}')">LABEL</button> <button onclick="dp('${p.id}')">DELETE</button></td></tr>`).join('');
  let av=db.purchases.filter(p=>left(p)>0);$('si').innerHTML=av.length?av.map(p=>`<option value="${p.id}">${esc(p.name)} — ${left(p)} left</option>`).join(''):'<option value="">No stock</option>';
-  if($('priceStock')){
-    const prior=$('priceStock').value;
-    $('priceStock').innerHTML='<option value="">Manual calculation</option>'+av.map(p=>`<option value="${p.id}">${esc(p.name)} — ${left(p)} left — ${m(uc(p))} unit cost</option>`).join('');
-    if([...$('priceStock').options].some(o=>o.value===prior))$('priceStock').value=prior;
-  }
 
 
  // Warehouse module
@@ -2624,139 +2612,61 @@ window.restockLookupItem=pid=>{
 if($('scanLookup'))$('scanLookup').onclick=()=>{const p=findStockByScan($('scanInput').value);$('scanResult').innerHTML=p?`<b>${esc(p.name)}</b><br>SKU <span class="mono">${esc(p.sku)}</span> · Location <b>${esc(p.location||'UNALLOCATED')}</b> · Status ${esc((p.inventoryStatus||'IN_STOCK').replaceAll('_',' '))}`:'No matching SKU found.'};
 
 /* ==========================
-   GENGRAIL PRICING CALCULATOR
+   GENGRAIL PRICING CALCULATOR · AI VALUATION
    ========================== */
 let pricePlatform=localStorage.getItem('gengrailPricingPlatform')||'ebay';
 let lastSuggestedPrice=0;
+let pricingRecognition=null;
 
 function priceNum(id){return Math.max(0,Number($(id)?.value)||0)}
-function priceCeil99(v){
-  if(!isFinite(v)||v<0)return 0;
-  let w=Math.floor(v),c=w+.99;
-  if(c<v-1e-9)c++;
-  return Math.round(c*100)/100;
-}
-function priceTargetRatioForMarket(mv){
-  if(mv<25)return .55;
-  if(mv<100)return .65;
-  if(mv<250)return .70;
-  return .775;
-}
-function priceResaleTarget(cost){
-  const t=[
-    {lo:0,hi:25,r:.55,label:'≤55% buy-cost rule'},
-    {lo:25,hi:100,r:.65,label:'≤65% buy-cost rule'},
-    {lo:100,hi:250,r:.70,label:'≤70% buy-cost rule'},
-    {lo:250,hi:Infinity,r:.775,label:'~77.5% buy-cost rule'}
-  ];
-  for(const x of t){const sale=cost/x.r;if(sale>=x.lo&&sale<x.hi)return{sale,label:x.label}}
-  if(cost<13.75)return{sale:cost/.55,label:t[0].label};
-  if(cost<65)return{sale:Math.max(25,cost/.65),label:t[1].label};
-  if(cost<175)return{sale:Math.max(100,cost/.70),label:t[2].label};
-  return{sale:Math.max(250,cost/.775),label:t[3].label};
-}
+function priceCeil99(v){if(!isFinite(v)||v<0)return 0;let w=Math.floor(v),c=w+.99;if(c<v-1e-9)c++;return Math.round(c*100)/100}
+function priceTargetRatioForMarket(mv){if(mv<25)return .55;if(mv<100)return .65;if(mv<250)return .70;return .775}
 function priceFeeBreakdown(itemPrice){
-  const buyerPost=priceNum('priceBuyerPost'), total=itemPrice+buyerPost;
-  let platformFee=0, adFee=0, intlFee=0, label='', detail='';
+  const buyerPost=priceNum('priceBuyerPost'), total=itemPrice+buyerPost;let platformFee=0,adFee=0,intlFee=0,label='',detail='';
   if(pricePlatform==='ebay'){
-    const vatMult=$('priceVat').value==='include'?1.20:1;
-    const fvf=priceNum('priceEbayFvf')/100, reg=priceNum('priceEbayReg')/100;
-    const lowEligible=$('priceLowFee').value==='yes' && total<=10;
-    const orderBase=lowEligible?.10:(total<=10?.30:.40);
-    platformFee=(total*(fvf+reg)+orderBase)*vatMult;
-    const adRate=priceNum('priceAdRate')/100;
-    adFee=total*adRate*vatMult;
-    intlFee=total*(priceNum('priceIntl')/100);
-    label='eBay';
-    detail=`FVF ${priceNum('priceEbayFvf').toFixed(2)}% + regulatory ${priceNum('priceEbayReg').toFixed(2)}% on buyer total; ${lowEligible?'10p Collectables':'standard'} order fee${$('priceVat').value==='include'?' with VAT cost included':''}.`;
-  }else if(pricePlatform==='vinted'){
-    platformFee=itemPrice*(priceNum('priceVintedFee')/100);
-    label='Vinted';
-    detail=`Seller fee ${priceNum('priceVintedFee').toFixed(2)}%. Buyer Protection is not treated as a seller deduction.`;
-  }else{
-    platformFee=itemPrice*(priceNum('priceCmFee')/100);
-    intlFee=itemPrice*(priceNum('priceCmFx')/100);
-    label='Cardmarket';
-    detail=`Seller fee ${priceNum('priceCmFee').toFixed(2)}% of article value${priceNum('priceCmFx')?` + ${priceNum('priceCmFx').toFixed(2)}% currency conversion`:''}.`;
-  }
+    const vatMult=$('priceVat').value==='include'?1.20:1,fvf=priceNum('priceEbayFvf')/100,reg=priceNum('priceEbayReg')/100;
+    const lowEligible=$('priceLowFee').value==='yes'&&total<=10,orderBase=lowEligible?.10:(total<=10?.30:.40);
+    platformFee=(total*(fvf+reg)+orderBase)*vatMult;adFee=total*(priceNum('priceAdRate')/100)*vatMult;intlFee=total*(priceNum('priceIntl')/100);label='eBay';detail=`FVF ${priceNum('priceEbayFvf').toFixed(2)}% + regulatory ${priceNum('priceEbayReg').toFixed(2)}% on buyer total.`;
+  }else if(pricePlatform==='vinted'){platformFee=itemPrice*(priceNum('priceVintedFee')/100);label='Vinted';detail=`Seller fee ${priceNum('priceVintedFee').toFixed(2)}%.`;}
+  else{platformFee=itemPrice*(priceNum('priceCmFee')/100);intlFee=itemPrice*(priceNum('priceCmFx')/100);label='Cardmarket';detail=`Seller fee ${priceNum('priceCmFee').toFixed(2)}% of article value.`;}
   return {platformFee,adFee,intlFee,totalFees:platformFee+adFee+intlFee,label,detail,buyerTotal:total};
 }
-function priceNetAt(itemPrice){
-  const cost=priceNum('priceCost'), post=priceNum('pricePostCost'), pack=priceNum('pricePack');
-  const f=priceFeeBreakdown(itemPrice);
-  const revenue=itemPrice+priceNum('priceBuyerPost');
-  const net=revenue-cost-post-pack-f.totalFees;
-  return {net,revenue,fees:f.totalFees,...f};
-}
-function priceForCondition(testFn){
-  let lo=0,hi=Math.max(20,priceNum('priceCost')*3+priceNum('pricePostCost')+priceNum('pricePack')+20);
-  for(let i=0;i<30 && !testFn(hi);i++)hi*=1.5;
-  for(let i=0;i<70;i++){const mid=(lo+hi)/2;if(testFn(mid))hi=mid;else lo=mid}
-  return priceCeil99(hi);
-}
+function priceNetAt(itemPrice,costOverride=null){const cost=costOverride===null?priceNum('priceCost'):Number(costOverride||0),post=priceNum('pricePostCost'),pack=priceNum('pricePack'),f=priceFeeBreakdown(itemPrice),revenue=itemPrice+priceNum('priceBuyerPost');return {net:revenue-cost-post-pack-f.totalFees,revenue,fees:f.totalFees,...f}}
+function pricingMarketAnchor(r){return marketSuggestedPrice(r)||0}
 function priceCalc(){
-  const cost=priceNum('priceCost'), target=priceResaleTarget(cost);
-  const p10=priceForCondition(p=>{const x=priceNetAt(p);return x.revenue>0 && x.net/x.revenue>=.10});
-  const p5=priceForCondition(p=>{const x=priceNetAt(p);return x.revenue>0 && x.net/x.revenue>=.05});
-  const p3=priceForCondition(p=>priceNetAt(p).net>=3);
-  const suggested=priceCeil99(Math.max(target.sale,p10,p3));
-  const r=priceNetAt(suggested), roi=cost?r.net/cost*100:0, margin=r.revenue?r.net/r.revenue*100:0;
+  const cost=priceNum('priceCost'),market=priceNum('priceMarketValue');
+  const suggested=priceCeil99(market>0?market:Math.max(cost/.65,cost+priceNum('pricePostCost')+priceNum('pricePack')+5));
+  const r=priceNetAt(suggested),roi=cost?r.net/cost*100:0,margin=r.revenue?r.net/r.revenue*100:0;
   lastSuggestedPrice=suggested;
-  $('pricePlatformLabel').textContent=r.label.toUpperCase()+' SUGGESTED LIST PRICE';
-  $('priceSuggested').textContent=m(suggested);
+  const ratio=market>0?priceTargetRatioForMarket(market):.65,maxBuy=market*ratio;
+  $('pricePlatformLabel').textContent=r.label.toUpperCase()+' GUIDED SELL PRICE';$('priceSuggested').textContent=m(suggested);
   $('priceProfit').textContent=`Estimated net profit ${m(r.net)} • ${margin.toFixed(1)}% net margin • estimated fees ${m(r.fees)}`;
-  $('priceP5').textContent=m(p5);
-  $('priceP10').textContent=m(p10);
-  $('priceRoi').textContent=roi.toFixed(1)+'%';
-  $('priceResult').style.display='block';
-  $('priceFeeNote').textContent=r.detail+' Guidance only — actual fees can vary by category, seller status, promotions, taxes and transaction details.';
-  ['priceCost','priceBuyerPost','pricePostCost','pricePack','priceEbayFvf','priceEbayReg','priceAdRate','priceIntl','priceVintedFee','priceCmFee','priceCmFx','priceVat','priceLowFee'].forEach(k=>localStorage.setItem('gengrailPricing_'+k,$(k).value));
+  $('priceMaxBuy').textContent=m(maxBuy);$('priceMarketOut').textContent=m(market);$('priceRoi').textContent=roi.toFixed(1)+'%';$('priceResult').style.display='block';
+  const box=$('priceDecisionBox'),word=$('priceDecisionWord'),text=$('priceDecisionText');
+  if(market>0){let decision='PASS',cls='pass',msg=`Buy cost is above Gengrail's target of ${m(maxBuy)} for a ${m(market)} market value.`;if(cost<=maxBuy){decision='BUY';cls='buy';msg=`Buy cost is within the ${m(maxBuy)} target ceiling and projects ${m(r.net)} net profit.`}else if(cost<=maxBuy*1.12){decision='CONSIDER';cls='negotiate';msg=`Close to target. Aim for ${m(maxBuy)} or less before committing.`}box.className='pricing-decision '+cls;box.style.display='block';word.textContent=decision;text.textContent=msg}else box.style.display='none';
+  $('priceFeeNote').textContent=r.detail+' Guidance only — actual fees and realised sale prices can vary.';
+  ['priceCost','priceMarketValue','priceBuyerPost','pricePostCost','pricePack','priceEbayFvf','priceEbayReg','priceAdRate','priceIntl','priceVintedFee','priceCmFee','priceCmFx','priceVat','priceLowFee'].forEach(k=>localStorage.setItem('gengrailPricing_'+k,$(k).value));
 }
-function priceSyncPlatform(){
-  document.querySelectorAll('.pricing-tab').forEach(b=>b.classList.toggle('on',b.dataset.pricePlatform===pricePlatform));
-  const ebay=pricePlatform==='ebay',vinted=pricePlatform==='vinted',cm=pricePlatform==='cardmarket';
-  ['priceEbayFvfWrap','priceEbayRegWrap','priceVatWrap','priceLowWrap','priceAdWrap','priceIntlWrap'].forEach(id=>$(id).style.display=ebay?'block':'none');
-  $('priceVintedWrap').style.display=vinted?'block':'none';
-  $('priceCmWrap').style.display=cm?'block':'none';
-  $('priceCmFxWrap').style.display=cm?'block':'none';
-  localStorage.setItem('gengrailPricingPlatform',pricePlatform);
-  priceCalc();
+function priceSyncPlatform(){document.querySelectorAll('.pricing-tab').forEach(b=>b.classList.toggle('on',b.dataset.pricePlatform===pricePlatform));const ebay=pricePlatform==='ebay',vinted=pricePlatform==='vinted',cm=pricePlatform==='cardmarket';['priceEbayFvfWrap','priceEbayRegWrap','priceVatWrap','priceLowWrap','priceAdWrap','priceIntlWrap'].forEach(id=>$(id).style.display=ebay?'block':'none');$('priceVintedWrap').style.display=vinted?'block':'none';$('priceCmWrap').style.display=cm?'block':'none';$('priceCmFxWrap').style.display=cm?'block':'none';localStorage.setItem('gengrailPricingPlatform',pricePlatform);priceCalc()}
+function pricingAiRender(state='idle',r=null,msg=''){
+ const host=$('pricingAiCard');if(!host)return;if(state==='idle'){host.hidden=true;host.innerHTML='';return}host.hidden=false;
+ if(state==='loading'){host.innerHTML='<div class="ai-recognition-kicker">AI VALUATION</div><div class="ai-recognition-title"><span class="ai-spinner"></span>Recognising card…</div><div class="ai-recognition-sub">Reading identity, verifying the exact card and requesting available market evidence.</div>';return}
+ if(state==='error'){host.innerHTML=`<div class="ai-recognition-kicker">AI VALUATION</div><div class="ai-recognition-title">Could not price this card</div><div class="ai-recognition-sub">${esc(msg||'Try a clearer front photo or enter market value manually.')}</div>`;return}
+ const x=normaliseRecognition(r||{}),diag=recognitionDiagnostics(x),mp=x.marketPricing,market=pricingMarketAnchor(x),gbp=mp?.gbp||{};
+ host.innerHTML=`<div class="ai-recognition-kicker">${x.verified?'VERIFIED AI MATCH':'AI MATCH'} · ${diag.score}%</div><div class="pricing-ai-title">${esc(x.cardName||'Pokémon card')}</div><div class="pricing-ai-meta">${esc(printedCollectorNumber(x)||x.cardNumber||'—')} · ${esc(x.setName||'Unknown set')} · ${esc(x.language||'—')} · ${esc(x.rarity||'—')}</div>${market?`<div class="pricing-ai-market"><div><small>SUGGESTED MARKET VALUE</small><b>${m(market)}</b></div><span>${esc(marketEvidenceLabel(mp))}</span></div><div class="pricing-ai-signals"><span>Trend ${gbp.trend?m(gbp.trend):'—'}</span><span>7d ${gbp.avg7?m(gbp.avg7):'—'}</span><span>30d ${gbp.avg30?m(gbp.avg30):'—'}</span><span>Low ${gbp.low?m(gbp.low):'—'}</span></div>`:'<div class="market-price-note">No reliable automated market price was returned for this exact card. Enter market value manually.</div>'}`;
 }
-function priceLoadStock(){
-  const p=db.purchases.find(x=>x.id===$('priceStock').value);
-  if(p)$('priceCost').value=uc(p).toFixed(2);
-  priceCalc();
+async function pricingRecogniseFile(file){
+ if(!file)return;pricingAiRender('loading');
+ try{const image=await fileToRecognitionDataURL(file,1200,.80);const c=new AbortController(),t=setTimeout(()=>c.abort(),30000);let res;try{res=await fetch(aiEndpoint()+'/api/recognise-card',{method:'POST',mode:'cors',credentials:'omit',cache:'no-store',signal:c.signal,headers:{'content-type':'text/plain;charset=UTF-8','accept':'application/json'},body:JSON.stringify({image,scope:'pokemon_raw_single',recognitionVersion:3,requestedFields:['cardName','cardNumber','language','setName','setCode','rarity','illustrator'],requireFieldConfidence:true})})}finally{clearTimeout(t)}let d=null;try{d=await res.json()}catch{}if(!res.ok||!d?.ok||!d?.identified||!d?.card?.cardName)throw new Error(d?.message||`Recognition HTTP ${res.status}`);pricingRecognition=normaliseRecognition(d.card);pricingAiRender('match',pricingRecognition);const mv=pricingMarketAnchor(pricingRecognition);if(mv>0)$('priceMarketValue').value=mv.toFixed(2);priceCalc();}
+ catch(e){pricingRecognition=null;pricingAiRender('error',null,e?.name==='AbortError'?'Recognition timed out.':String(e?.message||e))}
 }
-function priceUse(){
-  const p=db.purchases.find(x=>x.id===$('priceStock').value);
-  if(!p)return alert('Select a stock item first to write the price back to Stock.');
-  if(!lastSuggestedPrice)priceCalc();
-  p.listPrice=lastSuggestedPrice;
-  save();
-  alert(`${p.name} target / eBay list price updated to ${m(lastSuggestedPrice)}.`);
-}
-function priceCheckDeal(){
-  const ask=priceNum('dealAsk'),mv=priceNum('dealMarket');
-  if(mv<=0)return alert('Enter a realistic market value.');
-  const ratio=priceTargetRatioForMarket(mv),targetBuy=mv*ratio,stretchBuy=mv*Math.min(ratio+.10,.87);
-  let decision,cls,msg;
-  if(ask<=targetBuy){decision='BUY';cls='buy';msg=`Target buy price is ${m(targetBuy)} or less. This asking price is ${((ask/mv)*100).toFixed(1)}% of market value.`}
-  else if(ask<=stretchBuy){decision='NEGOTIATE';cls='negotiate';msg=`Try to get the seller toward ${m(targetBuy)}. Current ask is ${((ask/mv)*100).toFixed(1)}% of market value.`}
-  else{decision='PASS';cls='pass';msg=`The ask is too close to market value for the margin rules. Target about ${m(targetBuy)} or below.`}
-  const box=$('dealBox');box.className='pricing-decision '+cls;box.style.display='block';$('dealWord').textContent=decision;$('dealText').textContent=msg;
-  localStorage.setItem('gengrailPricing_dealAsk',$('dealAsk').value);localStorage.setItem('gengrailPricing_dealMarket',$('dealMarket').value);
-}
+function pricingAiClear(){pricingRecognition=null;if($('pricingAiPhoto'))$('pricingAiPhoto').value='';if($('priceMarketValue'))$('priceMarketValue').value='0';pricingAiRender('idle');priceCalc()}
 if($('priceCalcBtn')){
-  ['priceCost','priceBuyerPost','pricePostCost','pricePack','priceEbayFvf','priceEbayReg','priceAdRate','priceIntl','priceVintedFee','priceCmFee','priceCmFx','priceVat','priceLowFee'].forEach(k=>{
-    const v=localStorage.getItem('gengrailPricing_'+k);if(v!==null)$(k).value=v;
-  });
-  const da=localStorage.getItem('gengrailPricing_dealAsk'),dm=localStorage.getItem('gengrailPricing_dealMarket');
-  if(da!==null)$('dealAsk').value=da;if(dm!==null)$('dealMarket').value=dm;
-  document.querySelectorAll('.pricing-tab').forEach(btn=>btn.onclick=()=>{pricePlatform=btn.dataset.pricePlatform;priceSyncPlatform()});
-  $('priceCalcBtn').onclick=priceCalc;$('priceStock').onchange=priceLoadStock;$('priceUseBtn').onclick=priceUse;$('dealBtn').onclick=priceCheckDeal;
-  priceSyncPlatform();
+ ['priceCost','priceMarketValue','priceBuyerPost','pricePostCost','pricePack','priceEbayFvf','priceEbayReg','priceAdRate','priceIntl','priceVintedFee','priceCmFee','priceCmFx','priceVat','priceLowFee'].forEach(k=>{const v=localStorage.getItem('gengrailPricing_'+k);if(v!==null&&$(k))$(k).value=v});
+ document.querySelectorAll('.pricing-tab').forEach(btn=>btn.onclick=()=>{pricePlatform=btn.dataset.pricePlatform;priceSyncPlatform()});
+ $('priceCalcBtn').onclick=priceCalc;$('pricingAiPhoto').onchange=e=>pricingRecogniseFile(e.target.files?.[0]);$('pricingAiClear').onclick=pricingAiClear;
+ ['priceCost','priceMarketValue','priceBuyerPost','pricePostCost','pricePack'].forEach(id=>$(id).addEventListener('input',priceCalc));priceSyncPlatform();
 }
-
 
 /* ==========================
    GENGRAIL OPPORTUNITY FINDER
