@@ -1,14 +1,8 @@
-Gengrail Business Log v19.16.0 — Pricing Calculator AI Refactor
+Gengrail Business Log v19.17.0 — Pricing Economics + Postage Profiles
 
-Major changes
-- Pricing Calculator is now the home for AI card recognition and market valuation.
-- Scan/import a raw Pokémon single directly inside Pricing Calculator.
-- Verified card identity and market evidence are shown compactly without the stock-intake form.
-- Market value auto-populates when reliable pricing is available, but remains editable.
-- Calculator now shows guided sell price, maximum target buy price, estimated profit, ROI and BUY / CONSIDER / PASS guidance.
-- Removed stock write-back / listing-style actions from Pricing Calculator.
-- Opportunity Finder remains a separate buying-opportunity module; live eBay feed is not part of this frontend release.
-- Service worker cache bumped to v19.16.0.
-
-Backend dependency
-- For improved English exact-card pricing (including Evolving Skies-style cases), deploy Gengrail Card AI v1.7.0 before this frontend.
+- Pricing Calculator now calculates recommended buy price and maximum buy price from verified market value, platform fees, postage, packaging, target margin, ROI, minimum profit and a safety buffer.
+- Added shared Gengrail postage profiles with editable Royal Mail cost assumptions.
+- AI-recognised raw singles automatically receive a recommended postage profile based on market value; users can override it.
+- eBay listing module can map each Gengrail postage profile to a synced eBay fulfilment policy and applies that policy when preparing an offer.
+- Pricing Calculator remains valuation-only: no listing actions are added.
+- Opportunity Finder remains a separate future live eBay deal stream.

@@ -8,7 +8,7 @@
 <meta content="Gengrail TCG" name="apple-mobile-web-app-title"/>
 <link href="manifest.json" rel="manifest"/>
 <link href="icon-512.png" rel="apple-touch-icon" sizes="512x512"/><title>Gengrail TCG Business Log</title>
-<meta content="v19.16.0-inline-pricing-flow" name="gengrail-build"/>
+<meta content="v19.17.0-inline-pricing-flow" name="gengrail-build"/>
 <style>
 /* GENGRAIL CROWN-GOLD ACTIVE TABS */
 
@@ -1054,6 +1054,8 @@ body.inner-page .kpi,
 
 
 .pricing-ai-tools{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}.pricing-ai-card{border:1px solid var(--line,#333);border-radius:16px;padding:14px;margin-bottom:12px;background:rgba(255,255,255,.025)}.pricing-ai-title{font-size:1.15rem;font-weight:800;margin-top:4px}.pricing-ai-meta{opacity:.78;margin-top:4px}.pricing-ai-market{display:flex;align-items:end;justify-content:space-between;gap:12px;margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,.08)}.pricing-ai-market small{display:block;opacity:.7}.pricing-ai-market b{font-size:1.65rem}.pricing-ai-market span{font-size:.75rem;font-weight:800;opacity:.8}.pricing-ai-signals{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.pricing-ai-signals span{padding:6px 8px;border:1px solid rgba(255,255,255,.08);border-radius:999px;font-size:.78rem;opacity:.82}
+
+.postage-profile-summary{margin:10px 0 14px;padding:12px;border:1px solid #34563e;border-radius:12px;background:#0b120d;color:#d9e9de}.postage-profile-summary b{color:#82dda0}.postage-profile-summary .pps-row{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}.postage-profile-summary small{color:#91a397}.pricing-stats-4{grid-template-columns:repeat(4,1fr)}.pricing-stat.emphasis{border-color:#7a5b13;background:#181205}.pricing-stat.emphasis b{color:#f2c84b}.postage-settings-grid{display:grid;gap:10px;margin-top:12px}.postage-setting{border:1px solid #303030;border-radius:12px;padding:12px;background:#0b0b0b}.postage-setting h4{margin:0 0 8px;color:#82dda0}.postage-setting .grid{margin-top:0}@media(max-width:700px){.pricing-stats-4{grid-template-columns:1fr 1fr}}
 </style>
 <link href="gengrail-theme.css" rel="stylesheet"/>
 <link href="gengrail-gold-tabs.css" rel="stylesheet"/>
@@ -1221,6 +1223,10 @@ body.inner-page .kpi,
 <div class="note" style="margin-top:0">Raw Pokémon singles only in this release. Recognition runs through a private Cloudflare Workers AI endpoint; no AI credential is stored in the app.</div>
 <div class="grid" style="margin-top:12px"><div class="full"><label>Recognition backend URL</label><input id="aiRecognitionEndpoint" placeholder="https://gengrail-card-ai.gengrailtcg.workers.dev"/></div></div>
 <div class="actions"><button class="btn alt" id="testAiRecognition" type="button">TEST AI CONNECTION</button></div><div class="ai-settings-status" id="aiRecognitionStatus">Not tested yet.</div></div>
+<div class="panel"><div class="title">POSTAGE PROFILES</div>
+<div class="note" style="margin-top:0">Shared fulfilment assumptions used by Pricing Calculator and eBay listing preparation. Gengrail chooses a profile by item type/value; all costs remain editable.</div>
+<div id="postageProfileSettings" class="postage-settings-grid"></div>
+<div class="actions"><button class="btn alt" id="resetPostageProfiles" type="button">RESET POSTAGE DEFAULTS</button></div></div>
 <div class="panel"><div class="title">BACKUP &amp; EXPORT</div><div class="actions"><button class="btn alt" id="csv">EXPORT CSV</button><button class="btn alt" id="json">BACKUP JSON</button><label class="btn alt">RESTORE JSON<input accept=".json" id="imp" style="display:none" type="file"/></label><button class="btn red" id="wipe">ERASE ALL</button></div><div class="note"><b>Protect the business data.</b> Core records are stored locally in this browser/device, so create a JSON backup before major app updates and regularly during normal use. Product photos remain in dedicated on-device photo storage and are not included in the JSON backup.</div></div>
 <div class="panel"><div class="title">APP DATA</div><div class="note">Export CSV creates a readable business-data export. Backup JSON is the portable, restorable Gengrail backup and also includes supported app preferences and eBay module data. <b>Automatic Safety Vault:</b> Gengrail now also maintains an independent last-good database copy in IndexedDB on this device. If an app update ever opens with its main local database missing, Gengrail checks this vault before allowing an empty database to become the new state. Product photos remain in their dedicated IndexedDB store. ERASE ALL remains a deliberate destructive action and does not overwrite the last-good safety vault.</div></div>
 <section class="sec" id="pricing">
@@ -1237,28 +1243,41 @@ body.inner-page .kpi,
 <button class="pricing-tab" data-price-platform="vinted" type="button">Vinted</button>
 <button class="pricing-tab" data-price-platform="cardmarket" type="button">Cardmarket</button>
 </div>
-<div class="grid">
+<div class="grid pricing-core-grid">
 <div><label>Your buy cost (£)</label><input id="priceCost" inputmode="decimal" min="0" step=".01" type="number" value="10"/></div>
-<div><label>Market value (£)</label><input id="priceMarketValue" inputmode="decimal" min="0" step=".01" type="number" value="0"/></div>
-<div><label>Buyer postage charged (£)</label><input id="priceBuyerPost" inputmode="decimal" min="0" step=".01" type="number" value="0"/></div>
-<div><label>Your actual postage cost (£)</label><input id="pricePostCost" inputmode="decimal" min="0" step=".01" type="number" value="1.55"/></div>
-<div><label>Packaging cost (£)</label><input id="pricePack" inputmode="decimal" min="0" step=".01" type="number" value=".30"/></div>
+<div><label>Verified market value (£)</label><input id="priceMarketValue" inputmode="decimal" min="0" step=".01" type="number" value="0"/></div>
+<div class="full"><label>Recommended delivery profile</label><select id="pricePostageProfile"></select></div>
 </div>
+<div class="postage-profile-summary" id="pricePostageSummary"></div>
 <button class="btn" id="priceCalcBtn" type="button">CALCULATE</button>
 <div class="pricing-result" id="priceResult">
 <div class="pricing-hero">
-<small id="pricePlatformLabel">SUGGESTED SELL PRICE</small>
+<small id="pricePlatformLabel">GUIDED SELL PRICE</small>
 <div class="pricing-price" id="priceSuggested">£0.00</div>
 <div class="pricing-profit" id="priceProfit">Estimated net profit £0.00</div>
 </div>
-<div class="pricing-stats">
+<div class="pricing-stats pricing-stats-4">
+<div class="pricing-stat emphasis"><span>RECOMMENDED BUY</span><b id="priceRecommendedBuy">£0.00</b></div>
 <div class="pricing-stat"><span>MAX BUY @ TARGET</span><b id="priceMaxBuy">£0.00</b></div>
-<div class="pricing-stat"><span>MARKET VALUE</span><b id="priceMarketOut">£0.00</b></div>
 <div class="pricing-stat"><span>EST. ROI</span><b id="priceRoi">0%</b></div>
+<div class="pricing-stat"><span>NET MARGIN</span><b id="priceMargin">0%</b></div>
 </div>
 <div class="pricing-decision" id="priceDecisionBox" style="display:none"><div class="word" id="priceDecisionWord"></div><div id="priceDecisionText"></div></div>
 </div>
 <details style="margin-top:14px">
+<summary>Buying & fulfilment assumptions</summary>
+<div class="grid" style="margin-top:10px">
+<div><label>Target net margin %</label><input id="priceTargetMargin" min="0" max="95" step="1" type="number" value="25"/></div>
+<div><label>Minimum ROI %</label><input id="priceTargetRoi" min="0" step="1" type="number" value="30"/></div>
+<div><label>Minimum profit (£)</label><input id="priceMinProfit" min="0" step=".50" type="number" value="5"/></div>
+<div><label>Recommended-buy safety buffer %</label><input id="priceSafetyBuffer" min="0" max="50" step="1" type="number" value="10"/></div>
+<div><label>Buyer postage charged (£)</label><input id="priceBuyerPost" inputmode="decimal" min="0" step=".01" type="number" value="1.55"/></div>
+<div><label>Your actual postage cost (£)</label><input id="pricePostCost" inputmode="decimal" min="0" step=".01" type="number" value="1.55"/></div>
+<div><label>Packaging cost (£)</label><input id="pricePack" inputmode="decimal" min="0" step=".01" type="number" value=".30"/></div>
+</div>
+<div class="note">Gengrail selects a delivery profile deterministically from item type and value. You can override it at any time. Royal Mail costs are editable assumptions, not hard-coded listing promises.</div>
+</details>
+<details style="margin-top:10px">
 <summary>Advanced platform fee settings</summary>
 <div class="grid" style="margin-top:10px">
 <div id="priceEbayFvfWrap"><label>eBay Final Value Fee %</label><input id="priceEbayFvf" step=".01" type="number" value="10.90"/></div>
@@ -2620,7 +2639,22 @@ let pricingRecognition=null;
 
 function priceNum(id){return Math.max(0,Number($(id)?.value)||0)}
 function priceCeil99(v){if(!isFinite(v)||v<0)return 0;let w=Math.floor(v),c=w+.99;if(c<v-1e-9)c++;return Math.round(c*100)/100}
-function priceTargetRatioForMarket(mv){if(mv<25)return .55;if(mv<100)return .65;if(mv<250)return .70;return .775}
+const POSTAGE_PROFILE_KEY='gengrailPostageProfilesV1';
+const POSTAGE_DEFAULTS=[
+ {id:'raw_standard',name:'Raw Single · Standard',service:'Royal Mail 2nd Class Large Letter',postCost:1.55,packCost:.30,buyerPost:1.55,minValue:0,maxValue:19.99,category:'raw'},
+ {id:'raw_tracked48',name:'Raw Single · Tracked',service:'Royal Mail Tracked 48 Large Letter',postCost:2.85,packCost:.30,buyerPost:2.85,minValue:20,maxValue:99.99,category:'raw'},
+ {id:'raw_tracked24',name:'Raw Single · Premium Tracked',service:'Royal Mail Tracked 24 Large Letter',postCost:3.80,packCost:.30,buyerPost:3.80,minValue:100,maxValue:999999,category:'raw'},
+ {id:'slab_tracked48',name:'Graded Slab · Tracked',service:'Royal Mail Tracked 48 Small Parcel',postCost:3.65,packCost:.30,buyerPost:3.65,minValue:0,maxValue:999999,category:'slab'}
+];
+function postageProfiles(){try{const p=JSON.parse(localStorage.getItem(POSTAGE_PROFILE_KEY)||'null');if(Array.isArray(p)&&p.length)return p}catch{}return POSTAGE_DEFAULTS.map(x=>({...x}))}
+function savePostageProfiles(rows){localStorage.setItem(POSTAGE_PROFILE_KEY,JSON.stringify(rows));window.dispatchEvent(new CustomEvent('gengrail:postage-updated',{detail:{profiles:rows}}))}
+function postageAutoSelect({category='Raw Single',value=0}={}){const rows=postageProfiles(),cat=/graded|slab/i.test(category)?'slab':'raw';return rows.find(x=>x.category===cat&&Number(value)>=Number(x.minValue||0)&&Number(value)<=Number(x.maxValue??999999))||rows.find(x=>x.category===cat)||rows[0]}
+function postageById(id){return postageProfiles().find(x=>x.id===id)||postageProfiles()[0]}
+window.GengrailPostage={profiles:postageProfiles,autoSelect:postageAutoSelect,byId:postageById,save:savePostageProfiles};
+function renderPostageProfileSettings(){const host=$('postageProfileSettings');if(!host)return;const rows=postageProfiles();host.innerHTML=rows.map((x,i)=>`<div class="postage-setting" data-postage-index="${i}"><h4>${esc(x.name)}</h4><div class="grid"><div class="full"><label>Service label</label><input data-pf="service" value="${esc(x.service)}"></div><div><label>Your postage cost (£)</label><input data-pf="postCost" type="number" min="0" step=".01" value="${Number(x.postCost).toFixed(2)}"></div><div><label>Packaging (£)</label><input data-pf="packCost" type="number" min="0" step=".01" value="${Number(x.packCost).toFixed(2)}"></div><div><label>Buyer postage (£)</label><input data-pf="buyerPost" type="number" min="0" step=".01" value="${Number(x.buyerPost).toFixed(2)}"></div><div><label>Auto from value (£)</label><input data-pf="minValue" type="number" min="0" step=".01" value="${Number(x.minValue).toFixed(2)}"></div><div><label>Auto to value (£)</label><input data-pf="maxValue" type="number" min="0" step=".01" value="${Number(x.maxValue).toFixed(2)}"></div></div></div>`).join('');host.querySelectorAll('input').forEach(inp=>inp.addEventListener('change',()=>{const idx=Number(inp.closest('[data-postage-index]').dataset.postageIndex),all=postageProfiles(),k=inp.dataset.pf;all[idx][k]=k==='service'?inp.value:Number(inp.value||0);savePostageProfiles(all);pricePopulatePostageProfiles();priceCalc()}))}
+function pricePopulatePostageProfiles(forceAuto=false){const sel=$('pricePostageProfile');if(!sel)return;const rows=postageProfiles(),market=priceNum('priceMarketValue'),auto=postageAutoSelect({category:'Raw Single',value:market});const previous=sel.value;sel.innerHTML=rows.map(x=>`<option value="${esc(x.id)}">${esc(x.name)} — ${esc(x.service)}</option>`).join('');sel.value=(!forceAuto&&previous&&rows.some(x=>x.id===previous))?previous:auto.id;if(!sel.value)sel.value=rows[0]?.id||'';if(forceAuto||!previous)priceApplyPostageProfile(sel.value)}
+function priceApplyPostageProfile(id){const p=postageById(id);if(!p)return;$('pricePostCost').value=Number(p.postCost||0).toFixed(2);$('pricePack').value=Number(p.packCost||0).toFixed(2);$('priceBuyerPost').value=Number(p.buyerPost||0).toFixed(2);priceRenderPostageSummary(p)}
+function priceRenderPostageSummary(p=postageById($('pricePostageProfile')?.value)){const h=$('pricePostageSummary');if(!h||!p)return;h.innerHTML=`<div class="pps-row"><div><small>DELIVERY METHOD</small><br><b>${esc(p.service)}</b></div><div><small>YOUR FULFILMENT COST</small><br><b>${m(Number(p.postCost||0)+Number(p.packCost||0))}</b></div></div><small>Postage ${m(p.postCost)} · packaging ${m(p.packCost)} · buyer postage assumption ${m(p.buyerPost)}</small>`}
 function priceFeeBreakdown(itemPrice){
   const buyerPost=priceNum('priceBuyerPost'), total=itemPrice+buyerPost;let platformFee=0,adFee=0,intlFee=0,label='',detail='';
   if(pricePlatform==='ebay'){
@@ -2631,21 +2665,25 @@ function priceFeeBreakdown(itemPrice){
   else{platformFee=itemPrice*(priceNum('priceCmFee')/100);intlFee=itemPrice*(priceNum('priceCmFx')/100);label='Cardmarket';detail=`Seller fee ${priceNum('priceCmFee').toFixed(2)}% of article value.`;}
   return {platformFee,adFee,intlFee,totalFees:platformFee+adFee+intlFee,label,detail,buyerTotal:total};
 }
-function priceNetAt(itemPrice,costOverride=null){const cost=costOverride===null?priceNum('priceCost'):Number(costOverride||0),post=priceNum('pricePostCost'),pack=priceNum('pricePack'),f=priceFeeBreakdown(itemPrice),revenue=itemPrice+priceNum('priceBuyerPost');return {net:revenue-cost-post-pack-f.totalFees,revenue,fees:f.totalFees,...f}}
+function priceNetAt(itemPrice,costOverride=null){const cost=costOverride===null?priceNum('priceCost'):Number(costOverride||0),post=priceNum('pricePostCost'),pack=priceNum('pricePack'),f=priceFeeBreakdown(itemPrice),revenue=itemPrice+priceNum('priceBuyerPost');return {net:revenue-cost-post-pack-f.totalFees,revenue,fees:f.totalFees,preCogs:revenue-post-pack-f.totalFees,...f}}
 function pricingMarketAnchor(r){return marketSuggestedPrice(r)||0}
 function priceCalc(){
   const cost=priceNum('priceCost'),market=priceNum('priceMarketValue');
   const suggested=priceCeil99(market>0?market:Math.max(cost/.65,cost+priceNum('pricePostCost')+priceNum('pricePack')+5));
   const r=priceNetAt(suggested),roi=cost?r.net/cost*100:0,margin=r.revenue?r.net/r.revenue*100:0;
+  const targetMargin=priceNum('priceTargetMargin')/100,targetRoi=priceNum('priceTargetRoi')/100,minProfit=priceNum('priceMinProfit'),buffer=Math.min(.5,priceNum('priceSafetyBuffer')/100);
+  const maxByMargin=r.preCogs-(targetMargin*r.revenue),maxByRoi=targetRoi>=0?r.preCogs/(1+targetRoi):r.preCogs,maxByProfit=r.preCogs-minProfit;
+  const maxBuy=Math.max(0,Math.min(maxByMargin,maxByRoi,maxByProfit));
+  const recommendedBuy=Math.max(0,maxBuy*(1-buffer));
   lastSuggestedPrice=suggested;
-  const ratio=market>0?priceTargetRatioForMarket(market):.65,maxBuy=market*ratio;
   $('pricePlatformLabel').textContent=r.label.toUpperCase()+' GUIDED SELL PRICE';$('priceSuggested').textContent=m(suggested);
-  $('priceProfit').textContent=`Estimated net profit ${m(r.net)} • ${margin.toFixed(1)}% net margin • estimated fees ${m(r.fees)}`;
-  $('priceMaxBuy').textContent=m(maxBuy);$('priceMarketOut').textContent=m(market);$('priceRoi').textContent=roi.toFixed(1)+'%';$('priceResult').style.display='block';
+  $('priceProfit').textContent=`At your entered buy cost: ${m(r.net)} net profit · ${margin.toFixed(1)}% margin · estimated fees ${m(r.fees)}`;
+  $('priceRecommendedBuy').textContent=m(recommendedBuy);$('priceMaxBuy').textContent=m(maxBuy);$('priceRoi').textContent=roi.toFixed(1)+'%';$('priceMargin').textContent=margin.toFixed(1)+'%';$('priceResult').style.display='block';
   const box=$('priceDecisionBox'),word=$('priceDecisionWord'),text=$('priceDecisionText');
-  if(market>0){let decision='PASS',cls='pass',msg=`Buy cost is above Gengrail's target of ${m(maxBuy)} for a ${m(market)} market value.`;if(cost<=maxBuy){decision='BUY';cls='buy';msg=`Buy cost is within the ${m(maxBuy)} target ceiling and projects ${m(r.net)} net profit.`}else if(cost<=maxBuy*1.12){decision='CONSIDER';cls='negotiate';msg=`Close to target. Aim for ${m(maxBuy)} or less before committing.`}box.className='pricing-decision '+cls;box.style.display='block';word.textContent=decision;text.textContent=msg}else box.style.display='none';
-  $('priceFeeNote').textContent=r.detail+' Guidance only — actual fees and realised sale prices can vary.';
-  ['priceCost','priceMarketValue','priceBuyerPost','pricePostCost','pricePack','priceEbayFvf','priceEbayReg','priceAdRate','priceIntl','priceVintedFee','priceCmFee','priceCmFx','priceVat','priceLowFee'].forEach(k=>localStorage.setItem('gengrailPricing_'+k,$(k).value));
+  if(market>0){let decision='PASS',cls='pass',msg=`Entered buy cost is above the ${m(maxBuy)} maximum that preserves your current targets.`;if(cost<=recommendedBuy){decision='BUY';cls='buy';msg=`Within Gengrail's ${m(recommendedBuy)} recommended buy price, including the ${Math.round(buffer*100)}% safety buffer.`}else if(cost<=maxBuy){decision='CONSIDER';cls='negotiate';msg=`Profitable at target, but above the buffered recommendation. Maximum target buy is ${m(maxBuy)}.`}box.className='pricing-decision '+cls;box.style.display='block';word.textContent=decision;text.textContent=msg}else box.style.display='none';
+  $('priceFeeNote').textContent=r.detail+' Recommended buy price also includes postage, packaging, target margin, ROI, minimum profit and your safety buffer.';
+  priceRenderPostageSummary();
+  ['priceCost','priceMarketValue','priceBuyerPost','pricePostCost','pricePack','priceTargetMargin','priceTargetRoi','priceMinProfit','priceSafetyBuffer','priceEbayFvf','priceEbayReg','priceAdRate','priceIntl','priceVintedFee','priceCmFee','priceCmFx','priceVat','priceLowFee'].forEach(k=>localStorage.setItem('gengrailPricing_'+k,$(k).value));
 }
 function priceSyncPlatform(){document.querySelectorAll('.pricing-tab').forEach(b=>b.classList.toggle('on',b.dataset.pricePlatform===pricePlatform));const ebay=pricePlatform==='ebay',vinted=pricePlatform==='vinted',cm=pricePlatform==='cardmarket';['priceEbayFvfWrap','priceEbayRegWrap','priceVatWrap','priceLowWrap','priceAdWrap','priceIntlWrap'].forEach(id=>$(id).style.display=ebay?'block':'none');$('priceVintedWrap').style.display=vinted?'block':'none';$('priceCmWrap').style.display=cm?'block':'none';$('priceCmFxWrap').style.display=cm?'block':'none';localStorage.setItem('gengrailPricingPlatform',pricePlatform);priceCalc()}
 function pricingAiRender(state='idle',r=null,msg=''){
@@ -2657,15 +2695,18 @@ function pricingAiRender(state='idle',r=null,msg=''){
 }
 async function pricingRecogniseFile(file){
  if(!file)return;pricingAiRender('loading');
- try{const image=await fileToRecognitionDataURL(file,1200,.80);const c=new AbortController(),t=setTimeout(()=>c.abort(),30000);let res;try{res=await fetch(aiEndpoint()+'/api/recognise-card',{method:'POST',mode:'cors',credentials:'omit',cache:'no-store',signal:c.signal,headers:{'content-type':'text/plain;charset=UTF-8','accept':'application/json'},body:JSON.stringify({image,scope:'pokemon_raw_single',recognitionVersion:3,requestedFields:['cardName','cardNumber','language','setName','setCode','rarity','illustrator'],requireFieldConfidence:true})})}finally{clearTimeout(t)}let d=null;try{d=await res.json()}catch{}if(!res.ok||!d?.ok||!d?.identified||!d?.card?.cardName)throw new Error(d?.message||`Recognition HTTP ${res.status}`);pricingRecognition=normaliseRecognition(d.card);pricingAiRender('match',pricingRecognition);const mv=pricingMarketAnchor(pricingRecognition);if(mv>0)$('priceMarketValue').value=mv.toFixed(2);priceCalc();}
+ try{const image=await fileToRecognitionDataURL(file,1200,.80);const c=new AbortController(),t=setTimeout(()=>c.abort(),30000);let res;try{res=await fetch(aiEndpoint()+'/api/recognise-card',{method:'POST',mode:'cors',credentials:'omit',cache:'no-store',signal:c.signal,headers:{'content-type':'text/plain;charset=UTF-8','accept':'application/json'},body:JSON.stringify({image,scope:'pokemon_raw_single',recognitionVersion:3,requestedFields:['cardName','cardNumber','language','setName','setCode','rarity','illustrator'],requireFieldConfidence:true})})}finally{clearTimeout(t)}let d=null;try{d=await res.json()}catch{}if(!res.ok||!d?.ok||!d?.identified||!d?.card?.cardName)throw new Error(d?.message||`Recognition HTTP ${res.status}`);pricingRecognition=normaliseRecognition(d.card);pricingAiRender('match',pricingRecognition);const mv=pricingMarketAnchor(pricingRecognition);if(mv>0)$('priceMarketValue').value=mv.toFixed(2);pricePopulatePostageProfiles(true);priceCalc();}
  catch(e){pricingRecognition=null;pricingAiRender('error',null,e?.name==='AbortError'?'Recognition timed out.':String(e?.message||e))}
 }
 function pricingAiClear(){pricingRecognition=null;if($('pricingAiPhoto'))$('pricingAiPhoto').value='';if($('priceMarketValue'))$('priceMarketValue').value='0';pricingAiRender('idle');priceCalc()}
 if($('priceCalcBtn')){
- ['priceCost','priceMarketValue','priceBuyerPost','pricePostCost','pricePack','priceEbayFvf','priceEbayReg','priceAdRate','priceIntl','priceVintedFee','priceCmFee','priceCmFx','priceVat','priceLowFee'].forEach(k=>{const v=localStorage.getItem('gengrailPricing_'+k);if(v!==null&&$(k))$(k).value=v});
+ ['priceCost','priceMarketValue','priceBuyerPost','pricePostCost','pricePack','priceTargetMargin','priceTargetRoi','priceMinProfit','priceSafetyBuffer','priceEbayFvf','priceEbayReg','priceAdRate','priceIntl','priceVintedFee','priceCmFee','priceCmFx','priceVat','priceLowFee'].forEach(k=>{const v=localStorage.getItem('gengrailPricing_'+k);if(v!==null&&$(k))$(k).value=v});
+ renderPostageProfileSettings();pricePopulatePostageProfiles(false);
  document.querySelectorAll('.pricing-tab').forEach(btn=>btn.onclick=()=>{pricePlatform=btn.dataset.pricePlatform;priceSyncPlatform()});
  $('priceCalcBtn').onclick=priceCalc;$('pricingAiPhoto').onchange=e=>pricingRecogniseFile(e.target.files?.[0]);$('pricingAiClear').onclick=pricingAiClear;
- ['priceCost','priceMarketValue','priceBuyerPost','pricePostCost','pricePack'].forEach(id=>$(id).addEventListener('input',priceCalc));priceSyncPlatform();
+ $('pricePostageProfile').onchange=()=>{priceApplyPostageProfile($('pricePostageProfile').value);priceCalc()};
+ $('resetPostageProfiles').onclick=()=>{if(confirm('Reset Gengrail postage profiles to the current default assumptions?')){localStorage.removeItem(POSTAGE_PROFILE_KEY);renderPostageProfileSettings();pricePopulatePostageProfiles(true);priceCalc()}};
+ ['priceCost','priceMarketValue','priceBuyerPost','pricePostCost','pricePack','priceTargetMargin','priceTargetRoi','priceMinProfit','priceSafetyBuffer'].forEach(id=>$(id).addEventListener('input',priceCalc));priceSyncPlatform();
 }
 
 /* ==========================
