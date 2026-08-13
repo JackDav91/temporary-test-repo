@@ -8,7 +8,7 @@
 <meta content="Gengrail TCG" name="apple-mobile-web-app-title"/>
 <link href="manifest.json" rel="manifest"/>
 <link href="icon-512.png" rel="apple-touch-icon" sizes="512x512"/><title>Gengrail TCG Business Log</title>
-<meta content="v19.17.0-inline-pricing-flow" name="gengrail-build"/>
+<meta content="v19.17.1-pricing-page-fix" name="gengrail-build"/>
 <style>
 /* GENGRAIL CROWN-GOLD ACTIVE TABS */
 
@@ -1229,6 +1229,7 @@ body.inner-page .kpi,
 <div class="actions"><button class="btn alt" id="resetPostageProfiles" type="button">RESET POSTAGE DEFAULTS</button></div></div>
 <div class="panel"><div class="title">BACKUP &amp; EXPORT</div><div class="actions"><button class="btn alt" id="csv">EXPORT CSV</button><button class="btn alt" id="json">BACKUP JSON</button><label class="btn alt">RESTORE JSON<input accept=".json" id="imp" style="display:none" type="file"/></label><button class="btn red" id="wipe">ERASE ALL</button></div><div class="note"><b>Protect the business data.</b> Core records are stored locally in this browser/device, so create a JSON backup before major app updates and regularly during normal use. Product photos remain in dedicated on-device photo storage and are not included in the JSON backup.</div></div>
 <div class="panel"><div class="title">APP DATA</div><div class="note">Export CSV creates a readable business-data export. Backup JSON is the portable, restorable Gengrail backup and also includes supported app preferences and eBay module data. <b>Automatic Safety Vault:</b> Gengrail now also maintains an independent last-good database copy in IndexedDB on this device. If an app update ever opens with its main local database missing, Gengrail checks this vault before allowing an empty database to become the new state. Product photos remain in their dedicated IndexedDB store. ERASE ALL remains a deliberate destructive action and does not overwrite the last-good safety vault.</div></div>
+</section>
 <section class="sec" id="pricing">
 <div class="panel">
 <div class="title">PRICING CALCULATOR</div>
