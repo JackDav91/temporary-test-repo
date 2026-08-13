@@ -8,7 +8,7 @@
 <meta content="Gengrail TCG" name="apple-mobile-web-app-title"/>
 <link href="manifest.json" rel="manifest"/>
 <link href="icon-512.png" rel="apple-touch-icon" sizes="512x512"/><title>Gengrail TCG Business Log</title>
-<meta content="v19.14.0-approved-pricing-flow" name="gengrail-build"/>
+<meta content="v19.15.0-inline-pricing-flow" name="gengrail-build"/>
 <style>
 /* GENGRAIL CROWN-GOLD ACTIVE TABS */
 
@@ -1109,8 +1109,8 @@ body.inner-page .kpi,
 <div><label>Purchase date</label><input id="pd" type="date"/></div><div><label>Quantity</label><input id="pq" min="1" type="number" value="1"/></div>
 <div><label>Total buy price (£)</label><input id="pp" step=".01" type="number"/></div><div><label>Source / seller</label><input id="ps"/></div>
 <div><label>Condition</label><select id="pcondition"><option>Ungraded</option><option>Graded</option><option>New</option><option>Used</option></select></div>
-<div><label>SKU</label><input id="psku" placeholder="Auto-generated GEN000001 if blank"/></div>
-<div><label>Purchase / batch ID</label><input id="ppurchaseid" placeholder="Auto-generated PUR000001 if blank"/></div>
+<div><label>SKU</label><input id="psku" placeholder="Auto-generated from permanent SKU ledger if blank"/></div>
+<div><label>Purchase / batch ID</label><input id="ppurchaseid" placeholder="Auto-generated from permanent purchase ledger if blank"/></div>
 <div><label>Storage location</label><select id="plocation"><option value="UNALLOCATED">UNALLOCATED</option></select></div>
 <div><label>Inventory status</label><select id="pstatus"><option value="IN_STOCK">In stock</option><option value="TO_CATALOGUE">To catalogue</option><option value="LISTED">Listed</option></select></div>
 <div><label>Target / eBay list price (£)</label><input id="plist" placeholder="Optional" step=".01" type="number"/></div>
@@ -2078,9 +2078,10 @@ function setAiRecognitionPanel(mode='idle',data=null,message=''){
     <div>${aiFieldHead('RARITY',f.rarity)}<input id="aiReviewRarity" value="${esc(r.rarity||'')}"/></div>
     <div>${aiFieldHead('ILLUSTRATOR',f.illustrator)}<input id="aiReviewIllustrator" value="${esc(r.illustrator||'')}"/></div>
    </div>
-   <div class="ai-diagnostic"><b>${diag.missing?`${diag.missing} field${diag.missing===1?'':'s'} unresolved.`:'All identity fields populated.'}</b> Intake confidence is now calculated from field-level completeness and confidence, so a partial result can no longer display as 100% just because the AI model says it is certain.</div>
-   <div class="ai-review-note">This is a candidate only. Correct anything that looks wrong, then approve it. Approval still does not add anything to Stock.</div>
-   <div class="ai-recognition-actions"><button class="btn alt" type="button" onclick="clearAiRecognition(false)">DISCARD MATCH</button><button class="btn" type="button" onclick="approveAiRecognition()">APPROVE &amp; PREFILL</button></div>`;
+   <div class="ai-diagnostic"><b>${diag.missing?`${diag.missing} field${diag.missing===1?'':'s'} unresolved.`:'All identity fields populated.'}</b> Intake confidence is calculated from field-level completeness and confidence, so a partial result cannot inherit an unrealistic overall model score.</div>
+   ${approvedMarketPricingHtml(r)}
+   <div class="ai-review-note">Review or correct the match above. Choosing the suggested price is optional. Continue Intake approves this match and pre-fills the editable purchase form; nothing is added to Stock until you save it.</div>
+   <div class="ai-approved-actions"><button class="btn alt" type="button" onclick="clearAiRecognition(false)">DISCARD MATCH</button><button class="btn ${Number($('plist')?.value||0)>0?'selected':''}" type="button" onclick="useReviewSuggestedPrice()" ${marketSuggestedPrice(r)?'':'disabled'}>${marketSuggestedPrice(r)?'USE SUGGESTED PRICE':'NO MARKET PRICE'}</button><button class="btn wide" type="button" onclick="approveAndContinueAiRecognition()">CONTINUE INTAKE</button></div>`;
 }
 function readAiReview(){
  const base=pendingRecognition||{};
@@ -2107,6 +2108,28 @@ function approveAiRecognition(){
  if($('pcondition'))$('pcondition').value='Ungraded';
  prepareVerifiedStockIntake(r);
  setAiRecognitionPanel('approved',r);
+}
+function useReviewSuggestedPrice(){
+ const r=normaliseRecognition(readAiReview());
+ const v=marketSuggestedPrice(r);
+ if(!v)return alert('No automated market price is available for this card.');
+ pendingRecognition=r;
+ if($('plist'))$('plist').value=v.toFixed(2);
+ setAiRecognitionPanel('review',pendingRecognition);
+}
+function approveAndContinueAiRecognition(){
+ const r=normaliseRecognition(readAiReview());
+ if(!r.cardName || !r.cardNumber || !r.language)return alert('Card name, card number and language are required before continuing intake. Complete those fields or discard the match and continue manually.');
+ r.reviewDiagnostics=recognitionDiagnostics(r);
+ currentRecognition=r;
+ pendingRecognition=null;
+ const title=titleFromRecognition(r);
+ if(title && $('pn'))$('pn').value=title;
+ if($('pc'))$('pc').value='Raw Single';
+ if($('pcondition'))$('pcondition').value='Ungraded';
+ prepareVerifiedStockIntake(r);
+ setAiRecognitionPanel('approved',r);
+ setTimeout(()=>document.getElementById('pn')?.scrollIntoView({behavior:'smooth',block:'start'}),40);
 }
 function clearAiRecognition(clearFields=true){
  currentRecognition=null;
