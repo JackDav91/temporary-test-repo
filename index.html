@@ -8,7 +8,7 @@
 <meta content="Gengrail TCG" name="apple-mobile-web-app-title"/>
 <link href="manifest.json" rel="manifest"/>
 <link href="icon-512.png" rel="apple-touch-icon" sizes="512x512"/><title>Gengrail TCG Business Log</title>
-<meta content="v19.11.0-recognition-v3" name="gengrail-build"/>
+<meta content="v19.12.0-stock-intake-v1" name="gengrail-build"/>
 <style>
 /* GENGRAIL CROWN-GOLD ACTIVE TABS */
 
@@ -2073,6 +2073,7 @@ function approveAiRecognition(){
  if(title && $('pn'))$('pn').value=title;
  if($('pc'))$('pc').value='Raw Single';
  if($('pcondition'))$('pcondition').value='Ungraded';
+ prepareVerifiedStockIntake(r);
  setAiRecognitionPanel('approved',r);
 }
 function clearAiRecognition(clearFields=true){
@@ -2107,8 +2108,31 @@ function resetRecognitionForNewIntake(){
  pendingCameraFiles=[];
  if($('ppreview'))$('ppreview').innerHTML='';
 }
+function printedCollectorNumber(r){
+ const raw=String(r?.printedCardNumber||r?.visionCardNumber||r?.cardNumber||'').trim();
+ const dbNo=String(r?.cardNumber||'').trim();
+ if(/^\d+\/\d+$/.test(raw) && /^\d+\/\d+$/.test(dbNo)){
+   const [a,b]=raw.split('/'),[da,dbb]=dbNo.split('/');
+   if(Number(a)===Number(da)&&Number(b)===Number(dbb)&&b.length>=dbb.length)return raw;
+ }
+ return raw||dbNo;
+}
 function titleFromRecognition(r){
- return [r?.cardName,r?.cardNumber,r?.setName].filter(Boolean).join(' ').replace(/\s+/g,' ').trim();
+ const no=printedCollectorNumber(r);
+ return [r?.cardName,no,r?.setCode||r?.setName].filter(Boolean).join(' · ').replace(/\s+/g,' ').trim();
+}
+function prepareVerifiedStockIntake(r){
+ const sku=nextSku(),purchaseId=nextPurchaseId();
+ if($('psku'))$('psku').value=sku;
+ if($('ppurchaseid'))$('ppurchaseid').value=purchaseId;
+ if($('pd')&&!$('pd').value)$('pd').value=new Date().toISOString().slice(0,10);
+ if($('pq'))$('pq').value=1;
+ if($('pstatus'))$('pstatus').value='IN_STOCK';
+ if($('plocation'))$('plocation').value='UNALLOCATED';
+ if($('pnotes')&&!$('pnotes').value.trim()){
+   const bits=[`AI verified ${r.language||''} Pokémon card`.trim(),r.setCode?`set ${r.setCode}`:'',printedCollectorNumber(r)?`collector ${printedCollectorNumber(r)}`:'',r.rarity||'',r.illustrator?`illustrator ${r.illustrator}`:''].filter(Boolean);
+   $('pnotes').value=bits.join(' · ');
+ }
 }
 function applyRecognition(r){
  currentRecognition=null;
@@ -2301,7 +2325,7 @@ $('addp').onclick=async()=>{
  const pid=id(), files=currentIntakeFiles();
  const sku=$('psku').value.trim()||nextSku();
  const purchaseId=$('ppurchaseid').value.trim()||nextPurchaseId();
- const p={id:pid,name:$('pn').value.trim(),cat:$('pc').value,date:$('pd').value,q:Math.max(1,Math.floor(n('pq'))),cost:n('pp'),source:$('ps').value.trim(),condition:$('pcondition').value,sku,purchaseId,location:$('plocation').value||'UNALLOCATED',inventoryStatus:$('pstatus').value||'IN_STOCK',qrData:'GENGRAIL:SKU:'+sku,listPrice:n('plist'),ebayStatus:$('pebaystatus').value,ebayItemId:'',ebayUrl:'',photoCount:0,notes:$('pnotes').value,productMeta:currentRecognition?{game:currentRecognition.game||'Pokémon TCG',cardName:currentRecognition.cardName||'',cardNumber:currentRecognition.cardNumber||'',setName:currentRecognition.setName||'',setCode:currentRecognition.setCode||'',language:currentRecognition.language||'',rarity:currentRecognition.rarity||'',illustrator:currentRecognition.illustrator||'',recognitionConfidence:Number(currentRecognition.confidence||0),recognitionVerified:!!currentRecognition.verified,recognitionReviewed:!!currentRecognition.reviewed,recognitionApprovedAt:currentRecognition.approvedAt||'',recognitionSource:'workers_ai',fieldConfidences:currentRecognition.fieldConfidences||{},fieldSources:currentRecognition.fieldSources||{},reviewDiagnostics:currentRecognition.reviewDiagnostics||recognitionDiagnostics(currentRecognition),recognitionVersion:3}:null};
+ const p={id:pid,name:$('pn').value.trim(),cat:$('pc').value,date:$('pd').value,q:Math.max(1,Math.floor(n('pq'))),cost:n('pp'),source:$('ps').value.trim(),condition:$('pcondition').value,sku,purchaseId,location:$('plocation').value||'UNALLOCATED',inventoryStatus:$('pstatus').value||'IN_STOCK',qrData:'GENGRAIL:SKU:'+sku,listPrice:n('plist'),ebayStatus:$('pebaystatus').value,ebayItemId:'',ebayUrl:'',photoCount:0,notes:$('pnotes').value,productMeta:currentRecognition?{game:currentRecognition.game||'Pokémon TCG',cardName:currentRecognition.cardName||'',cardNumber:printedCollectorNumber(currentRecognition),normalisedCardNumber:currentRecognition.cardNumber||'',setName:currentRecognition.setName||'',setCode:currentRecognition.setCode||'',language:currentRecognition.language||'',rarity:currentRecognition.rarity||'',illustrator:currentRecognition.illustrator||'',recognitionConfidence:Number(currentRecognition.confidence||0),intakeConfidence:Number((currentRecognition.reviewDiagnostics||recognitionDiagnostics(currentRecognition)).score||0),recognitionVerified:!!currentRecognition.verified,verificationStatus:currentRecognition.verificationStatus||'',recognitionReviewed:!!currentRecognition.reviewed,recognitionApprovedAt:currentRecognition.approvedAt||'',recognitionSource:'workers_ai',fieldConfidences:currentRecognition.fieldConfidences||{},fieldSources:currentRecognition.fieldSources||{},reviewDiagnostics:currentRecognition.reviewDiagnostics||recognitionDiagnostics(currentRecognition),recognitionVersion:3,intakeVersion:1}:null};
  db.purchases.push(p);
  try{p.photoCount=await addPhotos(pid,files)}catch(e){console.error(e);alert('Stock was saved, but one or more photos could not be stored on this device.');}
  ['pn','pp','ps','psku','ppurchaseid','plist','pnotes'].forEach(x=>$(x).value='');$('pq').value=1;$('pcondition').value='Ungraded';$('pebaystatus').value='NOT_LISTED';$('pphotos').value='';if($('pcamera'))$('pcamera').value='';pendingCameraFiles=[];currentRecognition=null;pendingRecognition=null;$('ppreview').innerHTML='';save();closeStockEntry();
