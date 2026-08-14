@@ -26,3 +26,6 @@ v20 UI consolidation (13 Aug 2026)
 
 
 v20.1.1 final consolidation patch: fixed Channels → eBay navigation, styled mobile record actions, collapsed location-creation tools, cache bumped.
+
+
+v20.2.0 raw foundation: safer two-pass raw-card identity handling, review-required conflict state, dynamic pricing-source labels, and pricing-confidence separation.

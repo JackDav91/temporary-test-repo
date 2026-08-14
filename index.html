@@ -2028,6 +2028,9 @@ function normaliseRecognition(raw={}){
  r.rarity=String(raw.rarity||raw.rarityCode||'').trim();
  r.illustrator=String(raw.illustrator||raw.artist||'').trim();
  r.marketPricing=(raw.marketPricing&&typeof raw.marketPricing==='object')?raw.marketPricing:null;
+ r.printedCardNumber=String(raw.printedCardNumber||raw.visionCardNumber||'').trim();
+ r.reviewRequired=!!raw.reviewRequired;
+ r.pricingConfidence=String(raw.pricingConfidence||raw.marketPricing?.qualityStatus||raw.marketPricing?.confidence||'').trim();
  const fc=raw.fieldConfidences||raw.fieldConfidence||raw.confidences||{};
  r.fieldConfidences=(fc&&typeof fc==='object')?fc:{};
  const fs=raw.fieldSources||raw.sources||{};
@@ -2086,6 +2089,12 @@ function setAiRecognitionPanel(mode='idle',data=null,message=''){
    return;
  }
  const r=normaliseRecognition(data||{});
+ if(r.reviewRequired){
+   const diag=recognitionDiagnostics(r),no=printedCollectorNumber(r)||r.cardNumber||'—',meta=[no,r.setName||r.setCode,r.language,r.rarity].filter(Boolean).map(esc).join(' · ');
+   host.className='ai-recognition-panel warn';
+   host.innerHTML=`<div class="ai-recognition-kicker">REVIEW REQUIRED · RAW CARD IDENTITY</div><div class="ai-identity-summary"><div><b>${esc(r.cardName||'Pokémon card')}</b><span>${meta}</span></div><span class="ai-verified-pill">CHECK IDENTITY</span></div><div class="market-price-note">${esc(r.message||'Two visual reads disagreed on a key identity field. Confirm the printed card number/name before pricing or saving.')}</div><details class="ai-identity-details" open><summary>Review card identity</summary><div class="ai-review-grid"><div class="full">${aiFieldHead('CARD NAME',diag.fields.cardName)}<input id="aiReviewName" value="${esc(r.cardName||'')}"/></div><div>${aiFieldHead('CARD NUMBER',diag.fields.cardNumber)}<input id="aiReviewNumber" value="${esc(r.cardNumber||'')}"/></div><div>${aiFieldHead('LANGUAGE',diag.fields.language)}<input id="aiReviewLanguage" value="${esc(r.language||'')}"/></div><div>${aiFieldHead('SET NAME',diag.fields.setName)}<input id="aiReviewSet" value="${esc(r.setName||'')}"/></div><div>${aiFieldHead('SET CODE',diag.fields.setCode)}<input id="aiReviewSetCode" value="${esc(r.setCode||'')}"/></div><div>${aiFieldHead('RARITY',diag.fields.rarity)}<input id="aiReviewRarity" value="${esc(r.rarity||'')}"/></div><div>${aiFieldHead('ILLUSTRATOR',diag.fields.illustrator)}<input id="aiReviewIllustrator" value="${esc(r.illustrator||'')}"/></div></div></details><div class="ai-approved-actions"><button class="btn alt" type="button" onclick="clearAiRecognition(false);closeStockEntry()">DISCARD MATCH</button><button class="btn" type="button" onclick="approveAiRecognition()">CONFIRM MANUALLY</button></div>`;
+   return;
+ }
  const verified=!!r.verified;
  const diag=recognitionDiagnostics(r),f=diag.fields;
  host.className='ai-recognition-panel '+(diag.score>=80?'good':diag.score>=55?'warn':'bad');
@@ -2133,6 +2142,7 @@ function approveAiRecognition(){
 }
 function useReviewSuggestedPrice(){
  const r=normaliseRecognition(readAiReview());
+ if(r.reviewRequired)return alert('Confirm the card identity before using automated pricing.');
  const v=marketSuggestedPrice(r);
  if(!v)return alert('No automated market price is available for this card.');
  pendingRecognition=r;
@@ -2211,14 +2221,16 @@ function marketEvidenceLabel(mp){
  const q=String(mp?.qualityStatus||mp?.confidence||'MARKET DATA').toUpperCase();
  return q==='VALIDATED'?'VALIDATED EXACT CARD':q;
 }
+function marketSignalLabels(mp){
+ const d=mp?.signalLabels||{};
+ const tcg=String(mp?.provider||'').toLowerCase()==='tcgplayer';
+ return {trend:d.trend||(tcg?'TCGPLAYER MARKET':'CARDMARKET TREND'),avg7:d.avg7||(tcg?'TCGPLAYER MID':'7-DAY AVG'),avg30:d.avg30||(tcg?'':'30-DAY AVG'),low:d.low||(tcg?'TCGPLAYER LOW':'MARKET LOW')};
+}
 function approvedMarketPricingHtml(r){
  const mp=r?.marketPricing,gbp=mp?.gbp||{},sug=marketSuggestedPrice(r);
  if(!mp||!mp.available||!sug)return `<div class="market-price-card on ai-approved-market"><div class="market-price-kicker">MARKET PRICING · V2</div><div class="market-price-note">No reliable automated market price is available for this exact card. You can continue intake and enter a target price manually below.</div></div>`;
- const updated=mp.updated?new Date(mp.updated).toLocaleDateString('en-GB'):'unknown date';
- const dispersion=Number(mp.dispersionPct||0);
- const validation=mp.referenceCardId?`Exact card ${esc(mp.referenceCardId)}`:'Exact verified card';
- const qualityBits=[validation,mp.evidenceCount?`${mp.evidenceCount} market signals`:'',dispersion?`${dispersion.toFixed(1)}% signal spread`:''].filter(Boolean).join(' · ');
- return `<div class="market-price-card on ai-approved-market"><div class="market-price-head"><div><div class="market-price-kicker">MARKET PRICING · V2</div><div class="market-price-main">${m(sug)} suggested</div></div><span class="market-price-confidence">${esc(marketEvidenceLabel(mp))}</span></div><div class="market-price-grid"><div><small>CARDMARKET TREND</small><b>${gbp.trend?m(gbp.trend):'—'}</b></div><div><small>7-DAY AVG</small><b>${gbp.avg7?m(gbp.avg7):'—'}</b></div><div><small>30-DAY AVG</small><b>${gbp.avg30?m(gbp.avg30):'—'}</b></div><div><small>MARKET LOW</small><b>${gbp.low?m(gbp.low):'—'}</b></div></div></div>`;
+ const labels=marketSignalLabels(mp);
+ return `<div class="market-price-card on ai-approved-market"><div class="market-price-head"><div><div class="market-price-kicker">MARKET PRICING · V3</div><div class="market-price-main">${m(sug)} suggested</div></div><span class="market-price-confidence">${esc(marketEvidenceLabel(mp))}</span></div><div class="market-price-grid"><div><small>${esc(labels.trend)}</small><b>${gbp.trend?m(gbp.trend):'—'}</b></div><div><small>${esc(labels.avg7)}</small><b>${gbp.avg7?m(gbp.avg7):'—'}</b></div><div><small>${esc(labels.avg30||'ADDITIONAL SIGNAL')}</small><b>${gbp.avg30?m(gbp.avg30):'—'}</b></div><div><small>${esc(labels.low)}</small><b>${gbp.low?m(gbp.low):'—'}</b></div></div></div>`;
 }
 function useApprovedSuggestedPrice(){
  const v=marketSuggestedPrice(currentRecognition);if(!v)return alert('No automated market price is available for this card.');
@@ -2765,12 +2777,13 @@ function pricingAiRender(state='idle',r=null,msg=''){
  const host=$('pricingAiCard');if(!host)return;if(state==='idle'){host.hidden=true;host.innerHTML='';return}host.hidden=false;
  if(state==='loading'){host.innerHTML='<div class="ai-recognition-kicker">AI VALUATION</div><div class="ai-recognition-title"><span class="ai-spinner"></span>Recognising card…</div><div class="ai-recognition-sub">Reading identity, verifying the exact card and requesting available market evidence.</div>';return}
  if(state==='error'){host.innerHTML=`<div class="ai-recognition-kicker">AI VALUATION</div><div class="ai-recognition-title">Could not price this card</div><div class="ai-recognition-sub">${esc(msg||'Try a clearer front photo or enter market value manually.')}</div>`;return}
- const x=normaliseRecognition(r||{}),diag=recognitionDiagnostics(x),mp=x.marketPricing,market=pricingMarketAnchor(x),gbp=mp?.gbp||{};
- host.innerHTML=`<div class="ai-recognition-kicker">${x.verified?'VERIFIED AI MATCH':'AI MATCH'} · ${diag.score}%</div><div class="pricing-ai-title">${esc(x.cardName||'Pokémon card')}</div><div class="pricing-ai-meta">${esc(printedCollectorNumber(x)||x.cardNumber||'—')} · ${esc(x.setName||'Unknown set')} · ${esc(x.language||'—')} · ${esc(x.rarity||'—')}</div>${market?`<div class="pricing-ai-market"><div><small>SUGGESTED MARKET VALUE</small><b>${m(market)}</b></div><span>${esc(marketEvidenceLabel(mp))}</span></div><div class="pricing-ai-signals"><span>Trend ${gbp.trend?m(gbp.trend):'—'}</span><span>7d ${gbp.avg7?m(gbp.avg7):'—'}</span><span>30d ${gbp.avg30?m(gbp.avg30):'—'}</span><span>Low ${gbp.low?m(gbp.low):'—'}</span></div>`:'<div class="market-price-note">No reliable automated market price was returned for this exact card. Enter market value manually.</div>'}`;
+ const x=normaliseRecognition(r||{}),diag=recognitionDiagnostics(x),mp=x.marketPricing,market=x.reviewRequired?0:pricingMarketAnchor(x),gbp=mp?.gbp||{},labels=marketSignalLabels(mp);
+ if(x.reviewRequired){host.innerHTML=`<div class="ai-recognition-kicker">REVIEW REQUIRED · RAW CARD IDENTITY</div><div class="pricing-ai-title">${esc(x.cardName||'Pokémon card')}</div><div class="pricing-ai-meta">${esc(printedCollectorNumber(x)||x.cardNumber||'—')} · ${esc(x.language||'—')}</div><div class="market-price-note">${esc(x.message||'Two visual reads disagreed. Confirm the exact card identity before Gengrail values it.')}</div>`;return;}
+ host.innerHTML=`<div class="ai-recognition-kicker">${x.verified?'VERIFIED EXACT CARD':'AI MATCH'} · ${diag.score}%</div><div class="pricing-ai-title">${esc(x.cardName||'Pokémon card')}</div><div class="pricing-ai-meta">${esc(printedCollectorNumber(x)||x.cardNumber||'—')} · ${esc(x.setName||'Unknown set')} · ${esc(x.language||'—')} · ${esc(x.rarity||'—')}</div>${market?`<div class="pricing-ai-market"><div><small>SUGGESTED MARKET VALUE</small><b>${m(market)}</b></div><span>${esc(marketEvidenceLabel(mp))}</span></div><div class="pricing-ai-signals"><span>${esc(labels.trend)} ${gbp.trend?m(gbp.trend):'—'}</span><span>${esc(labels.avg7)} ${gbp.avg7?m(gbp.avg7):'—'}</span><span>${esc(labels.avg30||'Signal')} ${gbp.avg30?m(gbp.avg30):'—'}</span><span>${esc(labels.low)} ${gbp.low?m(gbp.low):'—'}</span></div>`:'<div class="market-price-note">Exact card identity verified, but no reliable automated market price was returned. Enter market value manually.</div>'}`;
 }
 async function pricingRecogniseFile(file){
  if(!file)return;if($('priceCost'))$('priceCost').value='';if($('priceMarketValue'))$('priceMarketValue').value='0';pricingAiRender('loading');
- try{const image=await fileToRecognitionDataURL(file,1200,.80);const c=new AbortController(),t=setTimeout(()=>c.abort(),30000);let res;try{res=await fetch(aiEndpoint()+'/api/recognise-card',{method:'POST',mode:'cors',credentials:'omit',cache:'no-store',signal:c.signal,headers:{'content-type':'text/plain;charset=UTF-8','accept':'application/json'},body:JSON.stringify({image,scope:'pokemon_raw_single',recognitionVersion:3,requestedFields:['cardName','cardNumber','language','setName','setCode','rarity','illustrator'],requireFieldConfidence:true})})}finally{clearTimeout(t)}let d=null;try{d=await res.json()}catch{}if(!res.ok||!d?.ok||!d?.identified||!d?.card?.cardName)throw new Error(d?.message||`Recognition HTTP ${res.status}`);pricingRecognition=normaliseRecognition(d.card);pricingAiRender('match',pricingRecognition);const mv=pricingMarketAnchor(pricingRecognition);if(mv>0)$('priceMarketValue').value=mv.toFixed(2);pricePopulatePostageProfiles(true);priceCalc();}
+ try{const image=await fileToRecognitionDataURL(file,1200,.80);const c=new AbortController(),t=setTimeout(()=>c.abort(),30000);let res;try{res=await fetch(aiEndpoint()+'/api/recognise-card',{method:'POST',mode:'cors',credentials:'omit',cache:'no-store',signal:c.signal,headers:{'content-type':'text/plain;charset=UTF-8','accept':'application/json'},body:JSON.stringify({image,scope:'pokemon_raw_single',recognitionVersion:3,requestedFields:['cardName','cardNumber','language','setName','setCode','rarity','illustrator'],requireFieldConfidence:true})})}finally{clearTimeout(t)}let d=null;try{d=await res.json()}catch{}if(!res.ok||!d?.ok||!d?.identified||!d?.card?.cardName)throw new Error(d?.message||`Recognition HTTP ${res.status}`);pricingRecognition=normaliseRecognition(d.card);pricingAiRender('match',pricingRecognition);const mv=pricingRecognition.reviewRequired?0:pricingMarketAnchor(pricingRecognition);if(mv>0)$('priceMarketValue').value=mv.toFixed(2);pricePopulatePostageProfiles(true);priceCalc();}
  catch(e){pricingRecognition=null;pricingAiRender('error',null,e?.name==='AbortError'?'Recognition timed out.':String(e?.message||e))}
 }
 function pricingAiClear(){pricingRecognition=null;if($('pricingAiPhoto'))$('pricingAiPhoto').value='';if($('priceCost'))$('priceCost').value='';if($('priceMarketValue'))$('priceMarketValue').value='0';pricingAiRender('idle');priceCalc()}
