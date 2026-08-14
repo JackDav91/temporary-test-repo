@@ -8,7 +8,7 @@
 <meta content="Gengrail TCG" name="apple-mobile-web-app-title"/>
 <link href="manifest.json" rel="manifest"/>
 <link href="icon-512.png" rel="apple-touch-icon" sizes="512x512"/><title>Gengrail TCG Business Log</title>
-<meta content="v20.1.0-consolidation" name="gengrail-build"/>
+<meta content="v20.2.0-unified-ai-contract" name="gengrail-build"/>
 <style>
 /* GENGRAIL CROWN-GOLD ACTIVE TABS */
 
@@ -2290,6 +2290,17 @@ async function fileToRecognitionDataURL(file,max=1200,quality=0.80){
    img.src=url;
  });
 }
+const GENGRAIL_RECOGNITION_CONTRACT=Object.freeze({scope:'pokemon_raw_single',recognitionVersion:4,requestedFields:['cardName','cardNumber','language','setName','setCode','rarity','illustrator'],requireFieldConfidence:true,requireCanonicalIdentity:true});
+async function gengrailRecogniseImage(image,timeoutMs=30000){
+ const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),timeoutMs);
+ try{
+  const res=await fetch(aiEndpoint()+'/api/recognise-card',{method:'POST',mode:'cors',credentials:'omit',cache:'no-store',signal:controller.signal,headers:{'content-type':'text/plain;charset=UTF-8','accept':'application/json'},body:JSON.stringify({...GENGRAIL_RECOGNITION_CONTRACT,image})});
+  let data=null;try{data=await res.json()}catch{}
+  if(!res.ok||!data?.ok)throw new Error(data?.message||`Recognition HTTP ${res.status}`);
+  return data;
+ }finally{clearTimeout(timer)}
+}
+
 async function recogniseCardFile(file){
  if(!file || recognitionBusy)return;
  const mySession=++recognitionSessionId;
@@ -2300,23 +2311,7 @@ async function recogniseCardFile(file){
  setAiRecognitionPanel('loading');
  recognitionBusy=true;
 
- const postRecognition=async(image)=>{
-   const controller=new AbortController();
-   const timer=setTimeout(()=>controller.abort(),30000);
-   try{
-     return await fetch(aiEndpoint()+'/api/recognise-card',{
-       method:'POST',
-       mode:'cors',
-       credentials:'omit',
-       cache:'no-store',
-       signal:controller.signal,
-       headers:{'content-type':'text/plain;charset=UTF-8','accept':'application/json'},
-       body:JSON.stringify({image,scope:'pokemon_raw_single',recognitionVersion:3,requestedFields:['cardName','cardNumber','language','setName','setCode','rarity','illustrator'],requireFieldConfidence:true})
-     });
-   }finally{
-     clearTimeout(timer);
-   }
- };
+ const postRecognition=async(image)=>gengrailRecogniseImage(image,30000);
 
  try{
    let image=await fileToRecognitionDataURL(file,1200,0.80);
@@ -2335,9 +2330,8 @@ async function recogniseCardFile(file){
      }
    }
 
-   let d=null; try{d=await res.json()}catch{}
+   const d=res;
    if(mySession!==recognitionSessionId)return;
-   if(!res.ok || !d?.ok)throw new Error(d?.message||`Recognition HTTP ${res.status}`);
    if(!d.identified || !d.card?.cardName){
      currentRecognition=null;
      pendingRecognition=null;
@@ -2783,7 +2777,7 @@ function pricingAiRender(state='idle',r=null,msg=''){
 }
 async function pricingRecogniseFile(file){
  if(!file)return;if($('priceCost'))$('priceCost').value='';if($('priceMarketValue'))$('priceMarketValue').value='0';pricingAiRender('loading');
- try{const image=await fileToRecognitionDataURL(file,1200,.80);const c=new AbortController(),t=setTimeout(()=>c.abort(),30000);let res;try{res=await fetch(aiEndpoint()+'/api/recognise-card',{method:'POST',mode:'cors',credentials:'omit',cache:'no-store',signal:c.signal,headers:{'content-type':'text/plain;charset=UTF-8','accept':'application/json'},body:JSON.stringify({image,scope:'pokemon_raw_single',recognitionVersion:3,requestedFields:['cardName','cardNumber','language','setName','setCode','rarity','illustrator'],requireFieldConfidence:true})})}finally{clearTimeout(t)}let d=null;try{d=await res.json()}catch{}if(!res.ok||!d?.ok||!d?.identified||!d?.card?.cardName)throw new Error(d?.message||`Recognition HTTP ${res.status}`);pricingRecognition=normaliseRecognition(d.card);pricingAiRender('match',pricingRecognition);const mv=pricingRecognition.reviewRequired?0:pricingMarketAnchor(pricingRecognition);if(mv>0)$('priceMarketValue').value=mv.toFixed(2);pricePopulatePostageProfiles(true);priceCalc();}
+ try{const image=await fileToRecognitionDataURL(file,1200,.80);const d=await gengrailRecogniseImage(image,30000);if(!d?.ok||!d?.identified||!d?.card?.cardName)throw new Error(d?.message||'Recognition failed');pricingRecognition=normaliseRecognition(d.card);pricingAiRender('match',pricingRecognition);const mv=pricingRecognition.reviewRequired?0:pricingMarketAnchor(pricingRecognition);if(mv>0)$('priceMarketValue').value=mv.toFixed(2);pricePopulatePostageProfiles(true);priceCalc();}
  catch(e){pricingRecognition=null;pricingAiRender('error',null,e?.name==='AbortError'?'Recognition timed out.':String(e?.message||e))}
 }
 function pricingAiClear(){pricingRecognition=null;if($('pricingAiPhoto'))$('pricingAiPhoto').value='';if($('priceCost'))$('priceCost').value='';if($('priceMarketValue'))$('priceMarketValue').value='0';pricingAiRender('idle');priceCalc()}
