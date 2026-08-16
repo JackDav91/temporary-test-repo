@@ -1,0 +1,86 @@
+name: Compact graded Stock and normalize slab pricing identity
+
+on:
+  push:
+    branches:
+      - agent/slab-recognition-v1
+    paths:
+      - .github/workflows/graded-compact-lugia-confidence.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Patch graded layer only
+        run: |
+          cp graded-integration.js /tmp/graded-before.js
+          cp index.html /tmp/index-before.html
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          p=Path('graded-integration.js')
+          s=p.read_text()
+
+          marker='function rawPricingStarted(){clearGradedPricingState();}'
+          helpers="""function rawPricingStarted(){clearGradedPricingState();}\nfunction confidencePct(r){const c=Number(r?.confidence);if(!Number.isFinite(c)||c<=0)return r?.canonicalVerified?99:0;return Math.max(0,Math.min(100,Math.round(c<=1?c*100:c)))}\nfunction gradeLabel(r){const g=String(r?.grade||'').trim(),t=String(r?.gradeText||'').trim();if(!t)return g;if(g&&new RegExp('^'+g.replace(/[.*+?^${}()|[\\]\\\\]/g,'\\\\$&')+'(?:\\\\s|$)','i').test(t))return t;return [g,t].filter(Boolean).join(' ')}"""
+          if s.count(marker)!=1: raise SystemExit('helper marker missing/non-unique')
+          s=s.replace(marker,helpers,1)
+
+          # Add compact Stock CSS before Stock importer comment.
+          css_marker='/* Stock: graded is a native fourth intake card. */'
+          css=""".graded-stock-compact{border:2px solid #34764a;border-left:6px solid #48b86c;border-radius:16px;background:linear-gradient(180deg,#07150b,#09110b);padding:16px;color:#f4f1ea}.gsc-kicker{color:#70e09a;font-size:11px;font-weight:950;letter-spacing:.16em}.gsc-name{font-size:24px;font-weight:900;margin-top:12px}.gsc-sub{color:#b7bdb8;font-size:15px;line-height:1.4;margin-top:4px}.gsc-verified{display:inline-block;margin-top:10px;border:1px solid #46a960;border-radius:999px;padding:7px 12px;font-weight:900}.gsc-slabmeta{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}.gsc-slabmeta span{border:1px solid #2b5136;border-radius:999px;padding:6px 9px;color:#d6ded8;font-size:11px;font-weight:850}.gsc-market{margin-top:14px;border:1px solid #34764a;border-radius:13px;padding:14px}.gsc-market-head{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}.gsc-market-title{color:#70e09a;font-size:11px;font-weight:950;letter-spacing:.14em}.gsc-badge{border:1px solid #46a960;border-radius:999px;padding:5px 8px;color:#9fe9b5;font-size:9px;font-weight:900}.gsc-price{color:#70e09a;font-size:34px;font-weight:950;line-height:1;margin-top:9px}.gsc-suggested{color:#70e09a;font-size:24px;font-weight:950}.gsc-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:12px}.gsc-stat{border:1px solid #294d34;border-radius:9px;padding:9px}.gsc-stat small{color:#8fa596;font-size:9px;font-weight:900}.gsc-stat b{display:block;color:#88e8a6;font-size:16px;margin-top:2px}.gsc-review{color:#ffd36f;font-weight:900;margin-top:8px}.gsc-assumed{margin-top:10px;color:#ffd36f;font-size:11px;line-height:1.4}.gsc-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:13px}.gsc-actions button{min-height:58px;margin:0!important}.gsc-actions .use{background:#e0ad16!important;color:#080808!important;border:1px solid #f2c84b!important}.gsc-actions .discard{background:#252525!important;color:#fff!important;border:1px solid #444!important}@media(max-width:520px){.gsc-stats{grid-template-columns:1fr 1fr}.gsc-stat:last-child{grid-column:1/-1}}\n/* Stock: graded is a native fourth intake card. */"""
+          if s.count(css_marker)!=1: raise SystemExit('CSS marker missing/non-unique')
+          s=s.replace(css_marker,css,1)
+
+          # Replace Stock renderer/UI only with compact raw-style hierarchy.
+          start=s.index('function stockHtml(r){')
+          end=s.index('async function syncStock(r){',start)
+          block=r'''function stockHtml(r){const m=r.marketPricing||{},assumed=m.graderAssumed===true,pct=confidencePct(r),gl=gradeLabel(r),identity=[r.cardNumber,r.setName,r.language].filter(Boolean).map(esc).join(' · ');let market;if(m.available){market=`<div class="gsc-market"><div class="gsc-market-head"><div class="gsc-market-title">MARKET PRICING · V3</div><div class="gsc-badge">${assumed?'ACE ASSUMED · CONFIRM':'VALIDATED EXACT SLAB'}</div></div><div class="gsc-price">£${Number(m.suggestedGbp||0).toFixed(2)}</div><div class="gsc-suggested">Suggested</div><div class="gsc-stats"><div class="gsc-stat"><small>MARKET LOW</small><b>£${Number(m.lowGbp||0).toFixed(2)}</b></div><div class="gsc-stat"><small>MEDIAN</small><b>£${Number(m.medianGbp||m.suggestedGbp||0).toFixed(2)}</b></div><div class="gsc-stat"><small>EXACT MATCHES</small><b>${esc(m.exactMatchCount||0)}</b></div></div>${assumed?'<div class="gsc-assumed">Priced provisionally as ACE from exact ACE listings. Confirm the grader before saving.</div>':''}</div>`}else{market=`<div class="gsc-market"><div class="gsc-market-title">MARKET PRICING · V3</div><div class="gsc-review">MARKET REVIEW REQUIRED</div><small>${esc(m.note||'Fewer than 3 exact current listing matches. No raw-card fallback has been used.')}</small></div>`}return `<div class="graded-stock-compact"><div class="gsc-kicker">VERIFIED CANDIDATE · V3</div><div class="gsc-name">${esc(r.cardName)}</div><div class="gsc-sub">${identity}</div><div class="gsc-verified">${pct}% VERIFIED</div><div class="gsc-slabmeta"><span>${esc(assumed?'ACE · ASSUMED':r.grader)}</span><span>${esc(gl)}</span><span>CERT ${esc(r.certNumber||'—')}</span></div>${market}${picker(r)}<div class="gsc-actions"><button class="btn discard" data-gdiscard type="button">DISCARD MATCH</button>${m.available?'<button class="btn use" data-guseprice type="button">USE SUGGESTED PRICE</button>':''}</div></div>`}
+function stockUI(r){style();let h=$('gradedStockBridge');if(!h){h=document.createElement('div');h.id='gradedStockBridge';h.className='graded-bridge';const p=$('stockEntryPanel');p?.parentNode?.insertBefore(h,p)}h.hidden=false;h.innerHTML=stockHtml(r);const b=h.querySelector('[data-gconfirm]');if(b)b.onclick=async()=>{const v=h.querySelector('[data-ggrader]')?.value;if(!v)return;userConfirm(r,v);await syncStock(r)};const use=h.querySelector('[data-guseprice]');if(use)use.onclick=()=>{const v=Number(r?.marketPricing?.suggestedGbp||0);if(!(v>0))return;const t=$('plist');if(t){t.value=v.toFixed(2);t.dispatchEvent(new Event('input',{bubbles:true}));t.dispatchEvent(new Event('change',{bubbles:true}));t.scrollIntoView({behavior:'smooth',block:'center'})}};const discard=h.querySelector('[data-gdiscard]');if(discard)discard.onclick=()=>document.querySelector('.stock-intake-reset')?.click()}
+'''
+          s=s[:start]+block+s[end:]
+
+          # Make all graded market searches use canonical normalized card number.
+          old="const unresolved=!r.grader||r.grader==='UNKNOWN';const marketGrader=unresolved?'ACE':r.grader;const res=await fetch(EBAY_BACKEND+'/api/ebay/graded-market'"
+          new="const unresolved=!r.grader||r.grader==='UNKNOWN';const marketGrader=unresolved?'ACE':r.grader;const marketCardNumber=r.normalisedCardNumber||r.cardNumber;const res=await fetch(EBAY_BACKEND+'/api/ebay/graded-market'"
+          if s.count(old)!=1: raise SystemExit('lookup preamble marker missing/non-unique')
+          s=s.replace(old,new,1)
+          s=s.replace('cardNumber:r.cardNumber,setName:r.setName,language:r.language,grader:marketGrader,grade:r.grade,canonicalId:r.canonicalId','cardNumber:marketCardNumber,setName:r.setName,language:r.language,grader:marketGrader,grade:r.grade,canonicalId:r.canonicalId',1)
+          s=s.replace("window.GengrailGradedMarket.build({cardName:r.cardName,cardNumber:r.cardNumber,setName:r.setName,language:r.language,grader:marketGrader,grade:r.grade},rows)","window.GengrailGradedMarket.build({cardName:r.cardName,cardNumber:marketCardNumber,setName:r.setName,language:r.language,grader:marketGrader,grade:r.grade},rows)",1)
+
+          p.write_text(s)
+
+          # Cache bust regardless of current graded version.
+          p=Path('index.html'); x=p.read_text()
+          x2,n=re.subn(r'graded-integration\.js\?v=[0-9.]+','graded-integration.js?v=21.8.0',x,count=1)
+          if n!=1: raise SystemExit('graded loader not found')
+          p.write_text(x2)
+          PY
+
+      - name: Syntax gate
+        run: node --check graded-integration.js
+
+      - name: Safety checks
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          g=Path('graded-integration.js').read_text()
+          for x in ["const ENDPOINT='https://gengrail-card-ai.gengrailtcg.workers.dev'","marketGrader=unresolved?'ACE':r.grader",'const marketCardNumber=r.normalisedCardNumber||r.cardNumber','function confidencePct(r)','function gradeLabel(r)','function stockHtml(r)','async function syncPricing(r)','recogniseSlabAttempt']:
+            if x not in g: raise SystemExit('Missing required marker: '+x)
+          if 'Math.round((Number(r.confidence)||.99)*100)' in g: raise SystemExit('Old confidence bug remains')
+          PY
+
+      - name: Commit to main
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add graded-integration.js index.html
+          git commit -m 'Compact graded Stock result and normalize slab market matching'
+          git push origin main
