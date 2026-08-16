@@ -3,7 +3,7 @@ const PE=require('./gengrail-profit-engine.js');
 const eq=(a,b,msg)=>assert.strictEqual(Number(a),Number(b),msg);
 function db(){return {schemaVersion:4,purchases:[],sales:[],expenses:[],funding:[],dividends:[],opportunities:[],locations:[],orders:[],settings:{},profitEngine:null}}
 function purchase(d,{id='P1',cost=0,q=1,origin='PURCHASED_FOR_RESALE',cat='Raw Single'}={}){d.purchases.push({id,cost,q,capitalOrigin:origin,cat,date:'2026-08-16'});return id}
-function sale(d,{id='S1',pid='P1',price=100,date='2026-08-16',status='COMPLETED',profitDataStatus='CONFIRMED'}={}){const s={id,pid,price,buyerPost:0,fee:0,post:0,pack:0,other:0,date,q:1,status,source:'MANUAL',profitDataStatus};d.sales.push(s);return s}
+function sale(d,{id='S1',pid='P1',price=100,date='2026-08-16',status='COMPLETED',profitDataStatus='CONFIRMED',source='MANUAL'}={}){const s={id,pid,price,buyerPost:0,fee:0,post:0,pack:0,other:0,date,q:1,status,source,profitDataStatus};d.sales.push(s);return s}
 function ctx(cash=10000,extra={}){return {totalBusinessCash:cash,taxReserveTarget:0,protectedLiquidityTarget:0,fixedMonthlyOperatingCosts:0,committedInventoryCapital:0,...extra}}
 
 (function stageSplits(){
@@ -25,7 +25,6 @@ function ctx(cash=10000,extra={}){return {totalBusinessCash:cash,taxReserveTarge
 
 (function sustainedUnderperformanceDowngrades(){
  const d=db();PE.ensureState(d,{now:'2026-01-01T00:00:00Z'});d.profitEngine.currentStage=4;d.profitEngine.stageSince='2026-05-01T00:00:00Z';
- // No recent trading profit: every 30-day window in the downgrade hold period is materially below thresholds.
  const r=PE.reconcileStage(d,{now:'2026-08-16T18:00:00Z'});assert.strictEqual(r.stage,1,'sustained underperformance should downgrade');assert(d.profitEngine.stageHistory.some(x=>String(x.reason).startsWith('DOWNGRADE_')));
 })();
 
@@ -49,6 +48,11 @@ function ctx(cash=10000,extra={}){return {totalBusinessCash:cash,taxReserveTarge
 (function ownerContributedGradedIsBootstrap(){
  const d=db();purchase(d,{origin:'OWNER_CONTRIBUTED_INVENTORY',cat:'Graded'});sale(d,{price:100});PE.ensureState(d,{now:'2026-08-16T09:00:00Z'});PE.reconcile(d,{context:ctx(),now:'2026-08-16T10:00:00Z'});
  const a=d.profitEngine.allocations.find(x=>x.saleId==='S1');assert.strictEqual(a.classification,'BOOTSTRAP');eq(a.tradingProfit,0);eq(a.bootstrapProceeds,100);
+})();
+
+(function pendingCostsNeverAllocate(){
+ const d=db();purchase(d,{cost:40});sale(d,{price:100,profitDataStatus:'PENDING_COSTS',source:'EBAY'});PE.ensureState(d,{now:'2026-08-16T09:00:00Z'});PE.reconcile(d,{context:ctx(),now:'2026-08-16T10:00:00Z'});
+ assert.strictEqual(d.profitEngine.allocations.some(x=>x.status==='ACTIVE'),false,'pending-cost sale must not allocate');assert.strictEqual(d.profitEngine.allocations.some(x=>x.status==='PENDING_COSTS'),true,'pending-cost audit record required');eq(Object.values(PE.ledgerBalances(d)).reduce((a,x)=>a+x,0),0);
 })();
 
 console.log('Advanced Profit Engine tests passed');
