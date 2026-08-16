@@ -1,4 +1,4 @@
-/* GENGRAIL GRAIL HUB v1.3 — Buying command centre + live Opportunity Stream
+/* GENGRAIL GRAIL HUB v1.4 — Opportunity Stream v1.1 accuracy hardening
    Consumes Profit Engine state and the existing Opportunity Finder economics.
    Active listings are evidence only; no sold-price or sell-through data is fabricated.
 */
@@ -26,9 +26,28 @@ function openExisting(labelMatchers){
   return false;
 }
 function median(values=[]){const a=values.filter(x=>x>0).slice().sort((a,b)=>a-b);if(!a.length)return 0;const i=Math.floor(a.length/2);return a.length%2?a[i]:(a[i-1]+a[i])/2}
+function percentile(values=[],q=.5){const a=values.filter(x=>x>0).slice().sort((a,b)=>a-b);if(!a.length)return 0;if(a.length===1)return a[0];const pos=(a.length-1)*Math.max(0,Math.min(1,q)),lo=Math.floor(pos),hi=Math.ceil(pos),w=pos-lo;return a[lo]*(1-w)+a[hi]*w}
 function listingPrice(item){const p=num(item?.price?.value||item?.priceGbp);const c=String(item?.price?.currency||item?.currency||'GBP').toUpperCase();return c==='GBP'?p:0}
 function shippingPrice(item){const rows=Array.isArray(item?.shippingOptions)?item.shippingOptions:[];for(const row of rows){const p=num(row?.shippingCost?.value);const c=String(row?.shippingCost?.currency||'GBP').toUpperCase();if(c==='GBP'&&p>=0)return p}return 0}
-function obviousReject(t){return /\b(proxy|custom|fan art|digital|code card|empty slab|slab only|case only|repack|mystery|orica|lot|bundle|collection|job lot|break)\b/.test(t)}
+function obviousReject(t){return /\b(proxy|custom|fan art|digital|code card|empty slab|slab only|case only|repack|mystery|orica|lot|bundle|collection|job lot|break|metal card|gold card)\b/.test(t)}
+function printingFamily(t,cardNumber){
+  if(/\b(celebrations|25th anniversary)\b/.test(t))return 'CELEBRATIONS';
+  if(/\b(evolutions|xy evolutions|2016)\b/.test(t))return 'EVOLUTIONS';
+  if(/\b(base set 2|base set ii)\b/.test(t))return 'BASE_SET_2';
+  if(/\b(shadowless)\b/.test(t))return 'BASE_SET_SHADOWLESS';
+  if(/\b(base set|wotc|wizards of the coast|1999)\b/.test(t))return 'BASE_SET';
+  if(cardNumber==='4/102'&&/\b(wizards|wizard|vintage)\b/.test(t))return 'BASE_SET';
+  return 'UNKNOWN';
+}
+function rawCondition(title,itemCondition=''){
+  const t=clean(`${title} ${itemCondition}`);
+  if(/\b(damaged|damage|dmg|creased|crease|water damage|torn)\b/.test(t))return 'DMG';
+  if(/\b(heavily played|heavy play|hp condition|hp played)\b/.test(t)||/\(hp\)/.test(t))return 'HP';
+  if(/\b(moderately played|moderate play|mp condition)\b/.test(t)||/\(mp\)/.test(t))return 'MP';
+  if(/\b(lightly played|light play|lp condition)\b/.test(t)||/\(lp\)/.test(t))return 'LP';
+  if(/\b(near mint|nm condition|mint condition|pack fresh)\b/.test(t)||/\(nm\)/.test(t))return 'NM';
+  return 'UNKNOWN';
+}
 function graderFrom(t){if(/\b(bgs|beckett)\b/.test(t))return 'BGS';if(/\bpsa\b/.test(t))return 'PSA';if(/\bcgc\b/.test(t))return 'CGC';if(/\bace\b/.test(t))return 'ACE';if(/\bsgc\b/.test(t))return 'SGC';return ''}
 function gradeFrom(t,grader){if(!grader)return '';const aliases=grader==='BGS'?'(?:bgs|beckett)':grader.toLowerCase();let m=t.match(new RegExp('\\b'+aliases+'\\s*(?:grade\\s*)?(10|[1-9](?:\\.5)?)\\b','i'));if(!m)m=t.match(/\b(?:grade|graded)\s*(10|[1-9](?:\.5)?)\b/i);return m?m[1]:''}
 const STOP=new Set(['pokemon','pokémon','tcg','card','cards','english','japanese','holo','holofoil','rare','ultra','secret','mint','nm','near','gem','graded','grade','psa','bgs','beckett','cgc','ace','sgc','new','listing','official','authentic','2023','2024','2025','2026']);
@@ -43,15 +62,24 @@ function parseListing(item){
   if(grader&&!grade)return null;
   if(!grader&&/\bgraded|slab\b/.test(t))return null;
   const ask=listingPrice(item);if(!(ask>0))return null;
-  return {item,title,t,cardNumber,grader,grade,type:grader?'GRADED':'RAW',ask,inbound:shippingPrice(item),tokens:tokensFor(title)};
+  const type=grader?'GRADED':'RAW',family=printingFamily(t,cardNumber),condition=type==='RAW'?rawCondition(title,item?.condition||''):'GRADED';
+  return {item,title,t,cardNumber,grader,grade,type,printingFamily:family,condition,ask,inbound:shippingPrice(item),tokens:tokensFor(title)};
 }
 function peerRows(row,all){
-  return all.filter(x=>x!==row&&x.cardNumber===row.cardNumber&&x.grader===row.grader&&x.grade===row.grade&&similarity(row.tokens,x.tokens)>=.42);
+  return all.filter(x=>{
+    if(x===row||x.cardNumber!==row.cardNumber||x.grader!==row.grader||x.grade!==row.grade)return false;
+    if(x.printingFamily!==row.printingFamily)return false;
+    if(row.type==='RAW'&&x.condition!==row.condition)return false;
+    return similarity(row.tokens,x.tokens)>=.42;
+  });
 }
-function confidenceFor(peers,simAvg,type){
-  let c=peers>=7?.95:peers>=5?.92:peers>=4?.88:peers>=3?.82:0;
-  if(simAvg>=.7)c+=.02;if(type==='GRADED')c+=.01;
-  return Math.min(.97,c);
+function confidenceFor(peers,simAvg,row){
+  const depth=Math.min(.28,Math.max(0,peers)*.025);
+  const identity=Math.max(0,Math.min(.22,simAvg*.22));
+  const printing=row.printingFamily==='UNKNOWN'?.045:.12;
+  const condition=row.type==='GRADED'?.08:(row.condition==='UNKNOWN'?.035:.08);
+  const graded=row.type==='GRADED'?.025:0;
+  return Math.min(.96,.30+depth+identity+printing+condition+graded);
 }
 function existingEconomics(v){
   if(typeof window.oppAnalyseValues==='function')return window.oppAnalyseValues(v);
@@ -79,10 +107,10 @@ function rankListings(items,g){
   for(const r of parsed){
     const peers=peerRows(r,parsed);if(peers.length<3)continue;
     const simAvg=peers.reduce((s,x)=>s+similarity(r.tokens,x.tokens),0)/peers.length;
-    const resale=median(peers.map(x=>x.ask));if(!(resale>r.ask))continue;
-    const confidence=confidenceFor(peers.length,simAvg,r.type);if(!(confidence>0))continue;
+    const peerPrices=peers.map(x=>x.ask),marketMedian=median(peerPrices),lowerBand=percentile(peerPrices,.35),resale=((marketMedian+lowerBand)/2);if(!(resale>r.ask))continue;
+    const confidence=confidenceFor(peers.length,simAvg,r);if(!(confidence>0))continue;
     const e=existingEconomics({id:r.item.itemId||'',title:r.title,source:'eBay live',confidence,ask:r.ask,inbound:r.inbound,resale,sellPlatform:'ebay',outbound,pack,minRoi:num(g.minimumROI),minProfit:1,url:String(r.item.itemWebUrl||'')});
-    e.cardNumber=r.cardNumber;e.grader=r.grader;e.grade=r.grade;e.type=r.type;e.peerCount=peers.length;e.marketMedian=resale;e.image=String(r.item?.image?.imageUrl||'');e.seller=r.item?.seller||null;e.similarity=simAvg;
+    e.cardNumber=r.cardNumber;e.grader=r.grader;e.grade=r.grade;e.type=r.type;e.printingFamily=r.printingFamily;e.condition=r.condition;e.peerCount=peers.length;e.marketMedian=marketMedian;e.conservativeAnchor=resale;e.lowerBand=lowerBand;e.image=String(r.item?.image?.imageUrl||'');e.seller=r.item?.seller||null;e.similarity=simAvg;
     e.qualityPass=e.profit>0&&e.roi>=num(g.minimumROI)&&e.margin>=num(g.minimumNetMargin)&&confidence>=num(g.minimumConfidence);
     e.liquidityPass=e.landed<=num(g.availableGrailPlanLiquidity);
     e.safe=e.qualityPass&&e.liquidityPass;
@@ -94,29 +122,28 @@ function rankListings(items,g){
   return [...uniq.values()].sort((a,b)=>Number(b.safe)-Number(a.safe)||b.rankScore-a.rankScore||b.profit-a.profit);
 }
 function buildBasket(rows,g){
-  const liquidity=num(g.availableGrailPlanLiquidity),targetMin=num(g.targetRange?.min),targetMax=num(g.targetRange?.max),safe=rows.filter(x=>x.qualityPass);
-  const inBudget=safe.filter(x=>x.landed<=liquidity),mode=String(g.mode||'SEED').toUpperCase();
-  const order=[...inBudget].sort((a,b)=>mode==='SCALE'?(b.profit-a.profit||b.rankScore-a.rankScore):(b.rankScore-a.rankScore||b.profit-a.profit));
-  const chosen=[],identities=new Set();let cost=0,profit=0;
-  for(const x of order){
-    const key=[x.cardNumber,x.grader,x.grade].join('|');if(identities.has(key))continue;
-    if(cost+x.landed>liquidity)continue;
-    chosen.push(x);identities.add(key);cost+=x.landed;profit+=x.profit;
-    if(profit>=targetMin)break;
-  }
+  const liquidity=num(g.availableGrailPlanLiquidity),targetMin=num(g.targetRange?.min),targetMax=num(g.targetRange?.max),safe=rows.filter(x=>x.qualityPass&&x.landed<=liquidity);
+  const pool=safe.slice(0,14),candidates=[];
+  function consider(chosen,cost,profit,score){if(!chosen.length)return;candidates.push({chosen:[...chosen],cost,profit,score,inBand:profit>=targetMin&&profit<=targetMax,reaches:profit>=targetMin,overshoot:Math.max(0,profit-targetMax)})}
+  function walk(start,chosen,ids,cost,profit,score){consider(chosen,cost,profit,score);if(chosen.length>=4)return;for(let i=start;i<pool.length;i++){const x=pool[i],key=[x.cardNumber,x.grader,x.grade,x.printingFamily,x.condition].join('|');if(ids.has(key)||cost+x.landed>liquidity)continue;ids.add(key);chosen.push(x);walk(i+1,chosen,ids,cost+x.landed,profit+x.profit,score+x.rankScore);chosen.pop();ids.delete(key)}}
+  walk(0,[],new Set(),0,0,0);
+  const good=candidates.filter(x=>x.reaches).sort((a,b)=>Number(b.inBand)-Number(a.inBand)||a.chosen.length-b.chosen.length||(a.inBand?a.cost-b.cost:a.overshoot-b.overshoot)||b.score-a.score||a.cost-b.cost);
+  const best=good[0]||candidates.sort((a,b)=>b.profit-a.profit||b.score-a.score||a.cost-b.cost)[0]||{chosen:[],cost:0,profit:0};
   let status='NO HIGH-CONFIDENCE ROUTE FOUND',shortfall=0,unlocked=0;
-  if(chosen.length&&profit>=targetMin)status='TARGET ROUTE FOUND';
-  else if(chosen.length)status='TARGET CONSTRAINED BY MARKET QUALITY';
-  const over=safe.filter(x=>x.landed>liquidity).sort((a,b)=>a.landed-b.landed)[0];
-  if(!chosen.length&&over){status='TARGET CONSTRAINED BY LIQUIDITY';shortfall=Math.max(0,over.landed-liquidity);unlocked=over.profit}
-  return {status,chosen,cost,profit,targetMin,targetMax,shortfall,unlocked};
+  if(best.chosen.length&&best.profit>=targetMin)status=best.profit<=targetMax?'TARGET ROUTE FOUND':'TARGET EXCEEDED BY BEST SENSIBLE ROUTE';
+  else if(best.chosen.length)status='TARGET CONSTRAINED BY MARKET QUALITY';
+  const over=rows.filter(x=>x.qualityPass&&x.landed>liquidity).sort((a,b)=>a.landed-b.landed)[0];
+  if(!best.chosen.length&&over){status='TARGET CONSTRAINED BY LIQUIDITY';shortfall=Math.max(0,over.landed-liquidity);unlocked=over.profit}
+  return {status,chosen:best.chosen,cost:best.cost,profit:best.profit,targetMin,targetMax,shortfall,unlocked};
 }
 function streamStatus(rows,g){const safe=rows.filter(x=>x.safe),quality=rows.filter(x=>x.qualityPass);if(streamState.error)return streamState.error;if(streamState.loading)return 'Scanning current eBay listings and building comparable peer groups…';if(!rows.length)return 'No defensible peer-priced opportunities found in this search. Try a specific Pokémon, set, or collector number.';if(safe.length)return `${safe.length} opportunity${safe.length===1?'':'ies'} currently clear the ${g.mode} guardrails.`;if(quality.length)return 'Strong market-quality candidates exist, but current deployable liquidity blocks them.';return 'Listings were found, but none clear ROI, margin and confidence together.'}
 function resultCard(a,i){
-  const reason=`${a.peerCount} comparable current listings · ${(a.confidence*100).toFixed(0)}% confidence · ${a.type}${a.grader?` · ${a.grader} ${a.grade}`:''}`;
-  return `<article class="grail-opportunity ${a.safe?'':'review'}"><img src="${esc(a.image||'icon-192.png')}" alt=""><div class="grail-opportunity-main"><div class="grail-opportunity-top"><h3>${esc(a.title)}</h3><span class="grail-opportunity-rank">#${i+1} · ${a.rankScore}/100</span></div><div class="grail-opportunity-sub">${esc(reason)}</div><div class="grail-opportunity-grid"><div><small>LANDED BUY</small><b>${money(a.landed)}</b></div><div><small>PEER MEDIAN</small><b>${money(a.marketMedian)}</b></div><div><small>NET PROFIT</small><b class="good">${money(a.profit)}</b></div><div><small>ROI / MARGIN</small><b>${a.roi.toFixed(0)}% / ${a.margin.toFixed(0)}%</b></div></div><div class="grail-opportunity-reason">Market depth is being used as a velocity proxy in v1. Active asking prices are evidence, not sold prices.</div><div class="grail-opportunity-actions">${a.url?`<button class="grail-open-listing" data-open-listing="${esc(a.id)}">OPEN EBAY</button>`:''}<button class="grail-add-plan" data-plan-item="${esc(a.id)}">${a.safe?'PLAN CANDIDATE':'REVIEW'}</button></div></div></article>`;
+  const condition=a.type==='RAW'?` · ${a.condition}`:'';
+  const family=a.printingFamily&&a.printingFamily!=='UNKNOWN'?` · ${a.printingFamily.replaceAll('_',' ')}`:'';
+  const reason=`${a.peerCount} condition-matched current listings · ${(a.confidence*100).toFixed(0)}% confidence · ${a.type}${a.grader?` · ${a.grader} ${a.grade}`:''}${condition}${family}`;
+  return `<article class="grail-opportunity ${a.safe?'':'review'}"><img src="${esc(a.image||'icon-192.png')}" alt=""><div class="grail-opportunity-main"><div class="grail-opportunity-top"><h3>${esc(a.title)}</h3><span class="grail-opportunity-rank">#${i+1} · ${a.rankScore}/100</span></div><div class="grail-opportunity-sub">${esc(reason)}</div><div class="grail-opportunity-grid"><div><small>LANDED BUY</small><b>${money(a.landed)}</b></div><div><small>CONSERVATIVE MARKET</small><b>${money(a.conservativeAnchor)}</b></div><div><small>NET PROFIT</small><b class="good">${money(a.profit)}</b></div><div><small>ROI / MARGIN</small><b>${a.roi.toFixed(0)}% / ${a.margin.toFixed(0)}%</b></div></div><div class="grail-opportunity-reason">Peer median ${money(a.marketMedian)} · buying anchor blends the median with the lower market band. Active asking prices remain evidence, not sold prices.</div><div class="grail-opportunity-actions">${a.url?`<button class="grail-open-listing" data-open-listing="${esc(a.id)}">OPEN EBAY</button>`:''}<button class="grail-add-plan" data-plan-item="${esc(a.id)}">${a.safe?'PLAN CANDIDATE':'REVIEW'}</button></div></div></article>`;
 }
-function planHtml(plan){if(!plan)return '';const cls=plan.status==='TARGET ROUTE FOUND'?'good':'';return `<div class="grail-plan-preview"><div class="grail-plan-preview-title">GRAIL PLAN · LIVE CANDIDATES</div><h3>${esc(plan.status)}</h3><p>${plan.status==='TARGET ROUTE FOUND'?'Smallest sensible high-ranked basket currently reaches the lower profit objective without exceeding deployable liquidity.':plan.status==='TARGET CONSTRAINED BY LIQUIDITY'?`A strong candidate needs ${money(plan.shortfall)} more deployable liquidity and could unlock about ${money(plan.unlocked)} projected net profit.`:'The current live candidate set does not safely reach the lower target. Gengrail will not weaken the guardrails to force a route.'}</p><div class="grail-plan-preview-grid"><div><small>CAPITAL DEPLOYED</small><b>${money(plan.cost)}</b></div><div><small>PROJECTED NET PROFIT</small><b>${money(plan.profit)}</b></div><div><small>PURCHASES</small><b>${plan.chosen.length}</b></div></div>${plan.chosen.length?`<div class="grail-plan-basket">${plan.chosen.map(x=>`<div class="grail-plan-basket-row"><span>${esc(x.title)}</span><span>${money(x.landed)} → ${money(x.profit)}</span></div>`).join('')}</div>`:''}</div>`}
+function planHtml(plan){if(!plan)return '';const cls=plan.status==='TARGET ROUTE FOUND'?'good':'';return `<div class="grail-plan-preview"><div class="grail-plan-preview-title">GRAIL PLAN · LIVE CANDIDATES</div><h3>${esc(plan.status)}</h3><p>${plan.status==='TARGET ROUTE FOUND'?'Smallest sensible basket reaches today’s target band without exceeding deployable liquidity.':plan.status==='TARGET EXCEEDED BY BEST SENSIBLE ROUTE'?'No route lands inside the target band; this is the smallest sensible high-confidence route above it.':plan.status==='TARGET CONSTRAINED BY LIQUIDITY'?`A strong candidate needs ${money(plan.shortfall)} more deployable liquidity and could unlock about ${money(plan.unlocked)} projected net profit.`:'The current live candidate set does not safely reach the lower target. Gengrail will not weaken the guardrails to force a route.'}</p><div class="grail-plan-preview-grid"><div><small>CAPITAL DEPLOYED</small><b>${money(plan.cost)}</b></div><div><small>PROJECTED NET PROFIT</small><b>${money(plan.profit)}</b></div><div><small>PURCHASES</small><b>${plan.chosen.length}</b></div></div>${plan.chosen.length?`<div class="grail-plan-basket">${plan.chosen.map(x=>`<div class="grail-plan-basket-row"><span>${esc(x.title)}</span><span>${money(x.landed)} → ${money(x.profit)}</span></div>`).join('')}</div>`:''}</div>`}
 function renderStream(){
   const root=document.getElementById('grailHubOverlay'),g=state();if(!root||!g)return;
   const rows=streamState.rows,safe=rows.filter(x=>x.safe),quality=rows.filter(x=>x.qualityPass),plan=streamState.lastPlan||buildBasket(rows,g);streamState.lastPlan=plan;
