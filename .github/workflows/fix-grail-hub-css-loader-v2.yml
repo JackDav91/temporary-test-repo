@@ -1,0 +1,70 @@
+name: Fix Grail Hub CSS loader v2
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/fix-grail-hub-css-loader-v2.yml'
+permissions:
+  contents: write
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 5
+      - name: Correct Grail Hub stylesheet placement
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          p=Path('index.html')
+          s=p.read_text()
+          s=re.sub(r'\n?<link href="grail-hub\.css\?v=[^"]+" rel="stylesheet" data-gengrail-grail-hub-css="1"/>\n?', '\n', s)
+          css='<link href="grail-hub.css?v=1.0.3" rel="stylesheet" data-gengrail-grail-hub-css="1"/>'
+          head_end=s.find('</head>')
+          if head_end < 0: raise SystemExit('No document head close')
+          s=s[:head_end]+css+'\n'+s[head_end:]
+          p.write_text(s)
+
+          swp=Path('sw.js')
+          sw=swp.read_text()
+          sw=re.sub(r"gengrail-log-v22\.1\.[^']+", "gengrail-log-v22.1.3-grail-hub-css-fixed", sw, count=1)
+          swp.write_text(sw)
+          PY
+      - name: Positional safety gates
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          s=Path('index.html').read_text()
+          css='data-gengrail-grail-hub-css="1"'
+          js='data-gengrail-grail-hub="1"'
+          assert s.count(css)==1, 'Grail Hub CSS loader count invalid'
+          assert s.count(js)==1, 'Grail Hub JS loader count invalid'
+          css_pos=s.index(css)
+          first_head=s.find('</head>')
+          assert css_pos < first_head, 'CSS loader is not in real document head'
+          js_pos=s.index(js)
+          last_body=s.rfind('</body>')
+          assert js_pos < last_body and last_body-js_pos < 500, 'JS loader is not at real document boundary'
+          for required in ['window.printLocationLabel','recognise-card','graded-integration.js','gengrail-ebay.js']:
+              assert required in s, f'Missing protected runtime marker: {required}'
+          sw=Path('sw.js').read_text()
+          assert 'gengrail-log-v22.1.3-grail-hub-css-fixed' in sw
+          assert "'./grail-hub.css'" in sw and "'./grail-hub.js'" in sw
+          print('Grail Hub loader boundaries verified')
+          PY
+      - name: Commit fixed loader
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html sw.js
+          git commit -m 'Load Grail Hub stylesheet from document head'
+          git push origin HEAD:main
