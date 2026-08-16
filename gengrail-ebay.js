@@ -892,6 +892,8 @@
           sale.buyerPost=num(order.buyerPostage);
           sale.ebayOrderId=order.ebayOrderId||'';
           sale.ebayLineItemId=order.ebayLineItemId||'';
+          sale.profitDataStatus=order.source==='ebay_api'?'PENDING_COSTS':'CONFIRMED';
+          sale.profitDataReason=order.source==='ebay_api'?'Live eBay order imported before marketplace/direct sale costs are confirmed.':'';
         }
         const fulfil=db.orders[db.orders.length-1];
         if(fulfil && sale && fulfil.saleId===sale.id){
@@ -900,6 +902,7 @@
           fulfil.buyerRef=order.buyerRef||'';
         }
         localStorage.setItem(MAIN_KEY,JSON.stringify(db));
+        if(typeof window.reloadGengrailMainDBFromStorage==='function')window.reloadGengrailMainDBFromStorage();
         window.dispatchEvent(new CustomEvent('gengrail:main-updated'));
       }
       return {ok:true,message:'Sale automatically added to Sales and fulfilment.'};

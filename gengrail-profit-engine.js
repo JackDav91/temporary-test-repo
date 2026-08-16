@@ -1,4 +1,4 @@
-/* GENGRAIL PROFIT ENGINE v1.0
+/* GENGRAIL PROFIT ENGINE v1.1
    Schema-4 financial foundation for realised trading profit, Profit Split,
    bootstrap capital, liquidity, Grail Plan operating mode and owner readiness.
    Pure/additive: Sales remains the factual transaction ledger.
@@ -6,7 +6,7 @@
 (function(root){
 'use strict';
 
-const ENGINE_VERSION=1;
+const ENGINE_VERSION=2;
 const SCHEMA_VERSION=4;
 const POTS=['STOCK_LIQUIDITY','TAX_RESERVE','BUSINESS_RESERVE','GROWTH_FUND','OWNER_POT'];
 const DAY=86400000;
@@ -133,9 +133,10 @@ function economics(db,sale){
 }
 function saleFingerprint(db,sale){
   const p=purchaseForSale(db,sale),e=economics(db,sale);
-  return JSON.stringify([sale?.id,sale?.pid,dayKey(sale?.date),num(sale?.q),e.saleRevenue,e.buyerPostage,e.acquisitionCost,e.marketplaceFees,e.postageCost,e.packagingCost,e.otherDirectCosts,purchaseOrigin(p),String(sale?.status||'')]);
+  return JSON.stringify([sale?.id,sale?.pid,dayKey(sale?.date),num(sale?.q),e.saleRevenue,e.buyerPostage,e.acquisitionCost,e.marketplaceFees,e.postageCost,e.packagingCost,e.otherDirectCosts,purchaseOrigin(p),String(sale?.status||''),String(sale?.profitDataStatus||'')]);
 }
 function saleIsRefunded(s){return ['REFUNDED','CANCELLED','VOID'].includes(String(s?.status||'').toUpperCase())||s?.refunded===true}
+function saleProfitDataPending(s){return ['PENDING_COSTS','INCOMPLETE','AWAITING_COSTS'].includes(String(s?.profitDataStatus||'').toUpperCase())}
 
 function activeAllocations(db){return ensureState(db).allocations.filter(a=>a.status==='ACTIVE')}
 function tradingProfitRows(db,{upTo=null}={}){
@@ -244,6 +245,12 @@ function reconcile(db,{context={},now=isoNow()}={}){
   sales.forEach(sale=>{
     const sid=String(sale.id),fingerprint=saleFingerprint(db,sale),active=[...state.allocations].reverse().find(a=>String(a.saleId)===sid&&a.status==='ACTIVE');
     if(saleIsRefunded(sale)){if(active)reverseAllocation(db,active,{now,reason:'SALE_REFUNDED_OR_CANCELLED'});return}
+    if(saleProfitDataPending(sale)){
+      if(active)reverseAllocation(db,active,{now,reason:'SALE_COSTS_PENDING'});
+      const prior=[...state.allocations].reverse().find(a=>String(a.saleId)===sid&&a.status==='PENDING_COSTS'&&a.saleFingerprint===fingerprint);
+      if(!prior)state.allocations.push({id:`PA-PENDING-${sid}-${Date.now().toString(36)}`,saleId:sid,saleDate:dayKey(sale.date),saleFingerprint:fingerprint,classification:classifySale(db,sale),status:'PENDING_COSTS',unallocatedReason:'DIRECT_SALE_COSTS_NOT_CONFIRMED',createdAt:now,updatedAt:now,allocationVersion:ENGINE_VERSION});
+      return
+    }
     if(active&&active.saleFingerprint===fingerprint)return;
     if(active)reverseAllocation(db,active,{now,reason:'SALE_EDITED_OR_RESYNCED'});
     if(dayKey(sale.date)<initDate){
@@ -301,7 +308,7 @@ function scoreCapitalVelocity({projectedNetProfit=0,roi=0,expectedDaysToSale=90,
   return round2((profitScore*w.projectedNetProfit+roiScore*w.roi+sellScore*w.sellThrough+confScore*w.confidence+capitalScore*w.capitalEfficiency)*100);
 }
 
-const api={ENGINE_VERSION,SCHEMA_VERSION,DEFAULT_CONFIG,POTS,ensureState,economics,classifySale,saleFingerprint,reconcile,reconcileStage,trendMetrics,ledgerBalances,getGrailPlanState,getFinanceSnapshot,scoreCapitalVelocity,totalOwnerCashInjected,bootstrapGenerated,retainedTradingProfit};
+const api={ENGINE_VERSION,SCHEMA_VERSION,DEFAULT_CONFIG,POTS,ensureState,economics,classifySale,saleFingerprint,saleProfitDataPending,reconcile,reconcileStage,trendMetrics,ledgerBalances,getGrailPlanState,getFinanceSnapshot,scoreCapitalVelocity,totalOwnerCashInjected,bootstrapGenerated,retainedTradingProfit};
 root.GengrailProfitEngine=api;
 if(typeof module!=='undefined'&&module.exports)module.exports=api;
 })(typeof window!=='undefined'?window:globalThis);
