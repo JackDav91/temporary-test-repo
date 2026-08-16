@@ -1,0 +1,56 @@
+name: Load consolidated graded stock UI
+
+on:
+  push:
+    branches:
+      - agent/slab-recognition-v1
+    paths:
+      - .github/workflows/load-graded-stock-ui.yml
+
+permissions:
+  contents: write
+
+jobs:
+  load:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Add only graded stock UI loader
+        run: |
+          cp index.html /tmp/index-before.html
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text()
+          marker='<script src="graded-stock-ui.js?v=1.0.0" data-gengrail-graded-stock-ui="1"></script>'
+          if marker in s:
+              raise SystemExit('graded stock UI loader already present')
+          i=s.rfind('</body>')
+          if i < 0:
+              raise SystemExit('Safety stop: no final </body>')
+          s=s[:i]+marker+'\n'+s[i:]
+          p.write_text(s)
+          PY
+
+      - name: Verify index changed by one loader only
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          before=Path('/tmp/index-before.html').read_text()
+          after=Path('index.html').read_text()
+          marker='<script src="graded-stock-ui.js?v=1.0.0" data-gengrail-graded-stock-ui="1"></script>\n'
+          if after.replace(marker,'') != before:
+              raise SystemExit('Safety stop: index changed beyond graded stock UI loader')
+          PY
+
+      - name: Commit loader to main
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          git commit -m 'Load consolidated graded stock intake UI'
+          git push origin main
