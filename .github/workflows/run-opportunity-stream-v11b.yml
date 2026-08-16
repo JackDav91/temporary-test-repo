@@ -1,0 +1,48 @@
+name: Retry Opportunity Stream v1.1 hardening
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/run-opportunity-stream-v11b.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 5
+      - name: Correct literal regex replacements
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('.github/scripts/harden_opportunity_stream_v11.py')
+          s=p.read_text()
+          s=s.replace('re.subn(r"function parseListing\\(item\\)\\{.*?\\n\\}", """', 're.subn(r"function parseListing\\(item\\)\\{.*?\\n\\}", lambda m: """')
+          s=s.replace('re.subn(r"function peerRows\\(row,all\\)\\{.*?\\n\\}", """', 're.subn(r"function peerRows\\(row,all\\)\\{.*?\\n\\}", lambda m: """')
+          s=s.replace('re.subn(r"function confidenceFor\\(peers,simAvg,type\\)\\{.*?\\n\\}", """', 're.subn(r"function confidenceFor\\(peers,simAvg,type\\)\\{.*?\\n\\}", lambda m: """')
+          s=s.replace('re.subn(r"function buildBasket\\(rows,g\\)\\{.*?\\n\\}", """', 're.subn(r"function buildBasket\\(rows,g\\)\\{.*?\\n\\}", lambda m: """')
+          s=s.replace('re.subn(r"function resultCard\\(a,i\\)\\{.*?\\n\\}", """', 're.subn(r"function resultCard\\(a,i\\)\\{.*?\\n\\}", lambda m: """')
+          p.write_text(s)
+          PY
+          python3 .github/scripts/harden_opportunity_stream_v11.py
+      - name: Verify boundaries
+        run: |
+          grep -q 'Opportunity Stream v1.1 accuracy hardening' grail-hub.js
+          grep -q 'function rawCondition' grail-hub.js
+          grep -q 'function printingFamily' grail-hub.js
+          grep -q 'CONSERVATIVE MARKET' grail-hub.js
+          grep -q 'TARGET EXCEEDED BY BEST SENSIBLE ROUTE' grail-hub.js
+          grep -q 'opportunities/search' grail-hub.js
+          grep -q 'recognise-card' index.html
+          grep -q 'graded-integration.js' index.html
+          grep -q 'gengrail-ebay.js' index.html
+      - name: Commit patch
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add grail-hub.js
+          git commit -m 'Harden Opportunity Stream identity condition and valuation'
+          git push origin HEAD:main
