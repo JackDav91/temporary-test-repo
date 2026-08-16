@@ -1,0 +1,59 @@
+name: Fix Grail Hub CSS loader
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/fix-grail-hub-css-loader.yml'
+permissions:
+  contents: write
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 5
+      - name: Move Grail Hub CSS link into real document head
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text()
+          # Remove any previous Grail Hub stylesheet tag wherever it was inserted.
+          import re
+          s=re.sub(r'\n?<link href="grail-hub\.css\?v=[^"]+" rel="stylesheet" data-gengrail-grail-hub-css="1"/>\n?', '\n', s)
+          css='<link href="grail-hub.css?v=1.0.2" rel="stylesheet" data-gengrail-grail-hub-css="1"/>'
+          # The first closing head is the actual document head. Later occurrences live inside print-template JS strings.
+          i=s.find('</head>')
+          if i < 0: raise SystemExit('No document </head> found')
+          s=s[:i]+css+'\n'+s[i:]
+          p.write_text(s)
+
+          p=Path('sw.js')
+          sw=p.read_text().replace('gengrail-log-v22.1.1-grail-hub-loader-fix','gengrail-log-v22.1.2-grail-hub-css-fix')
+          p.write_text(sw)
+          PY
+      - name: Safety gates
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(grep -o 'data-gengrail-grail-hub-css="1"' index.html | wc -l)" -eq 1
+          head -c 12000 index.html | grep -q 'grail-hub.css?v=1.0.2'
+          tail -c 1400 index.html | grep -q 'grail-hub.js?v=1.0.1'
+          grep -q 'window.printLocationLabel' index.html
+          grep -q 'recognise-card' index.html
+          grep -q 'graded-integration.js' index.html
+          grep -q 'gengrail-ebay.js' index.html
+          grep -q 'gengrail-log-v22.1.2-grail-hub-css-fix' sw.js
+      - name: Commit CSS loader fix
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html sw.js
+          git commit -m 'Fix Grail Hub stylesheet document boundary'
+          git push origin HEAD:main
