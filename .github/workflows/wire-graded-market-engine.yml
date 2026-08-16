@@ -1,0 +1,72 @@
+name: Wire graded active market engine
+
+on:
+  push:
+    branches:
+      - agent/slab-recognition-v1
+    paths:
+      - .github/workflows/wire-graded-market-engine.yml
+
+permissions:
+  contents: write
+
+jobs:
+  wire:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Patch only graded market bridge and loaders
+        run: |
+          cp graded-integration.js /tmp/graded-before.js
+          cp index.html /tmp/index-before.html
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('graded-integration.js')
+          s=p.read_text()
+          a=s.index('function marketHtml(r){')
+          b=s.index('function html(r){',a)
+          new_market='''function marketHtml(r){const m=r.marketPricing;if(!m||!m.available)return `<div class="graded-market"><small>CURRENT GRADED MARKET</small><b class="warn">MARKET REVIEW REQUIRED</b><small>${esc(m?.note||'Fewer than 3 exact current listing matches. No raw-card fallback has been used.')}</small></div>`;return `<div class="graded-market"><small>CURRENT GRADED MARKET · ${esc(m.exactMatchCount)} EXACT MATCHES · ${esc(m.confidence||'MEDIUM')} CONFIDENCE</small><div class="graded-market-value">£${Number(m.suggestedGbp||0).toFixed(2)}</div><small>${esc(m.source||'eBay current listings')} · active asking-price evidence</small><div class="graded-market-evidence"><span>LOW £${Number(m.lowGbp||0).toFixed(2)}</span><span>MEDIAN £${Number(m.medianGbp||m.suggestedGbp||0).toFixed(2)}</span><span>HIGH £${Number(m.highGbp||0).toFixed(2)}</span></div></div>`}\n'''
+          s=s[:a]+new_market+s[b:]
+          a=s.index('async function lookupMarket(r){')
+          b=s.index('async function attachMarket(r){',a)
+          new_lookup='''async function lookupMarket(r){try{const res=await fetch(EBAY_BACKEND+'/api/ebay/graded-market',{method:'POST',mode:'cors',credentials:'omit',cache:'no-store',headers:{'content-type':'application/json','accept':'application/json'},body:JSON.stringify({cardName:r.cardName,cardNumber:r.cardNumber,setName:r.setName,language:r.language,grader:r.grader,grade:r.grade,canonicalId:r.canonicalId})});const d=await res.json().catch(()=>null);if(!res.ok||!d?.ok)return {available:false,status:'MARKET_REVIEW_REQUIRED',note:d?.message||'Current graded-market feed is not deployed yet. No raw-card fallback has been used.'};const rows=Array.isArray(d.itemSummaries)?d.itemSummaries:Array.isArray(d.items)?d.items:Array.isArray(d.evidence)?d.evidence:[];if(window.GengrailGradedMarket&&rows.length){return window.GengrailGradedMarket.build({cardName:r.cardName,cardNumber:r.cardNumber,setName:r.setName,language:r.language,grader:r.grader,grade:r.grade},rows)}if(Number(d.suggestedGbp||0)>0&&Number(d.exactMatchCount||0)>=3)return {available:true,status:d.marketStatus||'ACTIVE_GRADED_MARKET',source:d.source||'eBay current listings · EBAY_GB',evidenceType:d.evidenceType||'current_active_asking_prices',exactMatchCount:Number(d.exactMatchCount||0),confidence:d.confidence||'MEDIUM',matchScore:Number(d.matchScore||0),suggestedGbp:Number(d.suggestedGbp||0),medianGbp:Number(d.medianGbp||d.suggestedGbp||0),lowGbp:Number(d.lowGbp||0),highGbp:Number(d.highGbp||0),evidence:rows,note:d.note||''};return {available:false,status:'MARKET_REVIEW_REQUIRED',exactMatchCount:Number(d.exactMatchCount||rows.length||0),note:d.note||'Fewer than 3 exact current listing matches. No raw-card fallback has been used.'}}catch(e){return {available:false,status:'MARKET_REVIEW_REQUIRED',note:'Current graded-market service unavailable. No raw-card fallback has been used.'}}}\n'''
+          s=s[:a]+new_lookup+s[b:]
+          p.write_text(s)
+
+          p=Path('index.html')
+          s=p.read_text()
+          old='<script src="graded-integration.js?v=21.5.5" data-gengrail-graded-main="1"></script>'
+          new='<script src="graded-market-engine.js?v=1.0.0" data-gengrail-graded-market="1"></script>\n<script src="graded-integration.js?v=21.6.0" data-gengrail-graded-main="1"></script>'
+          if s.count(old)!=1: raise SystemExit('Safety stop: graded integration loader marker missing or non-unique')
+          p.write_text(s.replace(old,new,1))
+          PY
+
+      - name: Verify raw application logic was not changed
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          before=Path('/tmp/index-before.html').read_text()
+          after=Path('index.html').read_text()
+          old='<script src="graded-integration.js?v=21.5.5" data-gengrail-graded-main="1"></script>'
+          new='<script src="graded-market-engine.js?v=1.0.0" data-gengrail-graded-market="1"></script>\n<script src="graded-integration.js?v=21.6.0" data-gengrail-graded-main="1"></script>'
+          if after != before.replace(old,new,1):
+              raise SystemExit('Safety stop: index changed beyond graded loaders')
+          gb=Path('/tmp/graded-before.js').read_text()
+          ga=Path('graded-integration.js').read_text()
+          for marker in ['recogniseSlabAttempt','async function slab(','function syncStock(','function syncPricing(']:
+              if marker not in ga: raise SystemExit('Safety stop: expected graded recognition marker missing')
+          if "const ENDPOINT='https://gengrail-card-ai.gengrailtcg.workers.dev'" not in ga:
+              raise SystemExit('Safety stop: recognition endpoint changed')
+          PY
+
+      - name: Commit graded market engine wiring
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add graded-integration.js index.html
+          git commit -m 'Use raw-style exact matching for graded active market pricing'
+          git push origin main
