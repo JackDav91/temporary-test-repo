@@ -27,13 +27,18 @@ jobs:
           from pathlib import Path
           p=Path('graded-integration.js')
           s=p.read_text()
-          bad='}\\nfunction '
-          count=s.count(bad)
-          if count < 1:
+          fixes=0
+          for bad,good in [
+              ('}\\nfunction ','}\nfunction '),
+              ('}\\nasync function ','}\nasync function ')
+          ]:
+              c=s.count(bad)
+              fixes+=c
+              s=s.replace(bad,good)
+          if fixes < 1:
               raise SystemExit('Safety stop: expected malformed literal separator not found')
-          s=s.replace(bad,'}\nfunction ')
           p.write_text(s)
-          print('Fixed literal separators:',count)
+          print('Fixed literal separators:',fixes)
 
           p=Path('index.html')
           s=p.read_text()
@@ -68,7 +73,7 @@ jobs:
             'recogniseSlabAttempt'
           ]:
               if x not in g: raise SystemExit('Required graded boundary marker missing: '+x)
-          if '}\\nfunction ' in g:
+          if '}\\nfunction ' in g or '}\\nasync function ' in g:
               raise SystemExit('Malformed literal function separator remains')
           PY
 
