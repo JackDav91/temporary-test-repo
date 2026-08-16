@@ -1,0 +1,95 @@
+from pathlib import Path
+import re
+
+p = Path('grail-hub.js')
+s = p.read_text()
+if 'GENGRAIL GRAIL HUB v1.3' not in s:
+    raise SystemExit('Safety stop: expected Grail Hub v1.3 source')
+
+s = s.replace('GENGRAIL GRAIL HUB v1.3 — Buying command centre + live Opportunity Stream','GENGRAIL GRAIL HUB v1.4 — Opportunity Stream v1.1 accuracy hardening',1)
+
+s = s.replace(
+"function median(values=[]){const a=values.filter(x=>x>0).slice().sort((a,b)=>a-b);if(!a.length)return 0;const i=Math.floor(a.length/2);return a.length%2?a[i]:(a[i-1]+a[i])/2}",
+"function median(values=[]){const a=values.filter(x=>x>0).slice().sort((a,b)=>a-b);if(!a.length)return 0;const i=Math.floor(a.length/2);return a.length%2?a[i]:(a[i-1]+a[i])/2}\nfunction percentile(values=[],q=.5){const a=values.filter(x=>x>0).slice().sort((a,b)=>a-b);if(!a.length)return 0;if(a.length===1)return a[0];const pos=(a.length-1)*Math.max(0,Math.min(1,q)),lo=Math.floor(pos),hi=Math.ceil(pos),w=pos-lo;return a[lo]*(1-w)+a[hi]*w}",1)
+
+s = s.replace(
+"function obviousReject(t){return /\\b(proxy|custom|fan art|digital|code card|empty slab|slab only|case only|repack|mystery|orica|lot|bundle|collection|job lot|break)\\b/.test(t)}",
+"function obviousReject(t){return /\\b(proxy|custom|fan art|digital|code card|empty slab|slab only|case only|repack|mystery|orica|lot|bundle|collection|job lot|break|metal card|gold card)\\b/.test(t)}\nfunction printingFamily(t,cardNumber){\n  if(/\\b(celebrations|25th anniversary)\\b/.test(t))return 'CELEBRATIONS';\n  if(/\\b(evolutions|xy evolutions|2016)\\b/.test(t))return 'EVOLUTIONS';\n  if(/\\b(base set 2|base set ii)\\b/.test(t))return 'BASE_SET_2';\n  if(/\\b(shadowless)\\b/.test(t))return 'BASE_SET_SHADOWLESS';\n  if(/\\b(base set|wotc|wizards of the coast|1999)\\b/.test(t))return 'BASE_SET';\n  if(cardNumber==='4/102'&&/\\b(wizards|wizard|vintage)\\b/.test(t))return 'BASE_SET';\n  return 'UNKNOWN';\n}\nfunction rawCondition(title,itemCondition=''){\n  const t=clean(`${title} ${itemCondition}`);\n  if(/\\b(damaged|damage|dmg|creased|crease|water damage|torn)\\b/.test(t))return 'DMG';\n  if(/\\b(heavily played|heavy play|hp condition|hp played)\\b/.test(t)||/\\(hp\\)/.test(t))return 'HP';\n  if(/\\b(moderately played|moderate play|mp condition)\\b/.test(t)||/\\(mp\\)/.test(t))return 'MP';\n  if(/\\b(lightly played|light play|lp condition)\\b/.test(t)||/\\(lp\\)/.test(t))return 'LP';\n  if(/\\b(near mint|nm condition|mint condition|pack fresh)\\b/.test(t)||/\\(nm\\)/.test(t))return 'NM';\n  return 'UNKNOWN';\n}",1)
+
+s, n = re.subn(r"function parseListing\(item\)\{.*?\n\}", """function parseListing(item){
+  const title=String(item?.title||'').trim(),t=clean(title);if(!title||obviousReject(t))return null;
+  if(!/pokemon|pokémon/i.test(title))return null;
+  const n=title.match(/\\b(\\d{1,4})\\s*\\/\\s*(\\d{1,4})\\b/);if(!n)return null;
+  const cardNumber=`${Number(n[1])}/${Number(n[2])}`;
+  const grader=graderFrom(t),grade=gradeFrom(t,grader);
+  if(grader&&!grade)return null;
+  if(!grader&&/\\bgraded|slab\\b/.test(t))return null;
+  const ask=listingPrice(item);if(!(ask>0))return null;
+  const type=grader?'GRADED':'RAW',family=printingFamily(t,cardNumber),condition=type==='RAW'?rawCondition(title,item?.condition||''):'GRADED';
+  return {item,title,t,cardNumber,grader,grade,type,printingFamily:family,condition,ask,inbound:shippingPrice(item),tokens:tokensFor(title)};
+}""", s, count=1, flags=re.S)
+if n != 1: raise SystemExit('parseListing replacement failed')
+
+s, n = re.subn(r"function peerRows\(row,all\)\{.*?\n\}", """function peerRows(row,all){
+  return all.filter(x=>{
+    if(x===row||x.cardNumber!==row.cardNumber||x.grader!==row.grader||x.grade!==row.grade)return false;
+    if(x.printingFamily!==row.printingFamily)return false;
+    if(row.type==='RAW'&&x.condition!==row.condition)return false;
+    return similarity(row.tokens,x.tokens)>=.42;
+  });
+}""", s, count=1, flags=re.S)
+if n != 1: raise SystemExit('peerRows replacement failed')
+
+s, n = re.subn(r"function confidenceFor\(peers,simAvg,type\)\{.*?\n\}", """function confidenceFor(peers,simAvg,row){
+  const depth=Math.min(.28,Math.max(0,peers)*.025);
+  const identity=Math.max(0,Math.min(.22,simAvg*.22));
+  const printing=row.printingFamily==='UNKNOWN'?.045:.12;
+  const condition=row.type==='GRADED'?.08:(row.condition==='UNKNOWN'?.035:.08);
+  const graded=row.type==='GRADED'?.025:0;
+  return Math.min(.96,.30+depth+identity+printing+condition+graded);
+}""", s, count=1, flags=re.S)
+if n != 1: raise SystemExit('confidence replacement failed')
+
+old = """    const resale=median(peers.map(x=>x.ask));if(!(resale>r.ask))continue;
+    const confidence=confidenceFor(peers.length,simAvg,r.type);if(!(confidence>0))continue;"""
+new = """    const peerPrices=peers.map(x=>x.ask),marketMedian=median(peerPrices),lowerBand=percentile(peerPrices,.35),resale=((marketMedian+lowerBand)/2);if(!(resale>r.ask))continue;
+    const confidence=confidenceFor(peers.length,simAvg,r);if(!(confidence>0))continue;"""
+if old not in s: raise SystemExit('resale/confidence block not found')
+s = s.replace(old,new,1)
+
+old = "    e.cardNumber=r.cardNumber;e.grader=r.grader;e.grade=r.grade;e.type=r.type;e.peerCount=peers.length;e.marketMedian=resale;e.image=String(r.item?.image?.imageUrl||'');e.seller=r.item?.seller||null;e.similarity=simAvg;"
+new = "    e.cardNumber=r.cardNumber;e.grader=r.grader;e.grade=r.grade;e.type=r.type;e.printingFamily=r.printingFamily;e.condition=r.condition;e.peerCount=peers.length;e.marketMedian=marketMedian;e.conservativeAnchor=resale;e.lowerBand=lowerBand;e.image=String(r.item?.image?.imageUrl||'');e.seller=r.item?.seller||null;e.similarity=simAvg;"
+if old not in s: raise SystemExit('enrichment block not found')
+s = s.replace(old,new,1)
+
+s, n = re.subn(r"function buildBasket\(rows,g\)\{.*?\n\}", """function buildBasket(rows,g){
+  const liquidity=num(g.availableGrailPlanLiquidity),targetMin=num(g.targetRange?.min),targetMax=num(g.targetRange?.max),safe=rows.filter(x=>x.qualityPass&&x.landed<=liquidity);
+  const pool=safe.slice(0,14),candidates=[];
+  function consider(chosen,cost,profit,score){if(!chosen.length)return;candidates.push({chosen:[...chosen],cost,profit,score,inBand:profit>=targetMin&&profit<=targetMax,reaches:profit>=targetMin,overshoot:Math.max(0,profit-targetMax)})}
+  function walk(start,chosen,ids,cost,profit,score){consider(chosen,cost,profit,score);if(chosen.length>=4)return;for(let i=start;i<pool.length;i++){const x=pool[i],key=[x.cardNumber,x.grader,x.grade,x.printingFamily,x.condition].join('|');if(ids.has(key)||cost+x.landed>liquidity)continue;ids.add(key);chosen.push(x);walk(i+1,chosen,ids,cost+x.landed,profit+x.profit,score+x.rankScore);chosen.pop();ids.delete(key)}}
+  walk(0,[],new Set(),0,0,0);
+  const good=candidates.filter(x=>x.reaches).sort((a,b)=>Number(b.inBand)-Number(a.inBand)||a.chosen.length-b.chosen.length||(a.inBand?a.cost-b.cost:a.overshoot-b.overshoot)||b.score-a.score||a.cost-b.cost);
+  const best=good[0]||candidates.sort((a,b)=>b.profit-a.profit||b.score-a.score||a.cost-b.cost)[0]||{chosen:[],cost:0,profit:0};
+  let status='NO HIGH-CONFIDENCE ROUTE FOUND',shortfall=0,unlocked=0;
+  if(best.chosen.length&&best.profit>=targetMin)status=best.profit<=targetMax?'TARGET ROUTE FOUND':'TARGET EXCEEDED BY BEST SENSIBLE ROUTE';
+  else if(best.chosen.length)status='TARGET CONSTRAINED BY MARKET QUALITY';
+  const over=rows.filter(x=>x.qualityPass&&x.landed>liquidity).sort((a,b)=>a.landed-b.landed)[0];
+  if(!best.chosen.length&&over){status='TARGET CONSTRAINED BY LIQUIDITY';shortfall=Math.max(0,over.landed-liquidity);unlocked=over.profit}
+  return {status,chosen:best.chosen,cost:best.cost,profit:best.profit,targetMin,targetMax,shortfall,unlocked};
+}""", s, count=1, flags=re.S)
+if n != 1: raise SystemExit('buildBasket replacement failed')
+
+s, n = re.subn(r"function resultCard\(a,i\)\{.*?\n\}", """function resultCard(a,i){
+  const condition=a.type==='RAW'?` · ${a.condition}`:'';
+  const family=a.printingFamily&&a.printingFamily!=='UNKNOWN'?` · ${a.printingFamily.replaceAll('_',' ')}`:'';
+  const reason=`${a.peerCount} condition-matched current listings · ${(a.confidence*100).toFixed(0)}% confidence · ${a.type}${a.grader?` · ${a.grader} ${a.grade}`:''}${condition}${family}`;
+  return `<article class=\"grail-opportunity ${a.safe?'':'review'}\"><img src=\"${esc(a.image||'icon-192.png')}\" alt=\"\"><div class=\"grail-opportunity-main\"><div class=\"grail-opportunity-top\"><h3>${esc(a.title)}</h3><span class=\"grail-opportunity-rank\">#${i+1} · ${a.rankScore}/100</span></div><div class=\"grail-opportunity-sub\">${esc(reason)}</div><div class=\"grail-opportunity-grid\"><div><small>LANDED BUY</small><b>${money(a.landed)}</b></div><div><small>CONSERVATIVE MARKET</small><b>${money(a.conservativeAnchor)}</b></div><div><small>NET PROFIT</small><b class=\"good\">${money(a.profit)}</b></div><div><small>ROI / MARGIN</small><b>${a.roi.toFixed(0)}% / ${a.margin.toFixed(0)}%</b></div></div><div class=\"grail-opportunity-reason\">Peer median ${money(a.marketMedian)} · buying anchor blends the median with the lower market band. Active asking prices remain evidence, not sold prices.</div><div class=\"grail-opportunity-actions\">${a.url?`<button class=\"grail-open-listing\" data-open-listing=\"${esc(a.id)}\">OPEN EBAY</button>`:''}<button class=\"grail-add-plan\" data-plan-item=\"${esc(a.id)}\">${a.safe?'PLAN CANDIDATE':'REVIEW'}</button></div></div></article>`;
+}""", s, count=1, flags=re.S)
+if n != 1: raise SystemExit('resultCard replacement failed')
+
+old = "plan.status==='TARGET ROUTE FOUND'?'Smallest sensible high-ranked basket currently reaches the lower profit objective without exceeding deployable liquidity.'"
+new = "plan.status==='TARGET ROUTE FOUND'?'Smallest sensible basket reaches today’s target band without exceeding deployable liquidity.':plan.status==='TARGET EXCEEDED BY BEST SENSIBLE ROUTE'?'No route lands inside the target band; this is the smallest sensible high-confidence route above it.'"
+if old not in s: raise SystemExit('plan copy anchor not found')
+s = s.replace(old,new,1)
+
+p.write_text(s)
