@@ -1,6 +1,6 @@
 (()=>{
 'use strict';
-const ENDPOINT='https://gengrail-card-ai-slab-preview.gengrailtcg.workers.dev';
+const ENDPOINT='https://gengrail-card-ai.gengrailtcg.workers.dev';
 let stockResult=null,pricingResult=null,installed=false;
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[c]));
