@@ -1,4 +1,4 @@
-/* GENGRAIL GRAIL HUB v1.4 — Opportunity Stream v1.1 accuracy hardening
+/* GENGRAIL GRAIL HUB v1.5 — Opportunity Stream v1.2 condition gate
    Consumes Profit Engine state and the existing Opportunity Finder economics.
    Active listings are evidence only; no sold-price or sell-through data is fabricated.
 */
@@ -42,10 +42,10 @@ function printingFamily(t,cardNumber){
 function rawCondition(title,itemCondition=''){
   const t=clean(`${title} ${itemCondition}`);
   if(/\b(damaged|damage|dmg|creased|crease|water damage|torn)\b/.test(t))return 'DMG';
-  if(/\b(heavily played|heavy play|hp condition|hp played)\b/.test(t)||/\(hp\)/.test(t))return 'HP';
-  if(/\b(moderately played|moderate play|mp condition)\b/.test(t)||/\(mp\)/.test(t))return 'MP';
-  if(/\b(lightly played|light play|lp condition)\b/.test(t)||/\(lp\)/.test(t))return 'LP';
-  if(/\b(near mint|nm condition|mint condition|pack fresh)\b/.test(t)||/\(nm\)/.test(t))return 'NM';
+  if(/\b(heavily played|heavy play|hp condition|hp played|hp)\b/.test(t))return 'HP';
+  if(/\b(moderately played|moderate play|mp condition|mp)\b/.test(t))return 'MP';
+  if(/\b(lightly played|light play|lp condition|lp)\b/.test(t))return 'LP';
+  if(/\b(near mint|nm condition|mint condition|pack fresh|nm)\b/.test(t))return 'NM';
   return 'UNKNOWN';
 }
 function graderFrom(t){if(/\b(bgs|beckett)\b/.test(t))return 'BGS';if(/\bpsa\b/.test(t))return 'PSA';if(/\bcgc\b/.test(t))return 'CGC';if(/\bace\b/.test(t))return 'ACE';if(/\bsgc\b/.test(t))return 'SGC';return ''}
@@ -111,7 +111,8 @@ function rankListings(items,g){
     const confidence=confidenceFor(peers.length,simAvg,r);if(!(confidence>0))continue;
     const e=existingEconomics({id:r.item.itemId||'',title:r.title,source:'eBay live',confidence,ask:r.ask,inbound:r.inbound,resale,sellPlatform:'ebay',outbound,pack,minRoi:num(g.minimumROI),minProfit:1,url:String(r.item.itemWebUrl||'')});
     e.cardNumber=r.cardNumber;e.grader=r.grader;e.grade=r.grade;e.type=r.type;e.printingFamily=r.printingFamily;e.condition=r.condition;e.peerCount=peers.length;e.marketMedian=marketMedian;e.conservativeAnchor=resale;e.lowerBand=lowerBand;e.image=String(r.item?.image?.imageUrl||'');e.seller=r.item?.seller||null;e.similarity=simAvg;
-    e.qualityPass=e.profit>0&&e.roi>=num(g.minimumROI)&&e.margin>=num(g.minimumNetMargin)&&confidence>=num(g.minimumConfidence);
+    const conditionKnown=e.type!=='RAW'||e.condition!=='UNKNOWN';
+    e.qualityPass=conditionKnown&&e.profit>0&&e.roi>=num(g.minimumROI)&&e.margin>=num(g.minimumNetMargin)&&confidence>=num(g.minimumConfidence);
     e.liquidityPass=e.landed<=num(g.availableGrailPlanLiquidity);
     e.safe=e.qualityPass&&e.liquidityPass;
     e.rankScore=modeScore(e,g);
