@@ -1,4 +1,4 @@
-const C='gengrail-log-v21.3.4-raw-first-bridge-refresh';
+const C='gengrail-log-v21.3.5-isolated-graded-import';
 const A=['./manifest.json','./gengrail-theme.css','./gengrail-ebay.js','./icon-192.png','./icon-512.png'];
 
 self.addEventListener('install',e=>{
@@ -15,7 +15,7 @@ async function ebayScriptWithGradedBridge(request){
   const r=await fetch(request,{cache:'no-store'});
   if(!r.ok)return r;
   const js=await r.text();
-  const loader=`\n;(()=>{try{if(!document.querySelector('script[data-gengrail-graded-bridge]')){const s=document.createElement('script');s.src='./graded-integration.js?v=21.3.4';s.dataset.gengrailGradedBridge='1';document.head.appendChild(s)}}catch(e){console.warn('graded bridge loader',e)}})();\n`;
+  const loader=`\n;(()=>{try{if(!document.querySelector('script[data-gengrail-graded-bridge]')){const s=document.createElement('script');s.src='./graded-integration.js?v=21.3.5';s.dataset.gengrailGradedBridge='1';document.head.appendChild(s)}}catch(e){console.warn('graded bridge loader',e)}})();\n`;
   const h=new Headers(r.headers);h.delete('content-length');h.set('cache-control','no-store');
   return new Response(js+loader,{status:r.status,statusText:r.statusText,headers:h});
 }
