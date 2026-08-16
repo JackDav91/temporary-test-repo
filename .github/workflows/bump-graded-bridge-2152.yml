@@ -1,0 +1,55 @@
+name: Cache-bust graded bridge 21.5.2
+
+on:
+  push:
+    branches:
+      - agent/slab-recognition-v1
+    paths:
+      - .github/workflows/bump-graded-bridge-2152.yml
+
+permissions:
+  contents: write
+
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Change only graded bridge cache version
+        run: |
+          cp index.html /tmp/index-before.html
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text()
+          old='<script src="graded-integration.js?v=21.5.1" data-gengrail-graded-main="1"></script>'
+          new='<script src="graded-integration.js?v=21.5.2" data-gengrail-graded-main="1"></script>'
+          if s.count(old) != 1:
+              raise SystemExit(f'Safety stop: expected exactly one old loader, found {s.count(old)}')
+          p.write_text(s.replace(old,new,1))
+          PY
+
+      - name: Verify no other index content changed
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          before=Path('/tmp/index-before.html').read_text()
+          after=Path('index.html').read_text()
+          old='<script src="graded-integration.js?v=21.5.1" data-gengrail-graded-main="1"></script>'
+          new='<script src="graded-integration.js?v=21.5.2" data-gengrail-graded-main="1"></script>'
+          if after.replace(new,old,1) != before:
+              raise SystemExit('Safety stop: index.html changed beyond the cache-bust line')
+          PY
+
+      - name: Commit cache-bust
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          git commit -m 'Cache-bust graded slab retry bridge v21.5.2'
+          git push origin main
