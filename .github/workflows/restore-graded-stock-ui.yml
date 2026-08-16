@@ -19,4 +19,69 @@ jobs:
         with:
           ref: main
 
-      - name: Restore pre
+      - name: Restore preferred Stock renderer only
+        run: |
+          cp graded-integration.js /tmp/graded-before.js
+          cp index.html /tmp/index-before.html
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('graded-integration.js')
+          s=p.read_text()
+
+          start=s.index('function stockUI(r){')
+          end=s.index('async function syncStock(r){',start)
+          old_style_stock="""function stockUI(r){style();let h=$('gradedStockBridge');if(!h){h=document.createElement('div');h.id='gradedStockBridge';h.className='graded-bridge';const p=$('stockEntryPanel');p?.parentNode?.insertBefore(h,p)}h.hidden=false;h.innerHTML=html(r)+(r?.marketPricing?.available?`<div class=\"actions graded-stock-market-actions\"><button class=\"btn graded-use-price\" data-guseprice type=\"button\">USE SUGGESTED PRICE</button></div>`:'');const b=h.querySelector('[data-gconfirm]');if(b)b.onclick=async()=>{const v=h.querySelector('[data-ggrader]')?.value;if(!v)return;userConfirm(r,v);await syncStock(r)};const use=h.querySelector('[data-guseprice]');if(use)use.onclick=()=>{const v=Number(r?.marketPricing?.suggestedGbp||0);if(!(v>0))return;const t=$('plist');if(t){t.value=v.toFixed(2);t.dispatchEvent(new Event('input',{bubbles:true}));t.dispatchEvent(new Event('change',{bubbles:true}));t.scrollIntoView({behavior:'smooth',block:'center'})}}}\n"""
+          s=s[:start]+old_style_stock+s[end:]
+
+          # Display provisional ACE clearly without changing stored recognition identity.
+          html_start=s.index('function html(r){')
+          html_end=s.index('function note(r){',html_start)
+          new_html="""function html(r){const displayGrader=r?.marketPricing?.graderAssumed===true?'ACE · ASSUMED':r.grader;return `<div class=\"graded-bridge-head\">GRADED SLAB IDENTIFIED</div><span class=\"graded-bridge-sub\">${esc(r.cardName)} · ${esc(r.cardNumber)} · ${esc(r.setName)}</span><div class=\"graded-bridge-grid\"><div><small>GRADER</small><b>${esc(displayGrader)}</b></div><div><small>GRADE</small><b>${esc(r.grade)} ${esc(r.gradeText)}</b></div><div><small>CERT</small><b>${esc(r.certNumber||'—')}</b></div><div><small>CARD VERIFY</small><b class=\"${r.canonicalVerified?'good':'warn'}\">${r.canonicalVerified?'YES':'REVIEW'}</b></div></div>${marketHtml(r)}${picker(r)}`}\n"""
+          s=s[:html_start]+new_html+s[html_end:]
+          p.write_text(s)
+
+          p=Path('index.html')
+          s=p.read_text()
+          old='<script src="graded-integration.js?v=21.7.1" data-gengrail-graded-main="1"></script>'
+          new='<script src="graded-integration.js?v=21.7.2" data-gengrail-graded-main="1"></script>'
+          if s.count(old)!=1: raise SystemExit('Safety stop: graded loader marker missing/non-unique')
+          p.write_text(s.replace(old,new,1))
+          PY
+
+      - name: JavaScript syntax gate
+        run: node --check graded-integration.js
+
+      - name: Verify pricing and ACE fallback preserved
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          g=Path('graded-integration.js').read_text()
+          required=[
+            "marketGrader=unresolved?'ACE':r.grader",
+            'PROVISIONAL_ACE_MARKET',
+            'async function lookupMarket(r)',
+            'async function syncStock(r)',
+            'async function syncPricing(r)',
+            'recogniseSlabAttempt',
+            'USE SUGGESTED PRICE',
+            "const ENDPOINT='https://gengrail-card-ai.gengrailtcg.workers.dev'"
+          ]
+          for x in required:
+            if x not in g: raise SystemExit('Safety stop: required logic missing: '+x)
+          if 'h.innerHTML=stockHtml(r)' in g: raise SystemExit('V3 Stock renderer still active')
+          if 'h.innerHTML=html(r)' not in g: raise SystemExit('Preferred Stock renderer not restored')
+
+          before=Path('/tmp/index-before.html').read_text()
+          after=Path('index.html').read_text()
+          old='<script src="graded-integration.js?v=21.7.1" data-gengrail-graded-main="1"></script>'
+          new='<script src="graded-integration.js?v=21.7.2" data-gengrail-graded-main="1"></script>'
+          if after != before.replace(old,new,1): raise SystemExit('index changed beyond graded cache bust')
+          PY
+
+      - name: Commit to main
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add graded-integration.js index.html
+          git commit -m 'Restore preferred graded Stock UI with live pricing intact'
+          git push origin main
