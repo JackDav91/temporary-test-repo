@@ -1,0 +1,5 @@
+/* GENGRAIL GRAIL HUB v1 — Buying command centre */
+:root{--gh-green:#78e39a;--gh-gold:#e0ad16;--gh-gold-hi:#f2c84b;--gh-line:#314636;--gh-bg:#071009}
+.grail-hub-overlay{position:fixed;inset:0;z-index:100300;background:linear-gradient(180deg,#070807,#040504);overflow-y:auto;-webkit-overflow-scrolling:touch;padding:max(12px,env(safe-area-inset-top)) 12px max(18px,env(safe-area-inset-bottom));color:#f4f1ea}
+.grail-hub-shell{width:min(760px,100%);margin:0 auto;padding-bottom:18px}
+.grail-hub-head{position:sticky;top:0;z-index:4;display:flex;align-items:center;gap:
