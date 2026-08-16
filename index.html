@@ -1151,6 +1151,7 @@ body.inner-page .kpi,
 <div><label>Purchase date</label><input id="pd" type="date"/></div><div><label>Quantity</label><input id="pq" min="1" type="number" value="1"/></div>
 <div><label>Total buy price (£)</label><input id="pp" step=".01" type="number" inputmode="decimal"/></div><div><label>Source / seller</label><input id="ps"/></div>
 <div><label>Condition</label><select id="pcondition"><option>Ungraded</option><option>Graded</option><option>New</option><option>Used</option></select></div>
+<div><label>Capital origin</label><select id="pcapitalorigin"><option value="PURCHASED_FOR_RESALE">Purchased for resale</option><option value="OWNER_CONTRIBUTED_INVENTORY">Owner-contributed inventory</option></select></div>
 <div class="intake-system-only"><label>SKU</label><input id="psku" placeholder="Auto-generated from permanent SKU ledger if blank"/></div>
 <div class="intake-system-only"><label>Purchase / batch ID</label><input id="ppurchaseid" placeholder="Auto-generated from permanent purchase ledger if blank"/></div>
 <div><label>Storage location</label><select id="plocation"><option value="UNALLOCATED">UNALLOCATED</option></select></div>
@@ -1370,8 +1371,9 @@ body.inner-page .kpi,
 </div>
 </section>
 </div>
+<script src="gengrail-profit-engine.js?v=1.0.0"></script>
 <script>
-const K='gengrailBizV1', SAFETY_K='gengrailBizV1_lastGood', SCHEMA_VERSION=3,
+const K='gengrailBizV1', SAFETY_K='gengrailBizV1_lastGood', SCHEMA_VERSION=4,
 $=x=>document.getElementById(x),
 m=v=>new Intl.NumberFormat('en-GB',{style:'currency',currency:'GBP'}).format(v||0),
 d=()=>new Date().toISOString().slice(0,10);
@@ -1396,6 +1398,7 @@ function normaliseDB(input){
   opportunities:Array.isArray(x.opportunities)?x.opportunities:[],
   locations:Array.isArray(x.locations)?x.locations:[],
   orders:Array.isArray(x.orders)?x.orders:[],
+  profitEngine:(x.profitEngine&&typeof x.profitEngine==='object')?x.profitEngine:null,
   settings:{...freshDB().settings,...(x.settings&&typeof x.settings==='object'?x.settings:{})}
  };
 }
@@ -1431,6 +1434,8 @@ if(validDB(primary)){
  db=freshDB();
  GENGRAIL_BOOT_SOURCE='vault-check-required';
 }
+
+if(window.GengrailProfitEngine)window.GengrailProfitEngine.ensureState(db);
 
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2)}
 function codeNumber(value,prefix){const m=String(value||'').trim().match(new RegExp('^'+prefix+'(\\d+)$','i'));return m?Number(m[1]):0}
@@ -1705,6 +1710,7 @@ function persistDB({renderAfter=true,writeVault=true}={}){
  db=normaliseDB(db);
  db.settings.salary=parseFloat($('salary').value)||0;
  db.settings.divUsedElsewhere=parseFloat($('divUsedElsewhere').value)||0;
+ if(window.GengrailProfitEngine){try{window.GengrailProfitEngine.ensureState(db);window.GengrailProfitEngine.reconcile(db,{context:profitEngineContext()})}catch(err){console.error('Profit Engine reconcile failed',err)}}
  let localSaved=false;
  try{
   const current=readJSON(K);
@@ -1745,6 +1751,10 @@ function dividends(){return db.dividends.reduce((a,x)=>a+x.amount,0)}
 function directSaleCashCosts(){return db.sales.reduce((a,s)=>a+s.fee+s.post+s.other,0)}
 function corp(p){p=Math.max(0,p);if(p<=50000)return p*.19;if(p>=250000)return p*.25;return p*.25-(250000-p)*.015}
 function companyCash(){return funding()+revenue()+postageCollected()-buys()-directSaleCashCosts()-exps()-dividends()}
+function profitEngineContext(){return {totalBusinessCash:companyCash(),taxReserveTarget:corp(accountingProfit()),committedInventoryCapital:stock(),protectedLiquidityTarget:Number(db?.profitEngine?.config?.protection?.protectedLiquidityMinimum||0),fixedMonthlyOperatingCosts:Number(db?.profitEngine?.config?.protection?.fixedMonthlyOperatingCostOverride||0)}}
+function getGrailPlanState(){return window.GengrailProfitEngine?window.GengrailProfitEngine.getGrailPlanState(db,profitEngineContext()):null}
+function getProfitFinanceSnapshot(){return window.GengrailProfitEngine?window.GengrailProfitEngine.getFinanceSnapshot(db,profitEngineContext()):null}
+window.getGrailPlanState=getGrailPlanState;window.getProfitFinanceSnapshot=getProfitFinanceSnapshot;
 function divTaxEstimate(){
  const salary=Math.max(0,db.settings.salary||0), totalDiv=Math.max(0,dividends()), used=Math.max(0,db.settings.divUsedElsewhere||0);
  const allowance=Math.max(0,500-used), taxable=Math.max(0,totalDiv-allowance);
@@ -2495,15 +2505,15 @@ $('addp').onclick=async()=>{
  const purchaseId=$('ppurchaseid').value.trim()||nextPurchaseId();
  if(sequenceIdUsed('sku',sku))return alert('That SKU already exists in Gengrail history. Use the proposed next SKU instead.');
  if(sequenceIdUsed('purchaseId',purchaseId))return alert('That Purchase / batch ID already exists in Gengrail history. Use the proposed next ID instead.');
- const p={id:pid,name:$('pn').value.trim(),cat:$('pc').value,date:$('pd').value,q:Math.max(1,Math.floor(n('pq'))),cost:n('pp'),source:$('ps').value.trim(),condition:$('pcondition').value,sku,purchaseId,location:$('plocation').value||'UNALLOCATED',inventoryStatus:$('pstatus').value||'IN_STOCK',qrData:'GENGRAIL:SKU:'+sku,listPrice:n('plist'),ebayStatus:$('pebaystatus').value,ebayItemId:'',ebayUrl:'',photoCount:0,notes:$('pnotes').value,productMeta:currentRecognition?{game:currentRecognition.game||'Pokémon TCG',cardName:currentRecognition.cardName||'',cardNumber:printedCollectorNumber(currentRecognition),normalisedCardNumber:currentRecognition.cardNumber||'',setName:currentRecognition.setName||'',setCode:currentRecognition.setCode||'',language:currentRecognition.language||'',rarity:currentRecognition.rarity||'',illustrator:currentRecognition.illustrator||'',recognitionConfidence:Number(currentRecognition.confidence||0),intakeConfidence:Number((currentRecognition.reviewDiagnostics||recognitionDiagnostics(currentRecognition)).score||0),recognitionVerified:!!currentRecognition.verified,verificationStatus:currentRecognition.verificationStatus||'',recognitionReviewed:!!currentRecognition.reviewed,recognitionApprovedAt:currentRecognition.approvedAt||'',recognitionSource:'workers_ai',fieldConfidences:currentRecognition.fieldConfidences||{},fieldSources:currentRecognition.fieldSources||{},reviewDiagnostics:currentRecognition.reviewDiagnostics||recognitionDiagnostics(currentRecognition),recognitionVersion:3,intakeVersion:2,marketPricing:currentRecognition.marketPricing||null,suggestedListPrice:marketSuggestedPrice(currentRecognition)||0}:null};
+ const p={id:pid,name:$('pn').value.trim(),cat:$('pc').value,date:$('pd').value,q:Math.max(1,Math.floor(n('pq'))),cost:n('pp'),source:$('ps').value.trim(),condition:$('pcondition').value,capitalOrigin:$('pcapitalorigin')?.value||'PURCHASED_FOR_RESALE',contributionValue:$('pcapitalorigin')?.value==='OWNER_CONTRIBUTED_INVENTORY'?n('pp'):0,sku,purchaseId,location:$('plocation').value||'UNALLOCATED',inventoryStatus:$('pstatus').value||'IN_STOCK',qrData:'GENGRAIL:SKU:'+sku,listPrice:n('plist'),ebayStatus:$('pebaystatus').value,ebayItemId:'',ebayUrl:'',photoCount:0,notes:$('pnotes').value,productMeta:currentRecognition?{game:currentRecognition.game||'Pokémon TCG',cardName:currentRecognition.cardName||'',cardNumber:printedCollectorNumber(currentRecognition),normalisedCardNumber:currentRecognition.cardNumber||'',setName:currentRecognition.setName||'',setCode:currentRecognition.setCode||'',language:currentRecognition.language||'',rarity:currentRecognition.rarity||'',illustrator:currentRecognition.illustrator||'',recognitionConfidence:Number(currentRecognition.confidence||0),intakeConfidence:Number((currentRecognition.reviewDiagnostics||recognitionDiagnostics(currentRecognition)).score||0),recognitionVerified:!!currentRecognition.verified,verificationStatus:currentRecognition.verificationStatus||'',recognitionReviewed:!!currentRecognition.reviewed,recognitionApprovedAt:currentRecognition.approvedAt||'',recognitionSource:'workers_ai',fieldConfidences:currentRecognition.fieldConfidences||{},fieldSources:currentRecognition.fieldSources||{},reviewDiagnostics:currentRecognition.reviewDiagnostics||recognitionDiagnostics(currentRecognition),recognitionVersion:3,intakeVersion:2,marketPricing:currentRecognition.marketPricing||null,suggestedListPrice:marketSuggestedPrice(currentRecognition)||0}:null};
  db.purchases.push(p);
  commitSequenceIds(sku,purchaseId);
  try{p.photoCount=await addPhotos(pid,files)}catch(e){console.error(e);alert('Stock was saved, but one or more photos could not be stored on this device.');}
- ['pn','pp','ps','psku','ppurchaseid','plist','pnotes'].forEach(x=>$(x).value='');$('pq').value=1;$('pcondition').value='Ungraded';$('pebaystatus').value='NOT_LISTED';$('pphotos').value='';if($('pcamera'))$('pcamera').value='';pendingCameraFiles=[];currentRecognition=null;pendingRecognition=null;$('ppreview').innerHTML='';clearMarketPricing();refreshSequencePreview();save();closeStockEntry();
+ ['pn','pp','ps','psku','ppurchaseid','plist','pnotes'].forEach(x=>$(x).value='');$('pq').value=1;$('pcondition').value='Ungraded';if($('pcapitalorigin'))$('pcapitalorigin').value='PURCHASED_FOR_RESALE';$('pebaystatus').value='NOT_LISTED';$('pphotos').value='';if($('pcamera'))$('pcamera').value='';pendingCameraFiles=[];currentRecognition=null;pendingRecognition=null;$('ppreview').innerHTML='';clearMarketPricing();refreshSequencePreview();save();closeStockEntry();
 };
 $('adds').onclick=()=>{let p=db.purchases.find(x=>x.id===$('si').value),q=Math.max(1,Math.floor(n('sq')));if(!p)return alert('Select stock.');if(q>left(p))return alert('Not enough stock.');if(n('sp')<=0)return alert('Enter sale price.');const saleId=id();db.sales.push({id:saleId,pid:p.id,date:$('sd').value,q,price:n('sp'),buyerPost:0,source:'MANUAL',pl:$('spl').value,fee:n('sf'),post:n('spo'),pack:n('spa'),other:n('so'),notes:$('snotes').value});const orderNo='ORD'+String(db.orders.length+1).padStart(6,'0');db.orders.push({id:id(),orderNo,saleId,pid:p.id,sku:p.sku,itemName:p.name,location:p.location||'UNALLOCATED',channel:$('spl').value,status:'PICK_REQUIRED',created:new Date().toISOString()});p.inventoryStatus='PICK_REQUIRED';['sp','sf','spo','spa','so'].forEach(x=>$(x).value='0');$('snotes').value='';save();if($('manualSaleForm'))$('manualSaleForm').hidden=true;if($('toggleManualSale'))$('toggleManualSale').textContent='+ ADD MANUAL SALE'};
 $('adde').onclick=()=>{if(!$('edes').value.trim())return alert('Enter expense details.');let amount=n('ea');if(amount===0)return alert('Enter an expense amount.');db.expenses.push({id:id(),date:$('ed').value,supplier:$('esupplier').value.trim(),cat:$('ec').value,class:$('eclass').value,desc:$('edes').value.trim(),qty:Math.max(1,Math.floor(n('eqty'))),amount,startup:$('estartup').value==='true',notes:$('en').value});$('esupplier').value='';$('edes').value='';$('eqty').value=1;$('ea').value='';$('estartup').value='false';$('en').value='';save()};
-$('addfund').onclick=()=>{if(n('fa')<=0)return alert('Enter funding amount.');db.funding.push({id:id(),date:$('fd').value,amount:n('fa'),note:$('fn').value});$('fa').value='';$('fn').value='';save()};
+$('addfund').onclick=()=>{if(n('fa')<=0)return alert('Enter funding amount.');db.funding.push({id:id(),date:$('fd').value,amount:n('fa'),note:$('fn').value,contributionType:'OWNER_CASH'});$('fa').value='';$('fn').value='';save()};
 $('adddiv').onclick=()=>{if(n('da')<=0)return alert('Enter dividend amount.');db.dividends.push({id:id(),date:$('dd').value,amount:n('da'),note:$('dn').value});$('da').value='';$('dn').value='';save()};
 
 window.dp=async x=>{if(db.sales.some(s=>s.pid===x))return alert('Delete related sales first.');if(confirm('Delete purchase?')){db.purchases=db.purchases.filter(p=>p.id!==x);try{await deletePhotosFor(x)}catch(e){console.error(e)}save()}};
@@ -2897,7 +2907,7 @@ $('json').onclick=()=>{
  }
  const out={
   ...db,
-  _backupVersion:2,
+  _backupVersion:3,
   _exportedAt:new Date().toISOString(),
   _preferences:prefs,
   ebay:(window.GengrailEbay&&window.GengrailEbay.exportData)?window.GengrailEbay.exportData():null,
