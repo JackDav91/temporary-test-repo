@@ -1,0 +1,78 @@
+name: Apply compact one-screen Home
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/apply-home-compact.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Apply presentation-only Home patch
+        run: |
+          cp index.html /tmp/index-before.html
+          cp sw.js /tmp/sw-before.js
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text()
+          marker='<link href="manifest.json" rel="manifest"/>'
+          addition=marker+'\n<link href="home-compact.css?v=1.0.0" rel="stylesheet" data-gengrail-home-compact="1"/>'
+          if 'data-gengrail-home-compact="1"' not in s:
+              if s.count(marker)!=1: raise SystemExit('Safety stop: manifest marker missing/non-unique')
+              s=s.replace(marker,addition,1)
+          p.write_text(s)
+
+          p=Path('sw.js')
+          s=p.read_text()
+          old="const C='gengrail-log-v22.0.4-profit-dashboard-ticker';"
+          new="const C='gengrail-log-v22.0.5-home-compact';"
+          if old not in s and new not in s: raise SystemExit('Safety stop: expected cache version not found')
+          s=s.replace(old,new,1)
+          if "'./home-compact.css'" not in s:
+              assets="'./profit-engine-diagnostic.js'"
+              if assets not in s: raise SystemExit('Safety stop: asset marker missing')
+              s=s.replace(assets,assets+",'./home-compact.css'",1)
+          p.write_text(s)
+          PY
+
+      - name: Static safety gates
+        run: |
+          grep -q 'data-gengrail-home-compact="1"' index.html
+          grep -q "gengrail-log-v22.0.5-home-compact" sw.js
+          grep -q "'./home-compact.css'" sw.js
+          grep -q 'body.home-page' home-compact.css
+          grep -q 'graded-integration.js' index.html
+          grep -q 'gengrail-profit-engine.js' index.html
+          grep -q 'profit-engine-diagnostic.js' index.html
+          node --check profit-engine-diagnostic.js
+          node --check gengrail-profit-engine.js
+
+      - name: Verify index change is loader-only
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          before=Path('/tmp/index-before.html').read_text()
+          after=Path('index.html').read_text()
+          marker='<link href="manifest.json" rel="manifest"/>'
+          expected=before if 'data-gengrail-home-compact="1"' in before else before.replace(marker,marker+'\n<link href="home-compact.css?v=1.0.0" rel="stylesheet" data-gengrail-home-compact="1"/>',1)
+          if after!=expected: raise SystemExit('Safety stop: index.html changed beyond Home stylesheet loader')
+          PY
+
+      - name: Commit compact Home
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html sw.js
+          if git diff --cached --quiet; then echo 'No changes required'; exit 0; fi
+          git commit -m 'Load compact one-screen Home layout'
+          git push origin main
