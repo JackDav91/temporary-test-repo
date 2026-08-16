@@ -1,0 +1,55 @@
+name: Cache-bust integrated slab endpoint
+
+on:
+  push:
+    branches:
+      - agent/slab-recognition-v1
+    paths:
+      - .github/workflows/bump-integrated-slab-endpoint.yml
+
+permissions:
+  contents: write
+
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Change only graded bridge cache version
+        run: |
+          cp index.html /tmp/index-before.html
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text()
+          old='graded-integration.js?v=21.5.2'
+          new='graded-integration.js?v=21.5.3'
+          if old not in s:
+              raise SystemExit('Expected graded bridge loader version not found')
+          if s.count(old) != 1:
+              raise SystemExit('Safety stop: loader marker is not unique')
+          p.write_text(s.replace(old,new,1))
+          PY
+
+      - name: Verify no other index content changed
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          before=Path('/tmp/index-before.html').read_text()
+          after=Path('index.html').read_text()
+          expected=before.replace('graded-integration.js?v=21.5.2','graded-integration.js?v=21.5.3',1)
+          if after != expected:
+              raise SystemExit('Safety stop: index changed beyond cache-bust')
+          PY
+
+      - name: Commit cache-bust
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          git commit -m 'Cache-bust integrated slab endpoint v21.5.3'
+          git push origin main
