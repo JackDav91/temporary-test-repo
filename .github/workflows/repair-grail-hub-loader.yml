@@ -1,0 +1,68 @@
+name: Repair Grail Hub loader
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/repair-grail-hub-loader.yml'
+permissions:
+  contents: write
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 20
+      - name: Restore clean index and wire at real document boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Restore index from the clean commit immediately before the faulty loader insertion.
+          git show 460a9c7c133b67b12fbcb65f8c68ef6115330734:index.html > index.html
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text()
+          css='<link href="grail-hub.css?v=1.0.1" rel="stylesheet" data-gengrail-grail-hub-css="1"/>'
+          js='<script src="grail-hub.js?v=1.0.1" data-gengrail-grail-hub="1"></script>'
+          if 'data-gengrail-grail-hub-css="1"' not in s:
+              i=s.rfind('</head>')
+              if i < 0: raise SystemExit('No real </head> found')
+              s=s[:i]+css+'\n'+s[i:]
+          if 'data-gengrail-grail-hub="1"' not in s:
+              i=s.rfind('</body>')
+              if i < 0: raise SystemExit('No real </body> found')
+              s=s[:i]+js+'\n'+s[i:]
+          p.write_text(s)
+          PY
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('sw.js')
+          s=p.read_text()
+          s=s.replace("gengrail-log-v22.1.0-grail-hub-v1","gengrail-log-v22.1.1-grail-hub-loader-fix")
+          if "'./grail-hub.css'" not in s:
+              s=s.replace("'./home-compact.css'","'./home-compact.css','./grail-hub.css','./grail-hub.js'")
+          p.write_text(s)
+          PY
+      - name: Safety gates
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(grep -o 'data-gengrail-grail-hub-css="1"' index.html | wc -l)" -eq 1
+          test "$(grep -o 'data-gengrail-grail-hub="1"' index.html | wc -l)" -eq 1
+          tail -c 1200 index.html | grep -q 'grail-hub.js?v=1.0.1'
+          grep -q 'window.printLocationLabel' index.html
+          grep -q 'recognise-card' index.html
+          grep -q 'graded-integration.js' index.html
+          grep -q 'gengrail-ebay.js' index.html
+          grep -q 'gengrail-log-v22.1.1-grail-hub-loader-fix' sw.js
+      - name: Commit repair
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html sw.js
+          git commit -m 'Repair Grail Hub loader document boundary'
+          git push origin HEAD:main
