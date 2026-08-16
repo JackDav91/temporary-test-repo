@@ -1,5 +1,35 @@
 /* GENGRAIL GRAIL HUB v1 — Buying command centre */
 :root{--gh-green:#78e39a;--gh-gold:#e0ad16;--gh-gold-hi:#f2c84b;--gh-line:#314636;--gh-bg:#071009}
-.grail-hub-overlay{position:fixed;inset:0;z-index:100300;background:linear-gradient(180deg,#070807,#040504);overflow-y:auto;-webkit-overflow-scrolling:touch;padding:max(12px,env(safe-area-inset-top)) 12px max(18px,env(safe-area-inset-bottom));color:#f4f1ea}
+.grail-hub-overlay{position:fixed;inset:0;z-index:100300;background:radial-gradient(circle at 50% -10%,rgba(224,173,22,.07),transparent 28%),linear-gradient(180deg,#070807,#040504);overflow-y:auto;-webkit-overflow-scrolling:touch;padding:max(12px,env(safe-area-inset-top)) 12px max(18px,env(safe-area-inset-bottom));color:#f4f1ea}
 .grail-hub-shell{width:min(760px,100%);margin:0 auto;padding-bottom:18px}
-.grail-hub-head{position:sticky;top:0;z-index:4;display:flex;align-items:center;gap:
+.grail-hub-head{position:sticky;top:0;z-index:4;display:flex;align-items:center;gap:12px;padding:8px 0 12px;background:linear-gradient(180deg,rgba(5,5,5,.98),rgba(5,5,5,.88),transparent);backdrop-filter:blur(8px)}
+.grail-hub-back{width:48px;height:48px;flex:0 0 48px;border:1px solid #9e7410;border-radius:14px;background:linear-gradient(180deg,#1b170d,#111);color:var(--gh-gold-hi);font-size:29px;font-weight:900;box-shadow:2px 3px #000}
+.grail-hub-title{font:30px Impact,Haettenschweiler,'Arial Narrow Bold',sans-serif;letter-spacing:.035em;line-height:1;text-transform:uppercase}
+.grail-hub-sub{color:#9d9992;font-size:11px;font-weight:750;margin-top:5px}
+.grail-plan-hero{border:1px solid #396348;border-left:5px solid var(--gh-green);border-radius:16px;background:linear-gradient(160deg,#09160d,#080b09);padding:16px;box-shadow:0 8px 22px rgba(0,0,0,.42)}
+.grail-plan-kicker{display:flex;justify-content:space-between;gap:8px;align-items:center;color:var(--gh-green);font-size:9px;font-weight:950;letter-spacing:.15em;text-transform:uppercase}
+.grail-plan-mode{border:1px solid #3d8751;border-radius:999px;padding:5px 9px;font-size:10px;letter-spacing:.08em;white-space:nowrap}
+.grail-plan-question{font:28px Impact,Haettenschweiler,'Arial Narrow Bold',sans-serif;line-height:1.02;margin-top:11px;color:#f4f1ea}
+.grail-plan-copy{color:#aaa7a1;font-size:12px;line-height:1.45;margin-top:8px}
+.grail-plan-target{display:grid;grid-template-columns:1.15fr .85fr;gap:9px;margin-top:14px}
+.grail-plan-target>div{background:#07100a;border:1px solid #294c34;border-radius:12px;padding:12px;min-width:0}
+.grail-plan-target small{display:block;color:#7e9685;font-size:8px;font-weight:950;letter-spacing:.08em;text-transform:uppercase}
+.grail-plan-target b{display:block;color:var(--gh-green);font-size:28px;margin-top:4px;line-height:1.05}
+.grail-plan-target .secondary b{color:#f4f1ea;font-size:21px}
+.grail-guardrails{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:9px}
+.grail-guardrail{background:#090b09;border:1px solid #2c362f;border-radius:10px;padding:10px}
+.grail-guardrail small{display:block;color:#777;font-size:8px;font-weight:950;text-transform:uppercase}.grail-guardrail b{display:block;margin-top:4px;font-size:16px}
+.grail-hub-section{margin-top:14px}
+.grail-hub-section-title{font-size:10px;font-weight:950;letter-spacing:.16em;color:#89e3a1;text-transform:uppercase;margin:0 2px 8px}
+.grail-action-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.grail-action-card{appearance:none;text-align:left;position:relative;min-height:130px;padding:15px 38px 14px 14px;border:1.5px solid #765714;border-radius:15px;background:radial-gradient(circle at 50% 0%,rgba(224,173,22,.08),transparent 58%),linear-gradient(145deg,#151515,#090909);color:#f4f1ea;box-shadow:3px 5px 11px rgba(0,0,0,.6)}
+.grail-action-card:after{content:'›';position:absolute;right:13px;top:50%;transform:translateY(-50%);font-size:38px;color:#edae10;font-weight:900}
+.grail-action-icon{display:block;color:var(--gh-gold-hi);font-size:27px;margin-bottom:12px}.grail-action-card b{display:block;font:21px Impact,Haettenschweiler,'Arial Narrow Bold',sans-serif;letter-spacing:.025em;text-transform:uppercase}.grail-action-card span{display:block;color:#a5a19b;font-size:10px;line-height:1.35;margin-top:6px}
+.grail-action-card.primary{border-color:#3d8751;background:radial-gradient(circle at 50% 0%,rgba(120,227,154,.08),transparent 58%),linear-gradient(145deg,#111b13,#090b09)}
+.grail-action-card.primary .grail-action-icon{color:var(--gh-green)}
+.grail-state-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-top:9px}
+.grail-state-cell{background:#080808;border:1px solid #2d2d2d;border-radius:9px;padding:9px;min-width:0}.grail-state-cell small{display:block;color:#777;font-size:7.5px;font-weight:950;text-transform:uppercase;line-height:1.2}.grail-state-cell b{display:block;margin-top:4px;font-size:13px;overflow-wrap:anywhere}
+.grail-status{margin-top:10px;border-left:4px solid var(--gh-gold);background:#151006;padding:10px 12px;border-radius:0 10px 10px 0;color:#d8c58f;font-size:11px;line-height:1.4}
+.grail-status.good{border-left-color:#3d8751;background:#09150d;color:#a9ddb6}
+.grail-hub-foot{margin-top:15px;color:#74716c;font-size:9px;line-height:1.45;text-align:center}
+@media(max-width:520px){.grail-hub-title{font-size:26px}.grail-plan-question{font-size:24px}.grail-plan-target{grid-template-columns:1fr 1fr}.grail-plan-target b{font-size:24px}.grail-plan-target .secondary b{font-size:18px}.grail-action-card{min-height:118px;padding:13px 34px 12px 12px}.grail-action-card b{font-size:18px}.grail-state-strip{grid-template-columns:1fr 1fr}.grail-guardrails{grid-template-columns:repeat(3,1fr);gap:6px}.grail-guardrail{padding:8px}.grail-guardrail b{font-size:14px}}
