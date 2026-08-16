@@ -1,0 +1,66 @@
+name: Promote isolated graded bridge to temp main
+
+on:
+  push:
+    branches:
+      - agent/slab-recognition-v1
+    paths:
+      - .github/workflows/promote-graded-bridge.yml
+
+permissions:
+  contents: write
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout slab branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/slab-recognition-v1
+          fetch-depth: 0
+
+      - name: Preserve graded bridge
+        run: cp graded-integration.js /tmp/graded-integration.js
+
+      - name: Switch to temp repo main
+        run: git checkout main
+
+      - name: Add graded bridge without altering raw handlers
+        run: |
+          cp /tmp/graded-integration.js graded-integration.js
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text()
+          marker='<script src="graded-integration.js?v=21.5.0" data-gengrail-graded-main="1"></script>'
+          if marker not in s:
+              if '</body>' not in s:
+                  raise SystemExit('index.html has no </body> marker')
+              s=s.replace('</body>', marker+'\n</body>', 1)
+              p.write_text(s)
+          PY
+
+      - name: Verify raw recognition code still exists unchanged
+        run: |
+          git show HEAD:index.html > /tmp/index-before.html
+          python3 - <<'PY'
+          from pathlib import Path
+          before=Path('/tmp/index-before.html').read_text()
+          after=Path('index.html').read_text()
+          marker='<script src="graded-integration.js?v=21.5.0" data-gengrail-graded-main="1"></script>\n'
+          stripped=after.replace(marker,'')
+          if stripped != before:
+              raise SystemExit('Safety stop: index.html changed beyond the single graded script include')
+          for token in ['async function pricingRecogniseFile(file)','async function recogniseCardFile(file)','function priceCalc()']:
+              if token not in after:
+                  raise SystemExit('Safety stop: missing locked raw function '+token)
+          PY
+
+      - name: Commit safe additive integration to main
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html graded-integration.js
+          git commit -m 'Add isolated graded slab import beside locked raw pricing flow'
+          git push origin main
