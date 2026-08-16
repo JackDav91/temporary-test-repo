@@ -1,0 +1,141 @@
+name: Profit Engine foundation
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/profit-engine-foundation.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  foundation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Run Profit Engine unit tests before integration
+        run: node profit-engine-tests.js
+
+      - name: Patch schema-4 app integration only
+        run: |
+          cp index.html /tmp/index-before.html
+          cp sw.js /tmp/sw-before.js
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          p=Path('index.html')
+          s=p.read_text()
+
+          # 1. Load engine before the main application script.
+          marker="</div>\n<script>\nconst K='gengrailBizV1'"
+          replacement="</div>\n<script src=\"gengrail-profit-engine.js?v=1.0.0\"></script>\n<script>\nconst K='gengrailBizV1'"
+          if s.count(marker)!=1: raise SystemExit('main script insertion marker missing/non-unique')
+          s=s.replace(marker,replacement,1)
+
+          # 2. Schema version only.
+          old="const K='gengrailBizV1', SAFETY_K='gengrailBizV1_lastGood', SCHEMA_VERSION=3,"
+          new="const K='gengrailBizV1', SAFETY_K='gengrailBizV1_lastGood', SCHEMA_VERSION=4,"
+          if s.count(old)!=1: raise SystemExit('schema marker missing/non-unique')
+          s=s.replace(old,new,1)
+
+          # 3. Preserve Profit Engine state through normalisation.
+          old="  orders:Array.isArray(x.orders)?x.orders:[],\n  settings:{...freshDB().settings,...(x.settings&&typeof x.settings==='object'?x.settings:{})}"
+          new="  orders:Array.isArray(x.orders)?x.orders:[],\n  profitEngine:(x.profitEngine&&typeof x.profitEngine==='object')?x.profitEngine:null,\n  settings:{...freshDB().settings,...(x.settings&&typeof x.settings==='object'?x.settings:{})}"
+          if s.count(old)!=1: raise SystemExit('normaliseDB marker missing/non-unique')
+          s=s.replace(old,new,1)
+
+          # 4. Initialise schema-4 engine after database boot source resolves.
+          marker="function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2)}"
+          insert="if(window.GengrailProfitEngine)window.GengrailProfitEngine.ensureState(db);\n\n"+marker
+          if s.count(marker)!=1: raise SystemExit('engine init marker missing/non-unique')
+          s=s.replace(marker,insert,1)
+
+          # 5. Add explicit inventory provenance field to Stock intake.
+          marker='<div><label>Condition</label><select id="pcondition"><option>Ungraded</option><option>Graded</option><option>New</option><option>Used</option></select></div>'
+          replacement=marker+'\n<div><label>Capital origin</label><select id="pcapitalorigin"><option value="PURCHASED_FOR_RESALE">Purchased for resale</option><option value="OWNER_CONTRIBUTED_INVENTORY">Owner-contributed inventory</option></select></div>'
+          if s.count(marker)!=1: raise SystemExit('stock provenance UI marker missing/non-unique')
+          s=s.replace(marker,replacement,1)
+
+          # 6. Add provenance to new Stock record only.
+          old="condition:$('pcondition').value,sku,purchaseId,location:$('plocation').value||'UNALLOCATED'"
+          new="condition:$('pcondition').value,capitalOrigin:$('pcapitalorigin')?.value||'PURCHASED_FOR_RESALE',contributionValue:$('pcapitalorigin')?.value==='OWNER_CONTRIBUTED_INVENTORY'?n('pp'):0,sku,purchaseId,location:$('plocation').value||'UNALLOCATED'"
+          if s.count(old)!=1: raise SystemExit('purchase object marker missing/non-unique')
+          s=s.replace(old,new,1)
+
+          # 7. Reset provenance after intake.
+          old="$('pq').value=1;$('pcondition').value='Ungraded';$('pebaystatus').value='NOT_LISTED';"
+          new="$('pq').value=1;$('pcondition').value='Ungraded';if($('pcapitalorigin'))$('pcapitalorigin').value='PURCHASED_FOR_RESALE';$('pebaystatus').value='NOT_LISTED';"
+          if s.count(old)!=1: raise SystemExit('stock reset marker missing/non-unique')
+          s=s.replace(old,new,1)
+
+          # 8. Explicit owner cash funding classification.
+          old="db.funding.push({id:id(),date:$('fd').value,amount:n('fa'),note:$('fn').value})"
+          new="db.funding.push({id:id(),date:$('fd').value,amount:n('fa'),note:$('fn').value,contributionType:'OWNER_CASH'})"
+          if s.count(old)!=1: raise SystemExit('funding marker missing/non-unique')
+          s=s.replace(old,new,1)
+
+          # 9. Add a single context helper after companyCash, leaving existing finance maths untouched.
+          marker="function companyCash(){return funding()+revenue()+postageCollected()-buys()-directSaleCashCosts()-exps()-dividends()}"
+          add=marker+"\nfunction profitEngineContext(){return {totalBusinessCash:companyCash(),taxReserveTarget:corp(accountingProfit()),committedInventoryCapital:stock(),protectedLiquidityTarget:Number(db?.profitEngine?.config?.protection?.protectedLiquidityMinimum||0),fixedMonthlyOperatingCosts:Number(db?.profitEngine?.config?.protection?.fixedMonthlyOperatingCostOverride||0)}}\nfunction getGrailPlanState(){return window.GengrailProfitEngine?window.GengrailProfitEngine.getGrailPlanState(db,profitEngineContext()):null}\nfunction getProfitFinanceSnapshot(){return window.GengrailProfitEngine?window.GengrailProfitEngine.getFinanceSnapshot(db,profitEngineContext()):null}\nwindow.getGrailPlanState=getGrailPlanState;window.getProfitFinanceSnapshot=getProfitFinanceSnapshot;"
+          if s.count(marker)!=1: raise SystemExit('companyCash marker missing/non-unique')
+          s=s.replace(marker,add,1)
+
+          # 10. Reconcile idempotently immediately before persistence.
+          marker=" let localSaved=false;\n try{"
+          replacement=" if(window.GengrailProfitEngine){try{window.GengrailProfitEngine.ensureState(db);window.GengrailProfitEngine.reconcile(db,{context:profitEngineContext()})}catch(err){console.error('Profit Engine reconcile failed',err)}}\n let localSaved=false;\n try{"
+          if s.count(marker)!=1: raise SystemExit('persistDB marker missing/non-unique')
+          s=s.replace(marker,replacement,1)
+
+          # 11. Backup format version bump only; full db spread already carries schema-4 state.
+          if s.count('_backupVersion:2')!=1: raise SystemExit('backup version marker missing/non-unique')
+          s=s.replace('_backupVersion:2','_backupVersion:3',1)
+
+          p.write_text(s)
+
+          # 12. Service worker includes engine and gets a new cache generation.
+          p=Path('sw.js'); s=p.read_text()
+          s=s.replace("const C='gengrail-log-v21.2.0-raw-foundation';","const C='gengrail-log-v22.0.0-profit-engine-foundation';",1)
+          old="'./gengrail-theme.css','./gengrail-ebay.js','./icon-192.png'"
+          new="'./gengrail-theme.css','./gengrail-ebay.js','./gengrail-profit-engine.js','./icon-192.png'"
+          if old not in s: raise SystemExit('service worker asset marker missing')
+          s=s.replace(old,new,1)
+          p.write_text(s)
+          PY
+
+      - name: Static safety gates
+        run: |
+          node profit-engine-tests.js
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('index.html').read_text()
+          required=[
+            'SCHEMA_VERSION=4',
+            'gengrail-profit-engine.js?v=1.0.0',
+            'id="pcapitalorigin"',
+            "capitalOrigin:$('pcapitalorigin')?.value||'PURCHASED_FOR_RESALE'",
+            "contributionType:'OWNER_CASH'",
+            'function profitEngineContext()',
+            'window.GengrailProfitEngine.reconcile',
+            '_backupVersion:3',
+            'window.getGrailPlanState=getGrailPlanState'
+          ]
+          for x in required:
+            if x not in s: raise SystemExit('Missing foundation marker: '+x)
+          # Existing core flows must still exist.
+          for x in ["$('adds').onclick",'function saleContribution(s)','function accountingProfit()','function companyCash()',"$('imp').onchange",'recogniseCardFile','priceCalc']:
+            if x not in s: raise SystemExit('Existing core flow missing: '+x)
+          sw=Path('sw.js').read_text()
+          if 'gengrail-profit-engine.js' not in sw: raise SystemExit('Profit Engine missing from PWA cache')
+          PY
+
+      - name: Commit schema-4 foundation
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html sw.js
+          git commit -m 'Wire schema-4 Profit Engine foundation into test app'
+          git push origin main
