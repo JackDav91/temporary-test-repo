@@ -1,0 +1,63 @@
+name: Wire Profit Engine diagnostic
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/wire-profit-diagnostic.yml
+
+permissions:
+  contents: write
+
+jobs:
+  wire:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Syntax check diagnostic
+        run: node --check profit-engine-diagnostic.js
+
+      - name: Wire diagnostic and cache only
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text()
+          marker='<script src="gengrail-profit-engine.js?v=1.1.0"></script>\n<script>'
+          repl='<script src="gengrail-profit-engine.js?v=1.1.0"></script>\n<script src="profit-engine-diagnostic.js?v=1.0.0"></script>\n<script>'
+          if marker not in s: raise SystemExit('Profit Engine loader marker not found')
+          if 'profit-engine-diagnostic.js' not in s:
+              s=s.replace(marker,repl,1)
+          p.write_text(s)
+
+          p=Path('sw.js')
+          s=p.read_text()
+          s=s.replace("const C='gengrail-log-v22.0.1-profit-engine-hardening';","const C='gengrail-log-v22.0.2-profit-diagnostic';")
+          old="'./gengrail-profit-engine.js','./icon-192.png'"
+          new="'./gengrail-profit-engine.js','./profit-engine-diagnostic.js','./icon-192.png'"
+          if old not in s: raise SystemExit('Service worker asset marker not found')
+          s=s.replace(old,new,1)
+          p.write_text(s)
+          PY
+
+      - name: Safety gates
+        run: |
+          grep -q 'profit-engine-diagnostic.js?v=1.0.0' index.html
+          grep -q 'profit-engine-diagnostic.js' sw.js
+          grep -q 'gengrail-profit-engine.js?v=1.1.0' index.html
+          grep -q "$('adds').onclick" index.html
+          grep -q 'graded-integration.js' index.html
+          grep -q 'gengrail-ebay.js' index.html
+          node --check profit-engine-diagnostic.js
+          node --check gengrail-profit-engine.js
+
+      - name: Commit wiring
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html sw.js
+          git commit -m 'Expose temporary Profit Engine diagnostic in test app'
+          git push origin main
