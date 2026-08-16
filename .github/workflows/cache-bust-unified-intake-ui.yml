@@ -1,0 +1,58 @@
+name: Cache-bust unified intake UI
+
+on:
+  push:
+    branches:
+      - agent/slab-recognition-v1
+    paths:
+      - .github/workflows/cache-bust-unified-intake-ui.yml
+
+permissions:
+  contents: write
+
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Bump only unified intake UI loaders
+        run: |
+          cp index.html /tmp/index-before.html
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          p=Path('index.html')
+          s=p.read_text()
+          original=s
+          # graded integration loader: bump any existing numeric dotted version
+          s,n1=re.subn(r'(graded-integration\.js\?v=)[0-9.]+', r'\g<1>21.5.5', s, count=1)
+          if n1 != 1:
+              raise SystemExit(f'Expected exactly one graded-integration loader; found {n1}')
+          # stock UI loader: support versioned or unversioned loader, then normalize to v2
+          if re.search(r'graded-stock-ui\.js\?v=[0-9.]+', s):
+              s,n2=re.subn(r'(graded-stock-ui\.js\?v=)[0-9.]+', r'\g<1>2', s, count=1)
+          else:
+              s,n2=re.subn(r'(graded-stock-ui\.js)(["\'])', r'\1?v=2\2', s, count=1)
+          if n2 != 1:
+              raise SystemExit(f'Expected exactly one graded-stock-ui loader; found {n2}')
+          p.write_text(s)
+          Path('/tmp/index-expected.html').write_text(s)
+          PY
+
+      - name: Verify only loader versions changed
+        run: |
+          cmp -s index.html /tmp/index-expected.html || { echo 'Safety stop: unexpected index change'; exit 1; }
+          git diff --exit-code -- . ':!index.html'
+          git diff -- index.html
+
+      - name: Commit cache-bust
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          git commit -m 'Cache-bust unified intake UI v21.5.5'
+          git push origin main
