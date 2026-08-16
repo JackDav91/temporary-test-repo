@@ -1,0 +1,143 @@
+name: Profit Engine hardening
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/profit-engine-hardening.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  harden:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Baseline engine tests
+        run: |
+          node profit-engine-tests.js
+
+      - name: Patch pending eBay costs and contributed-inventory cash
+        run: |
+          cp gengrail-profit-engine.js /tmp/profit-before.js
+          cp index.html /tmp/index-before.html
+          cp gengrail-ebay.js /tmp/ebay-before.js
+          cp sw.js /tmp/sw-before.js
+          python3 - <<'PY'
+          from pathlib import Path
+
+          # ---- Profit Engine: pending-cost state is never allocatable ----
+          p=Path('gengrail-profit-engine.js')
+          s=p.read_text()
+          s=s.replace('const ENGINE_VERSION=1;','const ENGINE_VERSION=2;',1)
+          s=s.replace('/* GENGRAIL PROFIT ENGINE v1.0','/* GENGRAIL PROFIT ENGINE v1.1',1)
+
+          old="return JSON.stringify([sale?.id,sale?.pid,dayKey(sale?.date),num(sale?.q),e.saleRevenue,e.buyerPostage,e.acquisitionCost,e.marketplaceFees,e.postageCost,e.packagingCost,e.otherDirectCosts,purchaseOrigin(p),String(sale?.status||'')]);"
+          new="return JSON.stringify([sale?.id,sale?.pid,dayKey(sale?.date),num(sale?.q),e.saleRevenue,e.buyerPostage,e.acquisitionCost,e.marketplaceFees,e.postageCost,e.packagingCost,e.otherDirectCosts,purchaseOrigin(p),String(sale?.status||''),String(sale?.profitDataStatus||'')]);"
+          if s.count(old)!=1: raise SystemExit('saleFingerprint marker missing')
+          s=s.replace(old,new,1)
+
+          old="function saleIsRefunded(s){return ['REFUNDED','CANCELLED','VOID'].includes(String(s?.status||'').toUpperCase())||s?.refunded===true}"
+          new=old+"\nfunction saleProfitDataPending(s){return ['PENDING_COSTS','INCOMPLETE','AWAITING_COSTS'].includes(String(s?.profitDataStatus||'').toUpperCase())}"
+          if s.count(old)!=1: raise SystemExit('saleIsRefunded marker missing')
+          s=s.replace(old,new,1)
+
+          old="""    if(saleIsRefunded(sale)){if(active)reverseAllocation(db,active,{now,reason:'SALE_REFUNDED_OR_CANCELLED'});return}\n    if(active&&active.saleFingerprint===fingerprint)return;"""
+          new="""    if(saleIsRefunded(sale)){if(active)reverseAllocation(db,active,{now,reason:'SALE_REFUNDED_OR_CANCELLED'});return}\n    if(saleProfitDataPending(sale)){\n      if(active)reverseAllocation(db,active,{now,reason:'SALE_COSTS_PENDING'});\n      const prior=[...state.allocations].reverse().find(a=>String(a.saleId)===sid&&a.status==='PENDING_COSTS'&&a.saleFingerprint===fingerprint);\n      if(!prior)state.allocations.push({id:`PA-PENDING-${sid}-${Date.now().toString(36)}`,saleId:sid,saleDate:dayKey(sale.date),saleFingerprint:fingerprint,classification:classifySale(db,sale),status:'PENDING_COSTS',unallocatedReason:'DIRECT_SALE_COSTS_NOT_CONFIRMED',createdAt:now,updatedAt:now,allocationVersion:ENGINE_VERSION});\n      return\n    }\n    if(active&&active.saleFingerprint===fingerprint)return;"""
+          if s.count(old)!=1: raise SystemExit('reconcile pending insertion marker missing')
+          s=s.replace(old,new,1)
+
+          old="const api={ENGINE_VERSION,SCHEMA_VERSION,DEFAULT_CONFIG,POTS,ensureState,economics,classifySale,saleFingerprint,reconcile,reconcileStage,trendMetrics,ledgerBalances,getGrailPlanState,getFinanceSnapshot,scoreCapitalVelocity,totalOwnerCashInjected,bootstrapGenerated,retainedTradingProfit};"
+          new="const api={ENGINE_VERSION,SCHEMA_VERSION,DEFAULT_CONFIG,POTS,ensureState,economics,classifySale,saleFingerprint,saleProfitDataPending,reconcile,reconcileStage,trendMetrics,ledgerBalances,getGrailPlanState,getFinanceSnapshot,scoreCapitalVelocity,totalOwnerCashInjected,bootstrapGenerated,retainedTradingProfit};"
+          if s.count(old)!=1: raise SystemExit('engine API marker missing')
+          s=s.replace(old,new,1)
+          p.write_text(s)
+
+          # ---- Main app: owner-contributed inventory is management basis, not a cash purchase ----
+          p=Path('index.html')
+          s=p.read_text()
+          old="function buys(){return db.purchases.reduce((a,p)=>a+p.cost,0)}"
+          new=old+"\nfunction cashBuys(){return db.purchases.reduce((a,p)=>a+(String(p.capitalOrigin||'').toUpperCase()==='OWNER_CONTRIBUTED_INVENTORY'?0:(Number(p.cost)||0)),0)}"
+          if s.count(old)!=1: raise SystemExit('buys marker missing')
+          s=s.replace(old,new,1)
+
+          old="function companyCash(){return funding()+revenue()+postageCollected()-buys()-directSaleCashCosts()-exps()-dividends()}"
+          new="function companyCash(){return funding()+revenue()+postageCollected()-cashBuys()-directSaleCashCosts()-exps()-dividends()}"
+          if s.count(old)!=1: raise SystemExit('companyCash marker missing')
+          s=s.replace(old,new,1)
+
+          old="source:'MANUAL',pl:$('spl').value,fee:n('sf'),post:n('spo'),pack:n('spa'),other:n('so'),notes:$('snotes').value"
+          new="source:'MANUAL',pl:$('spl').value,fee:n('sf'),post:n('spo'),pack:n('spa'),other:n('so'),profitDataStatus:'CONFIRMED',notes:$('snotes').value"
+          if s.count(old)!=1: raise SystemExit('manual sale marker missing')
+          s=s.replace(old,new,1)
+
+          # Explicit bridge for modules (eBay) that enrich main DB via localStorage.
+          marker="window.getGrailPlanState=getGrailPlanState;window.getProfitFinanceSnapshot=getProfitFinanceSnapshot;"
+          add=marker+"\nwindow.reloadGengrailMainDBFromStorage=function(){const latest=readJSON(K);if(!validDB(latest))return false;db=normaliseDB(latest);persistDB({renderAfter:true});return true};"
+          if s.count(marker)!=1: raise SystemExit('window finance API marker missing')
+          s=s.replace(marker,add,1)
+
+          old='gengrail-profit-engine.js?v=1.0.0'
+          if s.count(old)!=1: raise SystemExit('profit engine loader cache marker missing')
+          s=s.replace(old,'gengrail-profit-engine.js?v=1.1.0',1)
+          p.write_text(s)
+
+          # ---- eBay: mark live API sales pending until direct costs are confirmed ----
+          p=Path('gengrail-ebay.js')
+          s=p.read_text()
+          old="""          sale.source='EBAY';\n          sale.pl='eBay';\n          sale.buyerPost=num(order.buyerPostage);\n          sale.ebayOrderId=order.ebayOrderId||'';\n          sale.ebayLineItemId=order.ebayLineItemId||'';"""
+          new="""          sale.source='EBAY';\n          sale.pl='eBay';\n          sale.buyerPost=num(order.buyerPostage);\n          sale.ebayOrderId=order.ebayOrderId||'';\n          sale.ebayLineItemId=order.ebayLineItemId||'';\n          sale.profitDataStatus=order.source==='ebay_api'?'PENDING_COSTS':'CONFIRMED';\n          sale.profitDataReason=order.source==='ebay_api'?'Live eBay order imported before marketplace/direct sale costs are confirmed.':'';"""
+          if s.count(old)!=1: raise SystemExit('eBay sale enrichment marker missing')
+          s=s.replace(old,new,1)
+
+          old="""        localStorage.setItem(MAIN_KEY,JSON.stringify(db));\n        window.dispatchEvent(new CustomEvent('gengrail:main-updated'));"""
+          new="""        localStorage.setItem(MAIN_KEY,JSON.stringify(db));\n        if(typeof window.reloadGengrailMainDBFromStorage==='function')window.reloadGengrailMainDBFromStorage();\n        window.dispatchEvent(new CustomEvent('gengrail:main-updated'));"""
+          if s.count(old)<1: raise SystemExit('eBay main DB write marker missing')
+          s=s.replace(old,new,1)
+          p.write_text(s)
+
+          # ---- PWA cache generation ----
+          p=Path('sw.js')
+          s=p.read_text()
+          old="const C='gengrail-log-v22.0.0-profit-engine-foundation';"
+          new="const C='gengrail-log-v22.0.1-profit-engine-hardening';"
+          if s.count(old)!=1: raise SystemExit('service worker cache marker missing')
+          p.write_text(s.replace(old,new,1))
+          PY
+
+      - name: Engine and regression gates
+        run: |
+          node --check gengrail-profit-engine.js
+          node --check gengrail-ebay.js
+          node profit-engine-tests.js
+          node profit-engine-advanced-tests.js
+          python3 - <<'PY'
+          from pathlib import Path
+          e=Path('gengrail-profit-engine.js').read_text()
+          i=Path('index.html').read_text()
+          b=Path('gengrail-ebay.js').read_text()
+          required_engine=['saleProfitDataPending','DIRECT_SALE_COSTS_NOT_CONFIRMED','PENDING_COSTS','SALE_COSTS_PENDING']
+          required_index=['function cashBuys()','-cashBuys()','profitDataStatus:\'CONFIRMED\'','reloadGengrailMainDBFromStorage','gengrail-profit-engine.js?v=1.1.0']
+          required_ebay=["sale.profitDataStatus=order.source==='ebay_api'?'PENDING_COSTS':'CONFIRMED'",'reloadGengrailMainDBFromStorage']
+          for x in required_engine:
+            if x not in e: raise SystemExit('Missing engine hardening: '+x)
+          for x in required_index:
+            if x not in i: raise SystemExit('Missing app hardening: '+x)
+          for x in required_ebay:
+            if x not in b: raise SystemExit('Missing eBay hardening: '+x)
+          # Core regression boundaries remain.
+          for x in ['recogniseCardFile','priceCalc',"$('addp').onclick", "$('adds').onclick", "$('imp').onchange", 'function accountingProfit()']:
+            if x not in i: raise SystemExit('Core app marker missing: '+x)
+          PY
+
+      - name: Commit hardening
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add gengrail-profit-engine.js index.html gengrail-ebay.js sw.js
+          git commit -m 'Harden Profit Engine pending costs and bootstrap cash'
+          git push origin main
