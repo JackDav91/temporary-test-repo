@@ -47,7 +47,7 @@ function eq(a,b,msg){assert.strictEqual(Number(a),Number(b),msg)}
 
 (function protectedCashExcluded(){
  const d=db();PE.ensureState(d,{now:'2026-08-16T10:00:00Z'});d.profitEngine.config.protection.protectedLiquidityMinimum=200;
- const g=PE.getGrailPlanState(d,context(1000));eq(g.availableGrailPlanLiquidity,800);
+ const g=PE.getGrailPlanState(d,{totalBusinessCash:1000,taxReserveTarget:0,fixedMonthlyOperatingCosts:0,committedInventoryCapital:0});eq(g.availableGrailPlanLiquidity,800);
 })();
 
 (function ownerCashAndSelfFundingMetrics(){
