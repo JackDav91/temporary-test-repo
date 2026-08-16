@@ -1,4 +1,4 @@
-/* GENGRAIL GRAIL HUB v1.5 — Opportunity Stream v1.2 condition gate
+/* GENGRAIL GRAIL HUB v1.6 — daily discovery foundation + layout restore
    Consumes Profit Engine state and the existing Opportunity Finder economics.
    Active listings are evidence only; no sold-price or sell-through data is fabricated.
 */
@@ -10,9 +10,34 @@ const pct=v=>`${(Number(v||0)*100).toFixed(0)}%`;
 const esc=v=>String(v??'').replace(/[&<>\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[c]||c));
 const num=v=>Number.isFinite(Number(v))?Number(v):0;
 const clean=v=>String(v||'').toLowerCase().replace(/[’']/g,'').replace(/[^a-z0-9./]+/g,' ').replace(/\s+/g,' ').trim();
-let streamState={query:'Pokemon TCG card',rows:[],safe:[],lastPlan:null,loading:false,error:''};
+const DAILY_SHEET_KEY='gengrail_grail_daily_sheet_v1';
+const DISCOVERY_CONFIG=Object.freeze({
+  version:1,
+  refreshHours:24,
+  lanes:['Pokemon TCG Charizard','Pokemon TCG Pikachu','Pokemon TCG Umbreon','Pokemon TCG Lugia','Pokemon TCG Eevee','Pokemon TCG PSA']
+});
+let streamState={query:'Pokemon TCG card',rows:[],safe:[],lastPlan:null,loading:false,error:'',discoveryLoading:false,dailySheet:null};
+let layoutLock=null;
 
 function state(){try{return typeof window.getGrailPlanState==='function'?window.getGrailPlanState():null}catch{return null}}
+function loadDailySheet(){try{return JSON.parse(localStorage.getItem(DAILY_SHEET_KEY)||'null')}catch{return null}}
+function saveDailySheet(sheet){try{localStorage.setItem(DAILY_SHEET_KEY,JSON.stringify(sheet))}catch{}streamState.dailySheet=sheet;return sheet}
+function sheetAgeText(sheet){if(!sheet?.generatedAt)return 'No daily sheet built yet.';const generated=new Date(sheet.generatedAt),due=new Date(sheet.refreshDue);return `Built ${generated.toLocaleString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})} · refresh due ${due.toLocaleString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})}`}
+function restoreLayout(){
+  const y=layoutLock?.scrollY??window.scrollY;
+  document.documentElement.classList.remove('grail-hub-open');document.body.classList.remove('grail-hub-open');
+  document.documentElement.style.overflow=layoutLock?.htmlOverflow||'';document.documentElement.style.overflowX=layoutLock?.htmlOverflowX||'';
+  document.body.style.overflow=layoutLock?.bodyOverflow||'';document.body.style.overflowX=layoutLock?.bodyOverflowX||'';document.body.style.width=layoutLock?.bodyWidth||'';document.body.style.position=layoutLock?.bodyPosition||'';
+  document.documentElement.scrollLeft=0;document.body.scrollLeft=0;const root=document.getElementById('grailHubOverlay');if(root)root.scrollLeft=0;
+  layoutLock=null;requestAnimationFrame(()=>window.scrollTo(0,y));
+}
+function lockLayout(){
+  if(layoutLock)return;
+  layoutLock={scrollY:window.scrollY,htmlOverflow:document.documentElement.style.overflow,htmlOverflowX:document.documentElement.style.overflowX,bodyOverflow:document.body.style.overflow,bodyOverflowX:document.body.style.overflowX,bodyWidth:document.body.style.width,bodyPosition:document.body.style.position};
+  document.documentElement.classList.add('grail-hub-open');document.body.classList.add('grail-hub-open');
+  document.documentElement.style.overflow='hidden';document.documentElement.style.overflowX='hidden';document.body.style.overflow='hidden';document.body.style.overflowX='hidden';document.body.style.width='100%';
+}
+
 function statusCopy(g){
   if(!g)return 'Profit Engine state is not available yet.';
   if(g.liquidityConstrained)return `Opportunity capture constrained · additional liquidity required ${money(g.liquidityShortfall)}`;
@@ -148,12 +173,30 @@ function planHtml(plan){if(!plan)return '';const cls=plan.status==='TARGET ROUTE
 function renderStream(){
   const root=document.getElementById('grailHubOverlay'),g=state();if(!root||!g)return;
   const rows=streamState.rows,safe=rows.filter(x=>x.safe),quality=rows.filter(x=>x.qualityPass),plan=streamState.lastPlan||buildBasket(rows,g);streamState.lastPlan=plan;
-  root.querySelector('.grail-hub-shell').innerHTML=`<div class="grail-hub-head"><button class="grail-hub-back" type="button" id="grailStreamBack">←</button><div><div class="grail-hub-title">OPPORTUNITY STREAM</div><div class="grail-hub-sub">Live eBay candidates ranked for ${esc(g.mode)} mode</div></div></div><div class="grail-stream-toolbar"><label for="grailStreamQuery">CURRENT EBAY SEARCH</label><div class="grail-stream-search"><input id="grailStreamQuery" value="${esc(streamState.query)}" placeholder="e.g. Pokemon Charizard 4/102"><button id="grailStreamScan" type="button">${streamState.loading?'SCANNING…':'SCAN LIVE'}</button></div><div class="grail-stream-hint">Use a specific Pokémon, collector number or slab search for the strongest peer matching. Ambiguous listings are rejected automatically.</div></div><div class="grail-stream-summary"><div><small>LISTINGS RANKED</small><b>${rows.length}</b></div><div><small>CLEAR GUARDRAILS</small><b>${safe.length}</b></div><div><small>QUALITY PASS</small><b>${quality.length}</b></div><div><small>DEPLOYABLE</small><b>${money(g.availableGrailPlanLiquidity)}</b></div></div><div class="grail-stream-state ${safe.length?'good':streamState.error?'bad':''}">${esc(streamStatus(rows,g))}</div>${planHtml(plan)}<section class="grail-hub-section"><div class="grail-hub-section-title">RANKED CURRENT LISTINGS</div><div class="grail-stream-results">${rows.length?rows.slice(0,20).map(resultCard).join(''):'<div class="grail-stream-empty">No ranked opportunities yet. Tap SCAN LIVE to search current eBay listings.</div>'}</div></section>`;
+  const sheet=streamState.dailySheet||loadDailySheet();streamState.dailySheet=sheet;
+  root.querySelector('.grail-hub-shell').innerHTML=`<div class="grail-hub-head"><button class="grail-hub-back" type="button" id="grailStreamBack">←</button><div><div class="grail-hub-title">OPPORTUNITY STREAM</div><div class="grail-hub-sub">Live eBay candidates ranked for ${esc(g.mode)} mode</div></div></div><div class="grail-stream-toolbar"><label for="grailStreamQuery">CURRENT EBAY SEARCH</label><div class="grail-stream-search"><input id="grailStreamQuery" value="${esc(streamState.query)}" placeholder="e.g. Pokemon Charizard 4/102"><button id="grailStreamScan" type="button">${streamState.loading?'SCANNING…':'SCAN LIVE'}</button></div><div class="grail-discovery-row"><button id="grailDailyBuild" type="button">${streamState.discoveryLoading?'BUILDING DAILY SHEET…':'BUILD DAILY SHEET'}</button><span>${esc(sheetAgeText(sheet))}</span></div><div class="grail-stream-hint">Manual search remains the diagnostic route. Daily Sheet v1 scans a configured discovery universe, deduplicates live listings, applies the same hardened identity/condition/economics rules, and saves the resulting snapshot locally for 24 hours.</div></div><div class="grail-stream-summary"><div><small>LISTINGS RANKED</small><b>${rows.length}</b></div><div><small>CLEAR GUARDRAILS</small><b>${safe.length}</b></div><div><small>QUALITY PASS</small><b>${quality.length}</b></div><div><small>DEPLOYABLE</small><b>${money(g.availableGrailPlanLiquidity)}</b></div></div><div class="grail-stream-state ${safe.length?'good':streamState.error?'bad':''}">${esc(streamStatus(rows,g))}</div>${planHtml(plan)}<section class="grail-hub-section"><div class="grail-hub-section-title">RANKED CURRENT LISTINGS</div><div class="grail-stream-results">${rows.length?rows.slice(0,20).map(resultCard).join(''):'<div class="grail-stream-empty">No ranked opportunities yet. Tap SCAN LIVE to search current eBay listings.</div>'}</div></section>`;
   root.querySelector('#grailStreamBack').onclick=render;
   root.querySelector('#grailStreamScan').onclick=scanStream;
+  root.querySelector('#grailDailyBuild').onclick=buildDailySheet;
   root.querySelector('#grailStreamQuery').addEventListener('keydown',e=>{if(e.key==='Enter')scanStream()});
   root.querySelectorAll('[data-open-listing]').forEach(b=>b.onclick=()=>{const a=rows.find(x=>String(x.id)===String(b.dataset.openListing));if(a?.url)window.open(a.url,'_blank','noopener')});
   root.querySelectorAll('[data-plan-item]').forEach(b=>b.onclick=()=>{const a=rows.find(x=>String(x.id)===String(b.dataset.planItem));if(!a)return;alert(a.safe?`This candidate already qualifies for the live Grail Plan.\n\nProjected net profit: ${money(a.profit)}\nROI: ${a.roi.toFixed(1)}%\nCapital required: ${money(a.landed)}`:`This listing is visible for review but does not currently clear every Grail Plan guardrail.`)});
+}
+async function buildDailySheet(){
+  const g=state();if(!g||streamState.discoveryLoading)return;
+  streamState.discoveryLoading=true;streamState.error='';renderStream();
+  try{
+    const maxPrice=Math.max(1,num(g.availableGrailPlanLiquidity)),all=[],seen=new Set();
+    for(const q of DISCOVERY_CONFIG.lanes){
+      const u=new URL(EBAY_BACKEND+'/api/ebay/opportunities/search');u.searchParams.set('q',q);u.searchParams.set('limit','100');u.searchParams.set('max_price',String(maxPrice));
+      const res=await fetch(u,{method:'GET',mode:'cors',credentials:'omit',cache:'no-store',headers:{accept:'application/json'}});const d=await res.json().catch(()=>null);
+      if(!res.ok||!d?.ok)continue;
+      for(const item of (Array.isArray(d.itemSummaries)?d.itemSummaries:[])){const id=String(item?.itemId||item?.itemWebUrl||'');if(!id||seen.has(id))continue;seen.add(id);all.push(item)}
+    }
+    const rows=rankListings(all,g),plan=buildBasket(rows,g),now=Date.now(),sheet={schema:1,configVersion:DISCOVERY_CONFIG.version,generatedAt:new Date(now).toISOString(),refreshDue:new Date(now+DISCOVERY_CONFIG.refreshHours*3600000).toISOString(),mode:g.mode,targetRange:g.targetRange,deployableLiquidity:num(g.availableGrailPlanLiquidity),lanes:[...DISCOVERY_CONFIG.lanes],listingCount:all.length,rankedCount:rows.length,qualityCount:rows.filter(x=>x.qualityPass).length,safeCount:rows.filter(x=>x.safe).length,plan:{status:plan.status,cost:plan.cost,profit:plan.profit,chosen:plan.chosen.map(x=>({id:x.id,title:x.title,url:x.url,landed:x.landed,profit:x.profit,roi:x.roi,margin:x.margin,confidence:x.confidence,type:x.type,cardNumber:x.cardNumber,grader:x.grader,grade:x.grade,condition:x.condition,printingFamily:x.printingFamily}))},rows:rows.slice(0,40)};
+    saveDailySheet(sheet);streamState.rows=rows;streamState.safe=rows.filter(x=>x.safe);streamState.lastPlan=plan;streamState.query='DAILY DISCOVERY';
+  }catch(e){streamState.error=String(e?.message||e||'Daily discovery failed.');}
+  finally{streamState.discoveryLoading=false;renderStream()}
 }
 async function scanStream(){
   const g=state(),input=document.getElementById('grailStreamQuery');if(!g||!input)return;const q=input.value.trim();if(!q)return alert('Enter an eBay search first.');
@@ -187,10 +230,10 @@ function render(){
   root.querySelector('#grailOpportunityAction').onclick=renderStream;
   root.querySelector('#grailPlanAction').onclick=showPlan;
 }
-function open(){let root=document.getElementById('grailHubOverlay');if(!root){root=document.createElement('div');root.id='grailHubOverlay';root.className='grail-hub-overlay';root.innerHTML='<div class="grail-hub-shell"></div>';document.body.appendChild(root)}root.hidden=false;document.body.style.overflow='hidden';render()}
-function close(){const root=document.getElementById('grailHubOverlay');if(root)root.hidden=true;document.body.style.overflow=''}
+function open(){let root=document.getElementById('grailHubOverlay');if(!root){root=document.createElement('div');root.id='grailHubOverlay';root.className='grail-hub-overlay';root.innerHTML='<div class="grail-hub-shell"></div>';document.body.appendChild(root)}lockLayout();root.hidden=false;root.scrollLeft=0;root.scrollTop=0;render()}
+function close(){const root=document.getElementById('grailHubOverlay');if(root){root.hidden=true;root.scrollLeft=0}restoreLayout()}
 function bindBuying(){const buttons=[...document.querySelectorAll('button')];const buying=buttons.find(b=>/^BUYING$/i.test((b.querySelector('.home-label')?.textContent||b.textContent||'').trim()));if(!buying||buying.dataset.grailHubBound)return;buying.dataset.grailHubBound='1';buying.addEventListener('click',e=>{e.preventDefault();e.stopImmediatePropagation();open()},true)}
-window.GengrailGrailHub={open,close,render,renderStream,scanStream,getOpportunityState:()=>JSON.parse(JSON.stringify(streamState))};
+window.GengrailGrailHub={open,close,render,renderStream,scanStream,buildDailySheet,getOpportunityState:()=>JSON.parse(JSON.stringify(streamState)),getDailySheet:()=>loadDailySheet()};
 window.addEventListener('gengrail:main-updated',()=>{if(!document.getElementById('grailHubOverlay')?.hidden)render()});
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(bindBuying,0));else setTimeout(bindBuying,0);
 })();
