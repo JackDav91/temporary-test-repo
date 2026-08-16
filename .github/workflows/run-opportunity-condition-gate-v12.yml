@@ -1,0 +1,43 @@
+name: Run Opportunity Stream v1.2 condition gate
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/run-opportunity-condition-gate-v12.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 5
+
+      - name: Apply condition gate patch
+        run: python3 .github/scripts/fix_opportunity_condition_gate_v12.py
+
+      - name: Verify boundaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -q 'Opportunity Stream v1.2 condition gate' grail-hub.js
+          grep -q "hp condition|hp played|hp" grail-hub.js
+          grep -q "e.condition!=='UNKNOWN'" grail-hub.js
+          grep -q 'recognise-card' index.html
+          grep -q 'graded-integration.js' index.html
+          grep -q 'gengrail-ebay.js' index.html
+
+      - name: Commit patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add grail-hub.js
+          git commit -m 'Fix Opportunity Stream condition classification gate'
+          git push origin HEAD:main
