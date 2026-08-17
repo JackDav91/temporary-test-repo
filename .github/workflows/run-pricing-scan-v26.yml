@@ -1,0 +1,25 @@
+name: Run Pricing Scan v2.6
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/run-pricing-scan-v26.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Apply guarded direct Pricing scan patch
+        run: python .github/scripts/apply_pricing_scan_v26.py
+      - name: Commit Pricing scan files
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html gengrail-theme.css sw.js
+          git diff --cached --quiet && exit 0
+          git commit -m 'Restore Pricing Scan Card directly'
+          git push origin HEAD:main
