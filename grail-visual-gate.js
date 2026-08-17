@@ -1,11 +1,8 @@
-/* GENGRAIL GRAIL HUB v1.12.1 — structured eBay identity + visual verification gate
-   Identity hierarchy:
-   1) eBay structured product metadata / ePID when present
-   2) Gengrail visual recognition
-   3) seller title only as fallback context
-
-   Fail closed: contradictory or unresolved collision-prone printings do not enter
-   peer pricing, ROI, ranking or Grail Plan economics.
+/* GENGRAIL GRAIL HUB v1.13 — temporary pre-2002 safety gate
+   Option 2: while vintage/reprint identity remains collision-prone, exclude
+   listings whose intended card/set predates 2002 from Opportunity Stream economics.
+   This prevents Celebrations/modern reprints masquerading as vintage listings from
+   contaminating peer pricing, ROI, ranking or Grail Plan.
 */
 (function(){
 'use strict';
@@ -15,13 +12,14 @@ window.__gengrailVisualGateInstalled=true;
 const nativeFetch=window.fetch.bind(window);
 const AI_BACKEND='https://gengrail-card-ai.gengrailtcg.workers.dev';
 const EBAY_SEARCH_PATH='/api/ebay/opportunities/search';
-const CACHE_KEY='gengrail_grail_identity_gate_v1121';
+const CACHE_KEY='gengrail_grail_identity_gate_v113';
 const CACHE_TTL=24*60*60*1000;
 const CONCURRENCY=3;
 const MAX_IMAGE_BYTES=5_500_000;
 const CONTRACT=Object.freeze({scope:'pokemon_raw_single',recognitionVersion:4,requestedFields:['cardName','cardNumber','language','setName','setCode','rarity','illustrator'],requireFieldConfidence:true,requireCanonicalIdentity:true,requirePrintingIdentity:true});
 const CANONICAL=Object.freeze({'2/102':'blastoise','4/102':'charizard','15/102':'venusaur','58/102':'pikachu','9/111':'lugia','13/75':'umbreon'});
 const COLLISION=new Set(['2/102','4/102','15/102']);
+const PRE2002_FAMILIES=new Set(['BASE_SET','BASE_SET_SHADOWLESS','BASE_SET_2','NEO_GENESIS','NEO_DISCOVERY']);
 
 const EPID_IDENTITY=Object.freeze({
  '26052763408':{cardName:'Venusaur',cardNumber:'15/102',family:'CELEBRATIONS',setName:'Celebrations: Classic Collection',year:2021}
@@ -102,8 +100,21 @@ function structuredIdentity(item){
  const evidence=Boolean(setName||number||cardName||language||rarity||year||productType);
  return {source:evidence?'EBAY_ASPECTS':'NONE',epid,setName,cardNumber:number,cardName,language,rarity,year,productType,family,evidence,pairs};
 }
+function pre2002SafetyReject(item,meta){
+ const title=String(item?.title||'');
+ const family=expectedFamily(title,titleNumber(title));
+ const yearMatch=title.match(/\b(19\d{2}|2000|2001)\b/);
+ const titleYear=yearMatch?Number(yearMatch[1]):0;
+ if(PRE2002_FAMILIES.has(family))return {pass:false,reason:'pre2002_family_safety_gate',family,titleYear};
+ if(titleYear&&titleYear<2002)return {pass:false,reason:'pre2002_title_year_safety_gate',family,titleYear};
+ if(meta?.year&&meta.year<2002)return {pass:false,reason:'pre2002_structured_year_safety_gate',family:meta.family,titleYear:meta.year};
+ if(PRE2002_FAMILIES.has(meta?.family))return {pass:false,reason:'pre2002_structured_family_safety_gate',family:meta.family,titleYear:meta.year||0};
+ return {pass:true};
+}
 function structuredReject(item){
  const meta=structuredIdentity(item),title=String(item?.title||''),n=titleNumber(title),expectedName=CANONICAL[n]||'';
+ const vintage=pre2002SafetyReject(item,meta);
+ if(!vintage.pass)return {pass:false,meta,reason:vintage.reason};
  if(meta.source==='NONE')return {pass:null,meta,reason:'structured_unavailable'};
  const pt=clean(meta.productType);
  if(/keychain|key ring|keyring|charm|pendant|necklace|accessory|sticker|magnet|frame|holder|stand|case/.test(pt))return {pass:false,meta,reason:'structured_non_card_product'};
@@ -180,7 +191,7 @@ async function verifyItems(items){
  const results=await mapLimit(list,CONCURRENCY,item=>verifyOne(item,cache));writeCache(cache);
  const passed=results.filter(x=>x?.pass).map(x=>{if(x.structured?.source&&x.structured.source!=='NONE')x.item.__gengrailStructuredIdentity=x.structured;return x.item});
  const rejected=results.filter(x=>x&&!x.pass);
- window.__gengrailVisualGateLast={at:new Date().toISOString(),version:'1.12.1',input:list.length,passed:passed.length,rejected:rejected.length,reasons:rejected.reduce((a,x)=>(a[x.reason]=(a[x.reason]||0)+1,a),{}),structuredHits:results.filter(x=>x?.structured?.source&&x.structured.source!=='NONE').length};
+ window.__gengrailVisualGateLast={at:new Date().toISOString(),version:'1.13',mode:'PRE_2002_EXCLUDED',input:list.length,passed:passed.length,rejected:rejected.length,reasons:rejected.reduce((a,x)=>(a[x.reason]=(a[x.reason]||0)+1,a),{}),structuredHits:results.filter(x=>x?.structured?.source&&x.structured.source!=='NONE').length};
  console.info('[Gengrail Grail Hub] identity gate',window.__gengrailVisualGateLast);
  return passed;
 }
@@ -192,7 +203,7 @@ window.fetch=async function(input,init){
   const data=await response.clone().json();
   if(!data?.ok||!Array.isArray(data.itemSummaries))return response;
   const verified=await verifyItems(data.itemSummaries);
-  const body=JSON.stringify({...data,itemSummaries:verified,identityGate:{version:'1.12.1',input:data.itemSummaries.length,passed:verified.length,rejected:data.itemSummaries.length-verified.length,diagnostic:window.__gengrailVisualGateLast}});
+  const body=JSON.stringify({...data,itemSummaries:verified,identityGate:{version:'1.13',mode:'PRE_2002_EXCLUDED',input:data.itemSummaries.length,passed:verified.length,rejected:data.itemSummaries.length-verified.length,diagnostic:window.__gengrailVisualGateLast}});
   const headers=new Headers(response.headers);headers.set('content-type','application/json;charset=UTF-8');headers.set('cache-control','no-store');
   return new Response(body,{status:response.status,statusText:response.statusText,headers});
  }catch(e){
@@ -201,11 +212,11 @@ window.fetch=async function(input,init){
    const data=await response.clone().json();
    if(data?.ok&&Array.isArray(data.itemSummaries)){
     const headers=new Headers(response.headers);headers.set('content-type','application/json;charset=UTF-8');headers.set('cache-control','no-store');
-    return new Response(JSON.stringify({...data,itemSummaries:[],identityGate:{version:'1.12.1',input:data.itemSummaries.length,passed:0,rejected:data.itemSummaries.length,error:String(e?.message||e)}}),{status:response.status,statusText:response.statusText,headers});
+    return new Response(JSON.stringify({...data,itemSummaries:[],identityGate:{version:'1.13',mode:'PRE_2002_EXCLUDED',input:data.itemSummaries.length,passed:0,rejected:data.itemSummaries.length,error:String(e?.message||e)}}),{status:response.status,statusText:response.statusText,headers});
    }
   }catch{}
   return response;
  }
 };
-window.GengrailVisualGate={version:'1.12.1',verifyItems,structuredIdentity,clearCache(){try{localStorage.removeItem(CACHE_KEY);localStorage.removeItem('gengrail_grail_identity_gate_v112');localStorage.removeItem('gengrail_grail_visual_gate_v111')}catch{}},last:()=>window.__gengrailVisualGateLast||null};
+window.GengrailVisualGate={version:'1.13',mode:'PRE_2002_EXCLUDED',verifyItems,structuredIdentity,clearCache(){try{localStorage.removeItem(CACHE_KEY);localStorage.removeItem('gengrail_grail_identity_gate_v1121');localStorage.removeItem('gengrail_grail_identity_gate_v112');localStorage.removeItem('gengrail_grail_visual_gate_v111')}catch{}},last:()=>window.__gengrailVisualGateLast||null};
 })();
