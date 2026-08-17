@@ -4,7 +4,6 @@ import re
 # Gengrail v4: harden actual-card identity, keep unknown raw condition review-only,
 # and use the remaining iPhone viewport without redesigning the restored Home UI.
 
-# 1) Grail Hub identity hardening.
 p=Path('grail-hub.js')
 s=p.read_text()
 if 'GENGRAIL GRAIL HUB v1.6' not in s:
@@ -28,22 +27,17 @@ if old not in s:
     raise SystemExit('parseListing identity anchor not found')
 s=s.replace(old,new,1)
 
-# Unknown raw condition already cannot qualityPass; make this explicit and durable.
 old="const conditionKnown=e.type!=='RAW'||e.condition!=='UNKNOWN';"
 new="const conditionKnown=e.type!=='RAW'||e.condition!=='UNKNOWN'; // UNKNOWN raw condition remains REVIEW-only and cannot enter Grail Plan."
 if old not in s:
     raise SystemExit('condition gate anchor not found')
 s=s.replace(old,new,1)
-
 p.write_text(s)
 
-# 2) Home viewport fill — preserve current visual language, only consume spare height.
 p=Path('home-compact.css')
 s=p.read_text()
 if 'GENGRAIL HOME COMPACT v1.1' not in s:
     raise SystemExit('Safety stop: expected restored Home Compact v1.1')
-
-# Replace the previous conservative viewport correction with a stronger geometric fill.
 pattern=r'/\* Viewport-fill correction: preserve v1 card proportions; distribute spare height instead of redesigning tiles\. \*/.*?@media \(max-width:520px\) and \(min-height:900px\)\{.*?\n\}'
 replacement="""/* Viewport-fill correction v1.2: preserve the restored design and consume spare phone height. */
 @media (max-width:520px) and (min-height:821px){
@@ -62,11 +56,10 @@ if n!=1:
     raise SystemExit('Viewport correction anchor not found')
 p.write_text(s)
 
-# 3) Cache bust touched assets.
 p=Path('index.html')
 s=p.read_text()
 for asset,ver in (('grail-hub.js','23.2.0'),('home-compact.css','23.2.0')):
-    pattern=r'('+re.escape(asset)+r')(?:\\?v=[^"\\']+)?'
+    pattern="("+re.escape(asset)+r")(?:\?v=[^\"']+)?"
     s,n=re.subn(pattern,lambda m:m.group(1)+'?v='+ver,s)
     if n<1:
         raise SystemExit(f'Cache reference not found for {asset}')
