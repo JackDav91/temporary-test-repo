@@ -51,9 +51,10 @@ s=s.replace(old,new,1)
 
 # Preserve all genuinely positive ranked rows for review; guardrails decide whether they enter Grail Plan.
 old="const ranked=rankListings(all,g),rows=ranked.filter(x=>x.profit>0&&x.roi>0&&x.margin>0),plan=buildBasket(rows,g),now=Date.now(),sheet="
-new="const ranked=rankListings(all,g),rows=ranked.filter(x=>x.profit>0&&x.roi>0&&x.margin>0),plan=buildBasket(rows,g),now=Date.now(),sheet="
 if old not in s:
     raise SystemExit('Daily Sheet positive-economics anchor not found')
+
+p.write_text(s)
 
 # 2) Restore Home Compact v1 styling, then fix viewport fill without redesigning it.
 p=Path('home-compact.css')
@@ -63,9 +64,7 @@ if 'GENGRAIL HOME COMPACT v2' not in s:
 s=s.replace('GENGRAIL HOME COMPACT v2 — responsive full-height command centre','GENGRAIL HOME COMPACT v1.1 — restored command centre with viewport fill',1)
 s=s.replace("  height:calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 10px);\n  min-height:0;\n  overflow:hidden;","  min-height:calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 10px);\n  height:auto;\n  overflow:visible;",1)
 s=s.replace('  height:100% !important;\n  padding:10px 30px 10px 9px !important;','  height:auto !important;\n  padding:8px 30px 8px 9px !important;',1)
-# Remove the later forced tall-phone min-heights that changed the preferred UI proportions.
 s=re.sub(r'\n/\* Tall-phone tile height correction v2\.1 \*/.*?\n\}\n@media \(max-width:520px\) and \(min-height:900px\)\{.*?\n\}\n?','\n',s,flags=re.S)
-# Use the available vertical space naturally while keeping the original tile appearance.
 marker="""
 /* Viewport-fill correction: preserve v1 card proportions; distribute spare height instead of redesigning tiles. */
 @media (max-width:520px) and (min-height:821px){
@@ -98,7 +97,6 @@ if n!=1:
     raise SystemExit('Service worker cache anchor not found')
 p.write_text(s)
 
-# Safety gates: do not touch recognition, eBay integration, stock, sales, finance or raw/graded contracts.
 checks={
     'grail-hub.js':['floorRoi:10','preferredRoi:20','floorMargin:10','e.discoveryPass','e.preferredPass','function buildDailySheet','function scanStream'],
     'home-compact.css':['GENGRAIL HOME COMPACT v1.1','Viewport-fill correction','height:auto !important'],
