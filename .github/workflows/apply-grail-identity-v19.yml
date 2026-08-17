@@ -18,8 +18,8 @@ jobs:
           ref: main
           fetch-depth: 0
       - name: Harden Grail Hub identity matching
-        shell: python
         run: |
+          python3 - <<'PY'
           from pathlib import Path
 
           p = Path('grail-hub.js')
@@ -48,7 +48,7 @@ function canonicalNameMatches(t,cardNumber){
   const expected=CANONICAL_CARD_NAMES[cardNumber];
   if(!expected)return true;
   const known=['blastoise','charizard','venusaur','pikachu','lugia','umbreon'];
-  const named=known.filter(n=>new RegExp('\\\\b'+n+'\\\\b').test(t));
+  const named=known.filter(n=>new RegExp('\\b'+n+'\\b').test(t));
   return named.length===0||named.includes(expected);
 }
 function strongVintageEvidence(t,family){
@@ -88,6 +88,7 @@ function strongVintageEvidence(t,family){
           s = s.replace(old_family, new_family, 1)
 
           p.write_text(s, encoding='utf-8')
+          PY
       - name: Validate JavaScript
         run: node --check grail-hub.js
       - name: Commit patch
