@@ -1,0 +1,25 @@
+name: Run Grail hotfix v2
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/run-grail-hotfix-v2.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 10
+      - name: Apply guarded hotfix
+        run: python3 .github/scripts/apply_grail_hotfix_v2.py
+      - name: Commit app files
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add grail-hub.js grail-hub.css home-compact.css index.html sw.js
+          git commit -m 'Fix Grail search drift and daily sheet economics'
+          git push origin HEAD:main
