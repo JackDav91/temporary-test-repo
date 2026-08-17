@@ -34,19 +34,15 @@ function identityStatus(t,cardNumber,family,language){
   return 'CONFIRMED';
 }
 """
-
 start=s.find('function identityStatus(')
 end=s.find('function rawCondition',start)
 if start<0 or end<0: raise SystemExit(f'identity block anchors not found: {start=} {end=}')
 s=s[:start]+replacement+s[end:]
 
-s,n=re.subn(r"const type=grader\?'GRADED':'RAW',family=printingFamily\(t,cardNumber\),identity=identityStatus\(t,cardNumber,family\),condition=.*?;'", "", s, count=0)
-# Replace the actual parse line and return using stable local anchors.
 parse_start=s.find("const type=grader?'GRADED':'RAW',family=printingFamily(t,cardNumber)")
 if parse_start<0: raise SystemExit('parseListing type anchor not found')
 parse_end=s.find("\n  return {item,title,t,cardNumber",parse_start)
 if parse_end<0: raise SystemExit('parseListing return anchor not found')
-old_line=s[parse_start:parse_end]
 new_line="const type=grader?'GRADED':'RAW',family=printingFamily(t,cardNumber),language=languageFrom(t),identity=identityStatus(t,cardNumber,family,language),condition=type==='RAW'?rawCondition(title,item?.condition||''):'GRADED';"
 s=s[:parse_start]+new_line+s[parse_end:]
 ret_start=s.find("return {item,title,t,cardNumber",parse_start)
@@ -54,9 +50,11 @@ ret_end=s.find(';',ret_start)+1
 if ret_start<0 or ret_end<=0: raise SystemExit('parseListing return not found')
 s=s[:ret_start]+"return {item,title,t,cardNumber,grader,grade,type,printingFamily:family,language,identityStatus:identity,condition,ask,inbound:shippingPrice(item),tokens:tokensFor(title)};"+s[ret_end:]
 
-peer="if(x.printingFamily!==row.printingFamily)return false;"
-if peer not in s: raise SystemExit('peer language anchor not found')
-s=s.replace(peer,"if(x.printingFamily!==row.printingFamily||x.language!==row.language)return false;",1)
+peer_start=s.find('if(x.printingFamily!==row.printingFamily')
+if peer_start<0: raise SystemExit('peer language anchor not found')
+peer_end=s.find(';',peer_start)+1
+s=s[:peer_start]+"if(x.printingFamily!==row.printingFamily||x.language!==row.language)return false;"+s[peer_end:]
+
 s=s.replace("${esc(r.type)} · ${esc(r.condition)} · ${esc(r.printingFamily.replaceAll('_',' '))}","${esc(r.type)} · ${esc(r.condition)} · ${esc(r.language)} · ${esc(r.printingFamily.replaceAll('_',' '))}")
 p.write_text(s)
 
