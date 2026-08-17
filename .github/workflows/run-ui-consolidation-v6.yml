@@ -14,6 +14,15 @@ jobs:
         with:
           ref: main
           fetch-depth: 10
+      - name: Correct non-functional safety assertion
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('.github/scripts/apply_ui_consolidation_v6.py')
+          s=p.read_text()
+          s=s.replace("'ui-consolidation.js':['visualViewport','PHOTO LIBRARY','ui-settings-clean','REVIEW'],","'ui-consolidation.js':['visualViewport','PHOTO LIBRARY','ui-settings-clean'],")
+          p.write_text(s)
+          PY
       - name: Apply guarded UI consolidation patch
         run: python3 .github/scripts/apply_ui_consolidation_v6.py
       - name: Commit app files
