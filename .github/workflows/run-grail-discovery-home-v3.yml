@@ -23,3 +23,4 @@ jobs:
           git add grail-hub.js home-compact.css index.html sw.js
           git commit -m 'Restore Home UI and loosen Grail discovery thresholds'
           git push origin HEAD:main
+# rerun after patch persistence fix
