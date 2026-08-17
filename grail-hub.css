@@ -113,3 +113,16 @@ html.grail-hub-open,body.grail-hub-open{overflow:hidden!important;overflow-x:hid
   .grail-action-card.primary{grid-column:1/-1!important}
   .grail-plan-question{font-size:20px!important}
 }
+
+
+/* OPPORTUNITY STREAM STATE v1.8 — Daily Sheet first, mobile-contained counters. */
+.grail-stream-mode{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;padding:7px 9px;border-radius:8px;background:#09150d;border:1px solid #294c34;color:#8ce5a5;font-size:8px;letter-spacing:.09em}
+.grail-stream-mode.targeted{background:#151107;border-color:#5d4919;color:#e1c96f}
+.grail-stream-mode button{margin:0!important;padding:6px 8px!important;border-radius:7px!important;background:#202020!important;color:#eee!important;border:1px solid #444!important;font-size:7.5px!important;font-weight:950!important;white-space:nowrap}
+.grail-stream-empty{padding:15px 12px!important;min-height:0!important}
+@media(max-width:520px){
+  .grail-stream-summary{display:grid!important;grid-template-columns:1fr 1fr!important;gap:7px!important;overflow:visible!important;width:100%!important}
+  .grail-stream-summary>div{min-width:0!important;width:auto!important;padding:8px!important}
+  .grail-stream-summary b{font-size:13px!important;overflow-wrap:anywhere!important}
+  .grail-stream-mode{align-items:center!important}
+}
