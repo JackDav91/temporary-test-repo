@@ -1,0 +1,24 @@
+name: Run Home UI dynamic viewport patch v1.5
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/run-home-ui-v15.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Apply guarded Home UI v1.5 patch
+        run: python .github/scripts/apply_home_ui_v15.py
+      - name: Commit Home UI v1.5 files
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add home-compact.css index.html sw.js
+          git commit -m 'Use dynamic viewport for Home layout'
+          git push origin HEAD:main
