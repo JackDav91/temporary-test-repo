@@ -12,7 +12,7 @@ const num=v=>Number.isFinite(Number(v))?Number(v):0;
 const clean=v=>String(v||'').toLowerCase().replace(/[’']/g,'').replace(/[^a-z0-9./]+/g,' ').replace(/\s+/g,' ').trim();
 const DAILY_SHEET_KEY='gengrail_grail_daily_sheet_v1';
 const DISCOVERY_CONFIG=Object.freeze({
-  version:2,
+  version:3,
   refreshHours:24,
   // Discovery works best when each lane creates a genuine peer-priced set rather than a broad character soup.
   lanes:['Pokemon Charizard 4/102','Pokemon Pikachu 58/102','Pokemon Blastoise 2/102','Pokemon Venusaur 15/102','Pokemon Lugia 9/111','Pokemon Umbreon 13/75'],
@@ -24,7 +24,7 @@ let streamState={query:'Pokemon TCG card',rows:[],safe:[],lastPlan:null,loading:
 let layoutLock=null;
 
 function state(){try{return typeof window.getGrailPlanState==='function'?window.getGrailPlanState():null}catch{return null}}
-function loadDailySheet(){try{return JSON.parse(localStorage.getItem(DAILY_SHEET_KEY)||'null')}catch{return null}}
+function loadDailySheet(){try{const sheet=JSON.parse(localStorage.getItem(DAILY_SHEET_KEY)||'null');if(!sheet)return null;if(Number(sheet.configVersion)!==Number(DISCOVERY_CONFIG.version)){localStorage.removeItem(DAILY_SHEET_KEY);return null}return sheet}catch{try{localStorage.removeItem(DAILY_SHEET_KEY)}catch{}return null}}
 function saveDailySheet(sheet){try{localStorage.setItem(DAILY_SHEET_KEY,JSON.stringify(sheet))}catch{}streamState.dailySheet=sheet;return sheet}
 function sheetAgeText(sheet){if(!sheet?.generatedAt)return 'No daily sheet built yet.';const generated=new Date(sheet.generatedAt),due=new Date(sheet.refreshDue);return `Built ${generated.toLocaleString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})} · refresh due ${due.toLocaleString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})}`}
 function restoreLayout(){
@@ -133,6 +133,7 @@ function modeScore(a,g){
   else score=roi*.27+margin*.13+conf*.22+depth*.18+capital*.15+profit*.05;
   return Math.round(score*100);
 }
+function accessoryTitleReject(title){const t=clean(title);return /\b(keychain|key chain|keyring|key ring|novelty|extended artwork|extended art|magnetic case|case|display|frame|holder|stand|card not included|no card included|without card|replica|reproduction|proxy|custom)\b/.test(t)}
 function rankListings(items,g){
   const parsed=items.map(parseListing).filter(Boolean),rows=[];
   const outbound=num(localStorage.getItem('gengrailOpp_oppOutbound'))||4.10;
@@ -157,7 +158,7 @@ function rankListings(items,g){
   }
   const uniq=new Map();
   rows.sort((a,b)=>b.rankScore-a.rankScore||b.profit-a.profit).forEach(x=>{if(!uniq.has(x.id))uniq.set(x.id,x)});
-  return [...uniq.values()].sort((a,b)=>Number(b.safe)-Number(a.safe)||b.rankScore-a.rankScore||b.profit-a.profit);
+  return [...uniq.values()].filter(x=>!accessoryTitleReject(x.title)).sort((a,b)=>Number(b.safe)-Number(a.safe)||b.rankScore-a.rankScore||b.profit-a.profit);
 }
 function buildBasket(rows,g){
   const liquidity=num(g.availableGrailPlanLiquidity),targetMin=num(g.targetRange?.min),targetMax=num(g.targetRange?.max),safe=rows.filter(x=>x.qualityPass&&x.landed<=liquidity);
@@ -205,7 +206,7 @@ async function buildDailySheet(){
       if(!res.ok||!d?.ok)continue;
       for(const item of (Array.isArray(d.itemSummaries)?d.itemSummaries:[])){const id=String(item?.itemId||item?.itemWebUrl||'');if(!id||seen.has(id))continue;seen.add(id);all.push(item)}
     }
-    const ranked=rankListings(all,g),rows=ranked.filter(x=>x.profit>0&&x.roi>0&&x.margin>0),plan=buildBasket(rows,g),now=Date.now(),sheet={schema:1,configVersion:DISCOVERY_CONFIG.version,generatedAt:new Date(now).toISOString(),refreshDue:new Date(now+DISCOVERY_CONFIG.refreshHours*3600000).toISOString(),mode:g.mode,targetRange:g.targetRange,deployableLiquidity:num(g.availableGrailPlanLiquidity),lanes:[...DISCOVERY_CONFIG.lanes],listingCount:all.length,rankedCount:rows.length,qualityCount:rows.filter(x=>x.qualityPass).length,safeCount:rows.filter(x=>x.safe).length,plan:{status:plan.status,cost:plan.cost,profit:plan.profit,chosen:plan.chosen.map(x=>({id:x.id,title:x.title,url:x.url,landed:x.landed,profit:x.profit,roi:x.roi,margin:x.margin,confidence:x.confidence,type:x.type,cardNumber:x.cardNumber,grader:x.grader,grade:x.grade,condition:x.condition,printingFamily:x.printingFamily}))},rows:rows.slice(0,40)};
+    const ranked=rankListings(all,g),rows=ranked.filter(x=>!accessoryTitleReject(x.title)&&x.profit>0&&x.roi>0&&x.margin>0),plan=buildBasket(rows,g),now=Date.now(),sheet={schema:1,configVersion:DISCOVERY_CONFIG.version,generatedAt:new Date(now).toISOString(),refreshDue:new Date(now+DISCOVERY_CONFIG.refreshHours*3600000).toISOString(),mode:g.mode,targetRange:g.targetRange,deployableLiquidity:num(g.availableGrailPlanLiquidity),lanes:[...DISCOVERY_CONFIG.lanes],listingCount:all.length,rankedCount:rows.length,qualityCount:rows.filter(x=>x.qualityPass).length,safeCount:rows.filter(x=>x.safe).length,plan:{status:plan.status,cost:plan.cost,profit:plan.profit,chosen:plan.chosen.map(x=>({id:x.id,title:x.title,url:x.url,landed:x.landed,profit:x.profit,roi:x.roi,margin:x.margin,confidence:x.confidence,type:x.type,cardNumber:x.cardNumber,grader:x.grader,grade:x.grade,condition:x.condition,printingFamily:x.printingFamily}))},rows:rows.slice(0,40)};
     saveDailySheet(sheet);streamState.rows=rows;streamState.safe=rows.filter(x=>x.safe);streamState.lastPlan=plan;streamState.query='DAILY DISCOVERY';
   }catch(e){streamState.error=String(e?.message||e||'Daily discovery failed.');}
   finally{streamState.discoveryLoading=false;renderStream()}

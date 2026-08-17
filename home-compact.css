@@ -175,3 +175,16 @@ body.home-page .gengrail-ticker-item b{
   body.home-page .home-menu{grid-template-rows:repeat(3,minmax(118px,1fr)) !important}
   body.home-page .home-menu button{min-height:118px !important}
 }
+
+/* Final viewport fill v1.3: keep the restored visual design but move the ticker toward the browser chrome. */
+@media (max-width:520px) and (min-height:821px){
+  body.home-page{min-height:100dvh !important}
+  body.home-page .app{height:calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 4px) !important;min-height:0 !important;display:flex !important;flex-direction:column !important}
+  body.home-page .home-screen{display:flex !important;flex-direction:column !important;flex:1 1 auto !important}
+  body.home-page .home-menu{flex:1 1 auto !important;grid-template-rows:repeat(3,1fr) !important}
+  body.home-page .home-menu button{height:100% !important;min-height:112px !important}
+  body.home-page .gengrail-performance-ticker{margin-top:6px !important;margin-bottom:0 !important}
+}
+@media (max-width:520px) and (min-height:900px){
+  body.home-page .home-menu button{min-height:122px !important}
+}
