@@ -1,0 +1,83 @@
+from pathlib import Path
+import re
+
+p=Path('grail-hub.js')
+s=p.read_text()
+
+s=s.replace('GENGRAIL GRAIL HUB v1.6 — daily discovery foundation + layout restore',
+            'GENGRAIL GRAIL HUB v1.7 — identity-hardened discovery')
+s=s.replace('version:3,','version:4,',1)
+
+old="""function printingFamily(t,cardNumber){
+  if(/\\b(celebrations|25th anniversary)\\b/.test(t))return 'CELEBRATIONS';
+  if(/\\b(evolutions|xy evolutions|2016)\\b/.test(t))return 'EVOLUTIONS';
+  if(/\\b(base set 2|base set ii)\\b/.test(t))return 'BASE_SET_2';
+  if(/\\b(shadowless)\\b/.test(t))return 'BASE_SET_SHADOWLESS';
+  if(/\\b(base set|wotc|wizards of the coast|1999)\\b/.test(t))return 'BASE_SET';
+  if(cardNumber==='4/102'&&/\\b(wizards|wizard|vintage)\\b/.test(t))return 'BASE_SET';
+  return 'UNKNOWN';
+}"""
+new="""const COLLISION_PRONE_NUMBERS=new Set(['2/102','4/102','15/102']);
+function printingFamily(t,cardNumber){
+  // Printing/set evidence outranks character name and shared collector number.
+  // Modern reprints must be identified before any WOTC/Base Set fallback.
+  const celebrations=/\\b(celebrations|25th anniversary|25th anniversary collection|classic collection|pokemon 25|pok[eé]mon 25|2021 celebrations)\\b/.test(t);
+  const classic2021=/\\b2021\\b/.test(t)&&COLLISION_PRONE_NUMBERS.has(cardNumber);
+  if(celebrations||classic2021)return 'CELEBRATIONS';
+  if(/\\b(evolutions|xy evolutions)\\b/.test(t))return 'EVOLUTIONS';
+  if(/\\b(base set 2|base set ii)\\b/.test(t))return 'BASE_SET_2';
+  if(/\\b(neo genesis)\\b/.test(t))return 'NEO_GENESIS';
+  if(/\\b(neo discovery)\\b/.test(t))return 'NEO_DISCOVERY';
+  if(/\\b(shadowless)\\b/.test(t))return 'BASE_SET_SHADOWLESS';
+  if(/\\b(base set|wotc|wizards of the coast|1999)\\b/.test(t))return 'BASE_SET';
+  if(cardNumber==='4/102'&&/\\b(wizards|wizard|vintage)\\b/.test(t))return 'BASE_SET';
+  return 'UNKNOWN';
+}
+function identityStatus(t,cardNumber,family){
+  // Blastoise 2/102, Charizard 4/102 and Venusaur 15/102 collide between
+  // original Base Set and Celebrations Classic Collection. Never rank those
+  // cards from name/number alone: explicit set/era evidence is required.
+  if(COLLISION_PRONE_NUMBERS.has(cardNumber)&&family==='UNKNOWN')return 'UNCERTAIN';
+  if(family==='BASE_SET'&&/\\b(2021|celebrations|25th anniversary|classic collection)\\b/.test(t))return 'CONFLICT';
+  if(family==='CELEBRATIONS'&&/\\b(1999|wotc|wizards of the coast)\\b/.test(t)&&!/\\b(celebrations|25th anniversary|classic collection|2021)\\b/.test(t))return 'CONFLICT';
+  return 'CONFIRMED';
+}"""
+if old not in s:
+    raise SystemExit('Safety stop: printingFamily anchor not found')
+s=s.replace(old,new,1)
+
+old_parse="""  const type=grader?'GRADED':'RAW',family=printingFamily(t,cardNumber),condition=type==='RAW'?rawCondition(title,item?.condition||''):'GRADED';
+  return {item,title,t,cardNumber,grader,grade,type,printingFamily:family,condition,ask,inbound:shippingPrice(item),tokens:tokensFor(title)};"""
+new_parse="""  const type=grader?'GRADED':'RAW',family=printingFamily(t,cardNumber),identity=identityStatus(t,cardNumber,family),condition=type==='RAW'?rawCondition(title,item?.condition||''):'GRADED';
+  return {item,title,t,cardNumber,grader,grade,type,printingFamily:family,identityStatus:identity,condition,ask,inbound:shippingPrice(item),tokens:tokensFor(title)};"""
+if old_parse not in s:
+    raise SystemExit('Safety stop: parseListing return anchor not found')
+s=s.replace(old_parse,new_parse,1)
+
+old_rank="""  for(const r of parsed){
+    const peers=peerRows(r,parsed);if(peers.length<3)continue;"""
+new_rank="""  for(const r of parsed){
+    // Ambiguous or cross-era identities remain diagnostic evidence only.
+    // They cannot seed pricing peers, rankings or Grail Plan candidates.
+    if(r.identityStatus!=='CONFIRMED')continue;
+    const peers=peerRows(r,parsed).filter(x=>x.identityStatus==='CONFIRMED');if(peers.length<3)continue;"""
+if old_rank not in s:
+    raise SystemExit('Safety stop: rank loop anchor not found')
+s=s.replace(old_rank,new_rank,1)
+p.write_text(s)
+
+sw=Path('sw.js')
+w=sw.read_text()
+w,n=re.subn(r"const C='[^']+';","const C='gengrail-log-v24.8.0-grail-identity';",w,count=1)
+if n!=1:
+    raise SystemExit('Safety stop: sw cache anchor missing')
+sw.write_text(w)
+
+out=p.read_text()
+assert 'floorRoi:10' in out
+assert 'preferredRoi:20' in out
+assert 'floorMargin:10' in out
+assert 'COLLISION_PRONE_NUMBERS' in out
+assert "identityStatus!=='CONFIRMED'" in out
+assert 'version:4' in out
+print('Grail Hub identity v1.7 validated')
