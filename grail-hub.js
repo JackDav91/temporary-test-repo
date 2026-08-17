@@ -1,4 +1,4 @@
-/* GENGRAIL GRAIL HUB v1.7 — identity-hardened discovery
+/* GENGRAIL GRAIL HUB v1.8 — language + era identity hardening
    Consumes Profit Engine state and the existing Opportunity Finder economics.
    Active listings are evidence only; no sold-price or sell-through data is fabricated.
 */
@@ -12,7 +12,7 @@ const num=v=>Number.isFinite(Number(v))?Number(v):0;
 const clean=v=>String(v||'').toLowerCase().replace(/[’']/g,'').replace(/[^a-z0-9./]+/g,' ').replace(/\s+/g,' ').trim();
 const DAILY_SHEET_KEY='gengrail_grail_daily_sheet_v1';
 const DISCOVERY_CONFIG=Object.freeze({
-  version:4,
+  version:5,
   refreshHours:24,
   // Discovery works best when each lane creates a genuine peer-priced set rather than a broad character soup.
   lanes:['Pokemon Charizard 4/102','Pokemon Pikachu 58/102','Pokemon Blastoise 2/102','Pokemon Venusaur 15/102','Pokemon Lugia 9/111','Pokemon Umbreon 13/75'],
@@ -83,13 +83,30 @@ function printingFamily(t,cardNumber){
   if(cardNumber==='4/102'&&/\b(wizards|wizard|vintage)\b/.test(t))return 'BASE_SET';
   return 'UNKNOWN';
 }
-function identityStatus(t,cardNumber,family){
-  // Blastoise 2/102, Charizard 4/102 and Venusaur 15/102 collide between
-  // original Base Set and Celebrations Classic Collection. Never rank those
-  // cards from name/number alone: explicit set/era evidence is required.
+function languageFrom(t){
+  if(/\b(japanese|japan|jp|jpn|giapponese)\b/.test(t))return 'JA';
+  if(/\b(italian|italiano|italiana|italia)\b/.test(t))return 'IT';
+  if(/\b(german|deutsch|deutsche|deutschland)\b/.test(t))return 'DE';
+  if(/\b(french|francais|français|france)\b/.test(t))return 'FR';
+  if(/\b(spanish|espanol|español|espana|españa)\b/.test(t))return 'ES';
+  if(/\b(portuguese|portugues|português|portugal)\b/.test(t))return 'PT';
+  if(/\b(korean|korea|kr)\b/.test(t))return 'KO';
+  if(/\b(chinese|simplified chinese|traditional chinese|cn|zh)\b/.test(t))return 'ZH';
+  if(/\b(english|eng|uk)\b/.test(t))return 'EN';
+  return 'EN';
+}
+function eraStatus(t,cardNumber,family,language){
+  if(family==='BASE_SET'&&/\b(2021|2020|2019|2018|2017|2016|celebrations|25th anniversary|classic collection)\b/.test(t))return 'CONFLICT';
+  if(family==='CELEBRATIONS'&&/\b(1999|2000|wotc|wizards of the coast)\b/.test(t)&&!/\b(celebrations|25th anniversary|classic collection|2021)\b/.test(t))return 'CONFLICT';
+  if(family==='EVOLUTIONS'&&/\b(1999|wotc|wizards of the coast)\b/.test(t)&&!/\b2016\b/.test(t))return 'CONFLICT';
+  if(family==='BASE_SET'&&language==='EN'&&/\b1998\b/.test(t)&&!/\b1999\b/.test(t))return 'REVIEW';
+  return 'OK';
+}
+function identityStatus(t,cardNumber,family,language){
   if(COLLISION_PRONE_NUMBERS.has(cardNumber)&&family==='UNKNOWN')return 'UNCERTAIN';
-  if(family==='BASE_SET'&&/\b(2021|celebrations|25th anniversary|classic collection)\b/.test(t))return 'CONFLICT';
-  if(family==='CELEBRATIONS'&&/\b(1999|wotc|wizards of the coast)\b/.test(t)&&!/\b(celebrations|25th anniversary|classic collection|2021)\b/.test(t))return 'CONFLICT';
+  const era=eraStatus(t,cardNumber,family,language);
+  if(era==='CONFLICT')return 'CONFLICT';
+  if(era==='REVIEW')return 'REVIEW';
   return 'CONFIRMED';
 }
 function rawCondition(title,itemCondition=''){
@@ -119,13 +136,13 @@ function parseListing(item){
   if(grader&&!grade)return null;
   if(!grader&&/\bgraded|slab\b/.test(t))return null;
   const ask=listingPrice(item);if(!(ask>0))return null;
-  const type=grader?'GRADED':'RAW',family=printingFamily(t,cardNumber),identity=identityStatus(t,cardNumber,family),condition=type==='RAW'?rawCondition(title,item?.condition||''):'GRADED';
-  return {item,title,t,cardNumber,grader,grade,type,printingFamily:family,identityStatus:identity,condition,ask,inbound:shippingPrice(item),tokens:tokensFor(title)};
+  const type=grader?'GRADED':'RAW',family=printingFamily(t,cardNumber),language=languageFrom(t),identity=identityStatus(t,cardNumber,family,language),condition=type==='RAW'?rawCondition(title,item?.condition||''):'GRADED';
+  return {item,title,t,cardNumber,grader,grade,type,printingFamily:family,language,identityStatus:identity,condition,ask,inbound:shippingPrice(item),tokens:tokensFor(title)};
 }
 function peerRows(row,all){
   return all.filter(x=>{
     if(x===row||x.cardNumber!==row.cardNumber||x.grader!==row.grader||x.grade!==row.grade)return false;
-    if(x.printingFamily!==row.printingFamily)return false;
+    if(x.printingFamily!==row.printingFamily||x.language!==row.language)return false;
     if(row.type==='RAW'&&x.condition!==row.condition)return false;
     return similarity(row.tokens,x.tokens)>=.42;
   });
