@@ -35,27 +35,24 @@ function identityStatus(t,cardNumber,family,language){
 }
 """
 
-s,n=re.subn(r"function identityStatus\(t,cardNumber,family\)\{.*?\n\}\n(?=function rawCondition)",replacement,s,count=1,flags=re.S)
-if n!=1:
-    raise SystemExit('identityStatus block not found')
+start=s.find('function identityStatus(')
+end=s.find('function rawCondition',start)
+if start<0 or end<0:
+    raise SystemExit(f'identity block anchors not found: start={start} end={end}')
+s=s[:start]+replacement+s[end:]
 
-s,n=re.subn(
-    r"const type=grader\?'GRADED':'RAW',family=printingFamily\(t,cardNumber\),identity=identityStatus\(t,cardNumber,family\),condition=type==='RAW'\?rawCondition\(title,item\?\.condition\|\|''\):'GRADED';",
-    "const type=grader?'GRADED':'RAW',family=printingFamily(t,cardNumber),language=languageFrom(t),identity=identityStatus(t,cardNumber,family,language),condition=type==='RAW'?rawCondition(title,item?.condition||''):'GRADED';",
-    s,count=1)
-if n!=1: raise SystemExit('parseListing identity line not found')
-
-s,n=re.subn(
-    r"return \{item,title,t,cardNumber,grader,grade,type,printingFamily:family,identityStatus:identity,condition,ask,inbound:shippingPrice\(item\),tokens:tokensFor\(title\)\};",
-    "return {item,title,t,cardNumber,grader,grade,type,printingFamily:family,language,identityStatus:identity,condition,ask,inbound:shippingPrice(item),tokens:tokensFor(title)};",
-    s,count=1)
-if n!=1: raise SystemExit('parseListing return not found')
-
-s,n=re.subn(
-    r"if\(x\.printingFamily!==row\.printingFamily\)return false;",
-    "if(x.printingFamily!==row.printingFamily||x.language!==row.language)return false;",
-    s,count=1)
-if n!=1: raise SystemExit('peer language anchor not found')
+old="const type=grader?'GRADED':'RAW',family=printingFamily(t,cardNumber),identity=identityStatus(t,cardNumber,family),condition=type==='RAW'?rawCondition(title,item?.condition||''):'GRADED';"
+new="const type=grader?'GRADED':'RAW',family=printingFamily(t,cardNumber),language=languageFrom(t),identity=identityStatus(t,cardNumber,family,language),condition=type==='RAW'?rawCondition(title,item?.condition||''):'GRADED';"
+if old not in s: raise SystemExit('parseListing identity line not found')
+s=s.replace(old,new,1)
+oldret="return {item,title,t,cardNumber,grader,grade,type,printingFamily:family,identityStatus:identity,condition,ask,inbound:shippingPrice(item),tokens:tokensFor(title)};"
+newret="return {item,title,t,cardNumber,grader,grade,type,printingFamily:family,language,identityStatus:identity,condition,ask,inbound:shippingPrice(item),tokens:tokensFor(title)};"
+if oldret not in s: raise SystemExit('parseListing return not found')
+s=s.replace(oldret,newret,1)
+oldpeer="if(x.printingFamily!==row.printingFamily)return false;"
+newpeer="if(x.printingFamily!==row.printingFamily||x.language!==row.language)return false;"
+if oldpeer not in s: raise SystemExit('peer language anchor not found')
+s=s.replace(oldpeer,newpeer,1)
 
 s=s.replace("${esc(r.type)} · ${esc(r.condition)} · ${esc(r.printingFamily.replaceAll('_',' '))}","${esc(r.type)} · ${esc(r.condition)} · ${esc(r.language)} · ${esc(r.printingFamily.replaceAll('_',' '))}")
 p.write_text(s)
