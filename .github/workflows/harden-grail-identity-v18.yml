@@ -26,3 +26,4 @@ jobs:
           git add grail-hub.js sw.js
           git commit -m 'Add Grail Hub language and era identity guards'
           git push origin HEAD:main
+# rerun: identity v1.8
