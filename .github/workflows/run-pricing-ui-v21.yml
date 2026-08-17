@@ -1,0 +1,26 @@
+name: Run Pricing UI v2.1
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/run-pricing-ui-v21.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 10
+      - name: Apply Pricing Calculator UI patch
+        run: python .github/scripts/apply_pricing_ui_v21.py
+      - name: Commit Pricing Calculator UI
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html sw.js
+          git diff --cached --quiet && exit 0
+          git commit -m 'Clean up Pricing Calculator UI'
+          git push origin HEAD:main
