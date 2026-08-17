@@ -147,8 +147,8 @@ function rankListings(items,g){
     e.qualityPass=e.discoveryPass;
     e.liquidityPass=e.landed<=num(g.availableGrailPlanLiquidity);
     e.safe=e.qualityPass&&e.liquidityPass;
-    if(e.preferredPass)e.rankScore=Math.min(100,(e.rankScore||0)+8);
     e.rankScore=modeScore(e,g);
+    if(e.preferredPass)e.rankScore=Math.min(100,e.rankScore+8);
     rows.push(e);
   }
   const uniq=new Map();
