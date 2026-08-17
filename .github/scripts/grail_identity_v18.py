@@ -37,23 +37,26 @@ function identityStatus(t,cardNumber,family,language){
 
 start=s.find('function identityStatus(')
 end=s.find('function rawCondition',start)
-if start<0 or end<0:
-    raise SystemExit(f'identity block anchors not found: start={start} end={end}')
+if start<0 or end<0: raise SystemExit(f'identity block anchors not found: {start=} {end=}')
 s=s[:start]+replacement+s[end:]
 
-old="const type=grader?'GRADED':'RAW',family=printingFamily(t,cardNumber),identity=identityStatus(t,cardNumber,family),condition=type==='RAW'?rawCondition(title,item?.condition||''):'GRADED';"
-new="const type=grader?'GRADED':'RAW',family=printingFamily(t,cardNumber),language=languageFrom(t),identity=identityStatus(t,cardNumber,family,language),condition=type==='RAW'?rawCondition(title,item?.condition||''):'GRADED';"
-if old not in s: raise SystemExit('parseListing identity line not found')
-s=s.replace(old,new,1)
-oldret="return {item,title,t,cardNumber,grader,grade,type,printingFamily:family,identityStatus:identity,condition,ask,inbound:shippingPrice(item),tokens:tokensFor(title)};"
-newret="return {item,title,t,cardNumber,grader,grade,type,printingFamily:family,language,identityStatus:identity,condition,ask,inbound:shippingPrice(item),tokens:tokensFor(title)};"
-if oldret not in s: raise SystemExit('parseListing return not found')
-s=s.replace(oldret,newret,1)
-oldpeer="if(x.printingFamily!==row.printingFamily)return false;"
-newpeer="if(x.printingFamily!==row.printingFamily||x.language!==row.language)return false;"
-if oldpeer not in s: raise SystemExit('peer language anchor not found')
-s=s.replace(oldpeer,newpeer,1)
+s,n=re.subn(r"const type=grader\?'GRADED':'RAW',family=printingFamily\(t,cardNumber\),identity=identityStatus\(t,cardNumber,family\),condition=.*?;'", "", s, count=0)
+# Replace the actual parse line and return using stable local anchors.
+parse_start=s.find("const type=grader?'GRADED':'RAW',family=printingFamily(t,cardNumber)")
+if parse_start<0: raise SystemExit('parseListing type anchor not found')
+parse_end=s.find("\n  return {item,title,t,cardNumber",parse_start)
+if parse_end<0: raise SystemExit('parseListing return anchor not found')
+old_line=s[parse_start:parse_end]
+new_line="const type=grader?'GRADED':'RAW',family=printingFamily(t,cardNumber),language=languageFrom(t),identity=identityStatus(t,cardNumber,family,language),condition=type==='RAW'?rawCondition(title,item?.condition||''):'GRADED';"
+s=s[:parse_start]+new_line+s[parse_end:]
+ret_start=s.find("return {item,title,t,cardNumber",parse_start)
+ret_end=s.find(';',ret_start)+1
+if ret_start<0 or ret_end<=0: raise SystemExit('parseListing return not found')
+s=s[:ret_start]+"return {item,title,t,cardNumber,grader,grade,type,printingFamily:family,language,identityStatus:identity,condition,ask,inbound:shippingPrice(item),tokens:tokensFor(title)};"+s[ret_end:]
 
+peer="if(x.printingFamily!==row.printingFamily)return false;"
+if peer not in s: raise SystemExit('peer language anchor not found')
+s=s.replace(peer,"if(x.printingFamily!==row.printingFamily||x.language!==row.language)return false;",1)
 s=s.replace("${esc(r.type)} · ${esc(r.condition)} · ${esc(r.printingFamily.replaceAll('_',' '))}","${esc(r.type)} · ${esc(r.condition)} · ${esc(r.language)} · ${esc(r.printingFamily.replaceAll('_',' '))}")
 p.write_text(s)
 
