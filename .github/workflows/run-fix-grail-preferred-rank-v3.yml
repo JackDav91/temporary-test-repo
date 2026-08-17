@@ -1,4 +1,4 @@
-name: Fix Grail preferred discovery ranking v3
+name: Harden Grail Hub identity v1.7
 on:
   push:
     branches: [main]
@@ -14,12 +14,12 @@ jobs:
         with:
           ref: main
           fetch-depth: 10
-      - name: Apply preferred ranking fix
-        run: python3 .github/scripts/fix_grail_preferred_rank_v3.py
+      - name: Apply identity hardening
+        run: python3 .github/scripts/harden_grail_identity_v17.py
       - name: Commit app files
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add grail-hub.js index.html sw.js
-          git commit -m 'Fix preferred Grail discovery ranking boost'
+          git add grail-hub.js sw.js
+          git commit -m 'Harden Grail Hub card identity accuracy'
           git push origin HEAD:main
