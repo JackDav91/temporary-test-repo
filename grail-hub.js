@@ -84,25 +84,6 @@ function printingFamily(t,cardNumber){
   return 'UNKNOWN';
 }
 function languageFrom(t){
-  if(/\b(japanese|japan|jp|jpn|giapponese)\b/.test(t))return 'JA';
-  if(/\b(italian|italiano|italiana|italia)\b/.test(t))return 'IT';
-  if(/\b(german|deutsch|deutsche|deutschland)\b/.test(t))return 'DE';
-  if(/\b(french|francais|français|france)\b/.test(t))return 'FR';
-  if(/\b(spanish|espanol|español|espana|españa)\b/.test(t))return 'ES';
-  if(/\b(portuguese|portugues|português|portugal)\b/.test(t))return 'PT';
-  if(/\b(korean|korea|kr)\b/.test(t))return 'KO';
-  if(/\b(chinese|simplified chinese|traditional chinese|cn|zh)\b/.test(t))return 'ZH';
-  if(/\b(english|eng|uk)\b/.test(t))return 'EN';
-  return 'EN';
-}
-function eraStatus(t,cardNumber,family,language){
-  if(family==='BASE_SET'&&/\b(2021|2020|2019|2018|2017|2016|celebrations|25th anniversary|classic collection)\b/.test(t))return 'CONFLICT';
-  if(family==='CELEBRATIONS'&&/\b(1999|2000|wotc|wizards of the coast)\b/.test(t)&&!/\b(celebrations|25th anniversary|classic collection|2021)\b/.test(t))return 'CONFLICT';
-  if(family==='EVOLUTIONS'&&/\b(1999|wotc|wizards of the coast)\b/.test(t)&&!/\b2016\b/.test(t))return 'CONFLICT';
-  if(family==='BASE_SET'&&language==='EN'&&/\b1998\b/.test(t)&&!/\b1999\b/.test(t))return 'REVIEW';
-  return 'OK';
-}
-function languageFrom(t){
   if(/(japanese|japan|jp|jpn|giapponese)/.test(t))return 'JA';
   if(/(italian|italiano|italiana|italia)/.test(t))return 'IT';
   if(/(german|deutsch|deutsche|deutschland)/.test(t))return 'DE';
