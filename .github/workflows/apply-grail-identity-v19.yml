@@ -1,0 +1,100 @@
+name: Apply Grail Hub identity v1.9
+
+on:
+  push:
+    paths:
+      - '.github/workflows/apply-grail-identity-v19.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Harden Grail Hub identity matching
+        shell: python
+        run: |
+          from pathlib import Path
+
+          p = Path('grail-hub.js')
+          s = p.read_text(encoding='utf-8')
+
+          s = s.replace('GENGRAIL GRAIL HUB v1.8 — language + era identity hardening', 'GENGRAIL GRAIL HUB v1.9 — canonical identity + reprint collision hardening')
+          s = s.replace('  version:5,', '  version:6,', 1)
+
+          old = "function obviousReject(t){return /\\b(proxy|replica|reproduction|custom|fan art|fanart|digital|code card|empty slab|slab only|case only|repack|mystery|orica|lot|bundle|collection|job lot|break|metal card|gold card|keychain|key chain|keyring|key ring|novelty|magnetic case|extended artwork|display case|display frame|card holder|card stand|protective case|acrylic case|card not included|card is not included|no card included|without card|empty case|case for|frame for|holder for)\\b/.test(t)}"
+          new = "function obviousReject(t){return /\\b(proxy|replica|reproduction|custom|fan art|fanart|digital|code card|empty slab|slab only|case only|repack|mystery|orica|lot|bundle|collection|job lot|break|metal card|gold card|keychain|key chain|keyring|key ring|novelty|magnetic case|extended artwork|display case|display frame|card holder|card stand|protective case|acrylic case|card not included|card is not included|no card included|without card|empty case|case for|frame for|holder for|multi buy|multibuy)\\b/.test(t)||/\\bbuy\\s*\\d+\\s*get\\s*\\d+\\s*free\\b/.test(t)}"
+          if old not in s:
+              raise SystemExit('obviousReject anchor not found')
+          s = s.replace(old, new, 1)
+
+          anchor = "const COLLISION_PRONE_NUMBERS=new Set(['2/102','4/102','15/102']);"
+          insert = """const COLLISION_PRONE_NUMBERS=new Set(['2/102','4/102','15/102']);
+const CANONICAL_CARD_NAMES=Object.freeze({
+  '2/102':'blastoise',
+  '4/102':'charizard',
+  '15/102':'venusaur',
+  '58/102':'pikachu',
+  '9/111':'lugia',
+  '13/75':'umbreon'
+});
+function canonicalNameMatches(t,cardNumber){
+  const expected=CANONICAL_CARD_NAMES[cardNumber];
+  if(!expected)return true;
+  const known=['blastoise','charizard','venusaur','pikachu','lugia','umbreon'];
+  const named=known.filter(n=>new RegExp('\\\\b'+n+'\\\\b').test(t));
+  return named.length===0||named.includes(expected);
+}
+function strongVintageEvidence(t,family){
+  if(family==='BASE_SET'||family==='BASE_SET_SHADOWLESS')return /\\b(base set|shadowless|wotc|wizards of the coast|1999|1998|unlimited|1st edition|first edition)\\b/.test(t);
+  if(family==='NEO_GENESIS')return /\\b(neo genesis|2000|2001|wotc|wizards|unlimited|1st edition|first edition)\\b/.test(t);
+  if(family==='NEO_DISCOVERY')return /\\b(neo discovery|2001|wotc|wizards|unlimited|1st edition|first edition)\\b/.test(t);
+  return true;
+}
+"""
+          if anchor not in s:
+              raise SystemExit('collision anchor not found')
+          s = s.replace(anchor, insert, 1)
+
+          old_parse = """  const cardNumber=`${Number(n[1])}/${Number(n[2])}`;
+  // Collector number is necessary but not sufficient: require positive evidence that the listing is the card itself.
+  const actualCardSignal=/\\b(card|tcg|holo|holofoil|rare|unlimited|1st edition|first edition|shadowless|wotc|pokemon)\\b/.test(t);"""
+          new_parse = """  const cardNumber=`${Number(n[1])}/${Number(n[2])}`;
+  // Collector number is necessary but not sufficient. Reject impossible name/number combinations
+  // before they can contaminate peer pricing (e.g. Blastoise 4/102).
+  if(!canonicalNameMatches(t,cardNumber))return null;
+  // Collector number is necessary but not sufficient: require positive evidence that the listing is the card itself.
+  const actualCardSignal=/\\b(card|tcg|holo|holofoil|rare|unlimited|1st edition|first edition|shadowless|wotc|pokemon)\\b/.test(t);"""
+          if old_parse not in s:
+              raise SystemExit('parse anchor not found')
+          s = s.replace(old_parse, new_parse, 1)
+
+          old_family = """  const type=grader?'GRADED':'RAW',family=printingFamily(t,cardNumber),language=languageFrom(t),identity=identityStatus(t,cardNumber,family,language),condition=type==='RAW'?rawCondition(title,item?.condition||''):'GRADED';
+  return {item,title,t,cardNumber,grader,grade,type,printingFamily:family,language,identityStatus:identity,condition,ask,inbound:shippingPrice(item),tokens:tokensFor(title)};"""
+          new_family = """  const type=grader?'GRADED':'RAW',family=printingFamily(t,cardNumber),language=languageFrom(t),identity=identityStatus(t,cardNumber,family,language),condition=type==='RAW'?rawCondition(title,item?.condition||''):'GRADED';
+  // Shared collector numbers are especially vulnerable to Celebrations/Evolutions contamination.
+  // A vintage family must carry explicit era/set evidence before it is allowed into pricing peers.
+  if(COLLISION_PRONE_NUMBERS.has(cardNumber)&&(family==='BASE_SET'||family==='BASE_SET_SHADOWLESS')&&!strongVintageEvidence(t,family))return null;
+  if(family==='CELEBRATIONS'&&/\\b(base set|wotc|wizards of the coast|1999)\\b/.test(t)&&!/\\b(celebrations|25th anniversary|classic collection|pokemon 25|2021)\\b/.test(t))return null;
+  return {item,title,t,cardNumber,grader,grade,type,printingFamily:family,language,identityStatus:identity,condition,ask,inbound:shippingPrice(item),tokens:tokensFor(title)};"""
+          if old_family not in s:
+              raise SystemExit('family anchor not found')
+          s = s.replace(old_family, new_family, 1)
+
+          p.write_text(s, encoding='utf-8')
+      - name: Validate JavaScript
+        run: node --check grail-hub.js
+      - name: Commit patch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add grail-hub.js
+          git diff --cached --quiet && exit 0
+          git commit -m "Harden Grail Hub identity against reprint collisions"
+          git push origin HEAD:main
