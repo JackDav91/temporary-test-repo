@@ -4,6 +4,16 @@
 */
 (function(){
 'use strict';
+const PATCH_EPOCH='pre2002-direct-v2';
+const PATCH_EPOCH_KEY='gengrail_grail_patch_epoch';
+const DAILY_SHEET_KEY='gengrail_grail_daily_sheet_v1';
+try{
+ if(localStorage.getItem(PATCH_EPOCH_KEY)!==PATCH_EPOCH){
+  localStorage.removeItem(DAILY_SHEET_KEY);
+  localStorage.setItem(PATCH_EPOCH_KEY,PATCH_EPOCH);
+  console.info('[Gengrail] invalidated stale Daily Sheet for',PATCH_EPOCH);
+ }
+}catch(e){console.warn('[Gengrail] could not invalidate stale Daily Sheet',e)}
 if(window.__gengrailPre2002SafetyInstalled)return;
 window.__gengrailPre2002SafetyInstalled=true;
 const upstream=window.fetch.bind(window);
@@ -32,7 +42,7 @@ window.fetch=async function(input,init){
   const headers=new Headers(response.headers);
   headers.set('content-type','application/json;charset=UTF-8');
   headers.set('cache-control','no-store');
-  const diagnostic={version:'option2-direct-v1',mode:'PRE_2002_EXCLUDED',input:before,passed:filtered.length,rejected:before-filtered.length};
+  const diagnostic={version:'option2-direct-v2',mode:'PRE_2002_EXCLUDED',input:before,passed:filtered.length,rejected:before-filtered.length};
   window.__gengrailPre2002SafetyLast=diagnostic;
   console.info('[Gengrail] pre-2002 direct safety filter',diagnostic);
   return new Response(JSON.stringify({...data,itemSummaries:filtered,pre2002Safety:diagnostic}),{status:response.status,statusText:response.statusText,headers});
