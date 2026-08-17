@@ -1,0 +1,22 @@
+name: Emergency revert broken UI v24
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/emergency-revert-ui-v24.yml'
+permissions:
+  contents: write
+jobs:
+  revert:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 20
+      - name: Revert UI consolidation app commit
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git revert --no-edit 64bc264904556f8a3d066e9a69e8466702afd548
+          git push origin HEAD:main
