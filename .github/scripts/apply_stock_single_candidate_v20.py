@@ -27,8 +27,6 @@ if old in s:
     s=s.replace(old,new,1)
 elif "const gradedBridge=document.getElementById('gradedStockBridge');" not in s:
     raise SystemExit('Safety stop: raw intake reset anchor missing')
-
-# Cache-bust graded integration.
 pat=r'(graded-integration\.js)(?:\?v=[^"\']+)?'
 s,n=re.subn(pat,lambda m:m.group(1)+'?v=24.0.0',s)
 if n<1: raise SystemExit('Safety stop: graded integration asset reference missing')
@@ -42,6 +40,7 @@ if 'function addGradedImport' not in s or 'STOCK RECOGNITION UI v1.9' not in s:
 
 s=s.replace("${assumed?'ACE ASSUMED · CONFIRM':'VALIDATED EXACT SLAB'}","${assumed?'PROVISIONAL MARKET':'VALIDATED EXACT SLAB'}")
 s=s.replace("${esc(assumed?'ACE · ASSUMED':r.grader)}","${esc(assumed?'ACE · CONFIRMATION REQUIRED':r.grader)}")
+s=s.replace("${esc(assumed?'ACE · NEEDS CONFIRMATION':r.grader)}","${esc(assumed?'ACE · CONFIRMATION REQUIRED':r.grader)}")
 s=s.replace("${assumed?'<div class=\"gsc-assumed\">Priced provisionally as ACE from exact ACE listings. Confirm the grader before saving.</div>':''}","${assumed?'':''}")
 s=s.replace("btn.innerHTML='<span class=\"graded-intake-icon\">▣</span><b>IMPORT GRADED SLAB</b><small>Recognise PSA, BGS, ACE & more</small>'","btn.innerHTML='<span class=\"graded-intake-icon\">▣</span><b>GRADED SLAB</b><small>Recognise PSA, BGS, ACE & more</small>'")
 
@@ -52,7 +51,6 @@ if old in s:
 elif "if(mode==='stock'){try{if(typeof window.resetRecognitionForNewIntake" not in s:
     raise SystemExit('Safety stop: graded import click anchor missing')
 
-# Plain-English confirmation copy retained once, directly under the control.
 s=s.replace('Your selection is saved as a manual grader confirmation.','Confirming the grader will save your manual check with this card.')
 p.write_text(s)
 
