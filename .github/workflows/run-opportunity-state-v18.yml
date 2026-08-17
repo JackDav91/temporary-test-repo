@@ -1,0 +1,25 @@
+name: Run Opportunity Stream state v1.8
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/run-opportunity-state-v18.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Apply guarded Opportunity Stream v1.8 patch
+        run: python .github/scripts/apply_opportunity_state_v18.py
+      - name: Commit Opportunity Stream files
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add grail-hub.js grail-hub.css index.html sw.js
+          git diff --cached --quiet && exit 0
+          git commit -m 'Make Daily Sheet the default Opportunity Stream view'
+          git push origin HEAD:main
