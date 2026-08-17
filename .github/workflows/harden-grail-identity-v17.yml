@@ -118,3 +118,5 @@ function identityStatus(t,cardNumber,family){
           git add grail-hub.js sw.js
           git commit -m 'Harden Grail Hub card identity accuracy'
           git push origin HEAD:main
+
+# Trigger marker: 2026-08-17 identity pass
