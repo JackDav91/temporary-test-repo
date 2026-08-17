@@ -1350,7 +1350,8 @@ body.inner-page .kpi,
 <div class="panel">
 <div class="compact-help pricing-purpose">Identify, value and test a raw Pokémon single. No Stock or listing changes.</div>
 <div class="pricing-ai-tools">
-  <label class="btn alt">IMPORT CARD PHOTO<input accept="image/*" id="pricingAiPhoto" style="display:none" type="file"/></label>
+  <label class="btn pricing-scan-card">SCAN CARD<input accept="image/*" capture="environment" id="pricingAiScan" style="display:none" type="file"/></label>
+  <label class="btn alt">CARD PHOTO<input accept="image/*" id="pricingAiPhoto" style="display:none" type="file"/></label>
   <button class="btn alt" id="pricingAiClear" type="button">CLEAR CARD</button>
 </div>
 <div class="pricing-ai-card" id="pricingAiCard" hidden></div>
@@ -2899,12 +2900,12 @@ async function pricingRecogniseFile(file){
  try{const image=await fileToRecognitionDataURL(file,1200,.80);const d=await gengrailRecogniseImage(image,30000);if(!d?.ok||!d?.identified||!d?.card?.cardName)throw new Error(d?.message||'Recognition failed');pricingRecognition=normaliseRecognition(d.card);pricingAiRender('match',pricingRecognition);const mv=pricingRecognition.reviewRequired?0:pricingMarketAnchor(pricingRecognition);if(mv>0)$('priceMarketValue').value=mv.toFixed(2);pricePopulatePostageProfiles(true);priceCalc();}
  catch(e){pricingRecognition=null;pricingAiRender('error',null,e?.name==='AbortError'?'Recognition timed out.':String(e?.message||e))}
 }
-function pricingAiClear(){pricingRecognition=null;if($('pricingAiPhoto'))$('pricingAiPhoto').value='';if($('priceCost'))$('priceCost').value='';if($('priceMarketValue'))$('priceMarketValue').value='0';pricingAiRender('idle');priceCalc()}
+function pricingAiClear(){pricingRecognition=null;if($('pricingAiScan'))$('pricingAiScan').value='';if($('pricingAiPhoto'))$('pricingAiPhoto').value='';if($('priceCost'))$('priceCost').value='';if($('priceMarketValue'))$('priceMarketValue').value='0';pricingAiRender('idle');priceCalc()}
 if($('priceCalcBtn')){
  ['priceBuyerPost','pricePostCost','pricePack','priceTargetMargin','priceTargetRoi','priceMinProfit','priceSafetyBuffer','priceEbayFvf','priceEbayReg','priceAdRate','priceIntl','priceVintedFee','priceCmFee','priceCmFx','priceVat','priceLowFee','priceBuyingStrategy'].forEach(k=>{const v=localStorage.getItem('gengrailPricing_'+k);if(v!==null&&$(k))$(k).value=v});if($('priceCost'))$('priceCost').value='';if($('priceMarketValue'))$('priceMarketValue').value='0';priceSetManualVisibility();
  renderPostageProfileSettings();pricePopulatePostageProfiles(false);
  document.querySelectorAll('.pricing-tab').forEach(btn=>btn.onclick=()=>{pricePlatform=btn.dataset.pricePlatform;priceSyncPlatform()});
- $('priceCalcBtn').onclick=priceCalc;$('pricingAiPhoto').onchange=e=>pricingRecogniseFile(e.target.files?.[0]);$('pricingAiClear').onclick=pricingAiClear;
+ $('priceCalcBtn').onclick=priceCalc;$('pricingAiScan').onchange=e=>pricingRecogniseFile(e.target.files?.[0]);$('pricingAiPhoto').onchange=e=>pricingRecogniseFile(e.target.files?.[0]);$('pricingAiClear').onclick=pricingAiClear;
  $('pricePostageProfile').onchange=()=>{priceApplyPostageProfile($('pricePostageProfile').value);priceCalc()};
  $('resetPostageProfiles').onclick=()=>{if(confirm('Reset Gengrail postage profiles to the current default assumptions?')){localStorage.removeItem(POSTAGE_PROFILE_KEY);renderPostageProfileSettings();pricePopulatePostageProfiles(true);priceCalc()}};
  ['priceCost','priceMarketValue','priceBuyerPost','pricePostCost','pricePack','priceTargetMargin','priceTargetRoi','priceMinProfit','priceSafetyBuffer'].forEach(id=>$(id).addEventListener('input',priceCalc));$('priceBuyingStrategy').onchange=()=>{priceSetManualVisibility();priceCalc()};priceSyncPlatform();
