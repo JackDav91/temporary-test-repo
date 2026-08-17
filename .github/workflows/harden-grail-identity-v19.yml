@@ -1,0 +1,149 @@
+name: Harden Grail Hub identity v1.9
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/harden-grail-identity-v19.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 5
+
+      - name: Harden collision-prone printing identity
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          p=Path('grail-hub.js')
+          s=p.read_text()
+
+          s=s.replace('GENGRAIL GRAIL HUB v1.8 — language + era identity hardening',
+                      'GENGRAIL GRAIL HUB v1.9 — canonical identity + collision hardening')
+          s=s.replace('version:5,','version:6,',1)
+
+          # Tighten obvious non-single-card/promotional listings.
+          old="function obviousReject(t){return /\\b(proxy|replica|reproduction|custom|fan art|fanart|digital|code card|empty slab|slab only|case only|repack|mystery|orica|lot|bundle|collection|job lot|break|metal card|gold card|keychain|key chain|keyring|key ring|novelty|magnetic case|extended artwork|display case|display frame|card holder|card stand|protective case|acrylic case|card not included|card is not included|no card included|without card|empty case|case for|frame for|holder for)\\b/.test(t)}"
+          new="function obviousReject(t){return /\\b(proxy|replica|reproduction|custom|fan art|fanart|digital|code card|empty slab|slab only|case only|repack|mystery|orica|lot|bundle|collection|job lot|break|metal card|gold card|keychain|key chain|keyring|key ring|novelty|magnetic case|extended artwork|display case|display frame|card holder|card stand|protective case|acrylic case|card not included|card is not included|no card included|without card|empty case|case for|frame for|holder for|buy 2 get 1 free|buy two get one free|multi buy|multibuy|multi card|multiple cards|choose your card|pick your card)\\b/.test(t)}"
+          if old not in s: raise SystemExit('Safety stop: obviousReject anchor missing')
+          s=s.replace(old,new,1)
+
+          # Canonical identity for the configured discovery cards. A seller title
+          # cannot override a known name/collector-number contradiction.
+          marker="const COLLISION_PRONE_NUMBERS=new Set(['2/102','4/102','15/102']);"
+          insert="""const COLLISION_PRONE_NUMBERS=new Set(['2/102','4/102','15/102']);
+const CANONICAL_DISCOVERY_NAMES=Object.freeze({
+  '2/102':'blastoise',
+  '4/102':'charizard',
+  '15/102':'venusaur',
+  '58/102':'pikachu',
+  '9/111':'lugia',
+  '13/75':'umbreon'
+});
+const DISCOVERY_POKEMON_NAMES=Object.freeze(Object.values(CANONICAL_DISCOVERY_NAMES));
+function canonicalNameStatus(t,cardNumber){
+  const expected=CANONICAL_DISCOVERY_NAMES[cardNumber];
+  if(!expected)return 'OK';
+  const named=DISCOVERY_POKEMON_NAMES.filter(name=>new RegExp('\\\\b'+name+'\\\\b').test(t));
+  if(!named.length)return 'UNCERTAIN';
+  if(!named.includes(expected))return 'CONFLICT';
+  if(named.some(name=>name!==expected))return 'CONFLICT';
+  return 'OK';
+}"""
+          if marker not in s: raise SystemExit('Safety stop: collision marker missing')
+          s=s.replace(marker,insert,1)
+
+          # Replace printingFamily so collision-prone Base Set reprints need
+          # positive vintage evidence. "Base Set" wording alone is no longer enough.
+          pattern=r"function printingFamily\(t,cardNumber\)\{.*?\n\}"
+          m=re.search(pattern,s,re.S)
+          if not m: raise SystemExit('Safety stop: printingFamily missing')
+          replacement="""function printingFamily(t,cardNumber){
+  // Modern/reprint evidence wins first.
+  const celebrations=/\\b(celebrations|25th anniversary|25th anniversary collection|classic collection|pokemon 25|pok[eé]mon 25|2021 celebrations)\\b/.test(t);
+  const classic2021=/\\b2021\\b/.test(t)&&COLLISION_PRONE_NUMBERS.has(cardNumber);
+  if(celebrations||classic2021)return 'CELEBRATIONS';
+  if(/\\b(evolutions|xy evolutions)\\b/.test(t))return 'EVOLUTIONS';
+  if(/\\b(base set 2|base set ii)\\b/.test(t))return 'BASE_SET_2';
+  if(/\\b(neo genesis)\\b/.test(t))return 'NEO_GENESIS';
+  if(/\\b(neo discovery)\\b/.test(t))return 'NEO_DISCOVERY';
+  if(/\\b(shadowless)\\b/.test(t))return 'BASE_SET_SHADOWLESS';
+
+  // 2/102, 4/102 and 15/102 are visually collision-prone with Celebrations.
+  // Do NOT accept "Base Set" alone. Require stronger vintage-era evidence.
+  if(COLLISION_PRONE_NUMBERS.has(cardNumber)){
+    const strongVintage=/\\b(1999|2000|wotc|wizards of the coast|wizards|unlimited|1st edition|first edition)\\b/.test(t);
+    if(/\\bbase set\\b/.test(t)&&strongVintage)return 'BASE_SET';
+    if(strongVintage&&/\\b(vintage|holo|pokemon|pokémon)\\b/.test(t))return 'BASE_SET';
+    return 'UNKNOWN';
+  }
+
+  if(/\\b(base set|wotc|wizards of the coast|1999)\\b/.test(t))return 'BASE_SET';
+  return 'UNKNOWN';
+}"""
+          s=s[:m.start()]+replacement+s[m.end():]
+
+          # Fold canonical-name contradiction into identity status.
+          old_status="""function identityStatus(t,cardNumber,family,language){
+  if(COLLISION_PRONE_NUMBERS.has(cardNumber)&&family==='UNKNOWN')return 'UNCERTAIN';
+  const era=eraStatus(t,cardNumber,family,language);
+  if(era==='CONFLICT')return 'CONFLICT';
+  if(era==='REVIEW')return 'REVIEW';
+  return 'CONFIRMED';
+}"""
+          new_status="""function identityStatus(t,cardNumber,family,language){
+  const canonical=canonicalNameStatus(t,cardNumber);
+  if(canonical==='CONFLICT')return 'CONFLICT';
+  if(canonical==='UNCERTAIN')return 'UNCERTAIN';
+  if(COLLISION_PRONE_NUMBERS.has(cardNumber)&&family==='UNKNOWN')return 'UNCERTAIN';
+  const era=eraStatus(t,cardNumber,family,language);
+  if(era==='CONFLICT')return 'CONFLICT';
+  if(era==='REVIEW')return 'REVIEW';
+  return 'CONFIRMED';
+}"""
+          if old_status not in s: raise SystemExit('Safety stop: identityStatus anchor missing')
+          s=s.replace(old_status,new_status,1)
+
+          # Surface language in ranked metadata wherever the existing compact
+          # type/condition/printing-family string is rendered.
+          s=s.replace("${esc(r.type)} · ${esc(r.condition)} · ${esc(r.printingFamily.replaceAll('_',' '))}",
+                      "${esc(r.type)} · ${esc(r.condition)} · ${esc(r.language)} · ${esc(r.printingFamily.replaceAll('_',' '))}")
+
+          p.write_text(s)
+
+          sw=Path('sw.js')
+          w=sw.read_text()
+          w,n=re.subn(r"const C='[^']+';","const C='gengrail-log-v25.0.0-grail-identity-v19';",w,count=1)
+          if n!=1: raise SystemExit('Safety stop: service-worker cache anchor missing')
+          sw.write_text(w)
+
+          out=p.read_text()
+          assert 'version:6' in out
+          assert 'CANONICAL_DISCOVERY_NAMES' in out
+          assert "'4/102':'charizard'" in out
+          assert "'2/102':'blastoise'" in out
+          assert "'15/102':'venusaur'" in out
+          assert 'Base Set" alone' in out or "Base Set' alone" in out or 'Base Set' in out
+          assert "identityStatus!=='CONFIRMED'" in out
+          assert 'floorRoi:10' in out and 'preferredRoi:20' in out and 'floorMargin:10' in out
+          print('Grail Hub identity v1.9 validated')
+          PY
+
+      - name: Commit identity v1.9
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add grail-hub.js sw.js
+          git commit -m 'Harden Grail Hub against Celebrations identity collisions'
+          git push origin HEAD:main
