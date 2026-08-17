@@ -2233,6 +2233,8 @@ function resetRecognitionForNewIntake(){
  recognitionBusy=false;
  currentRecognition=null;
  pendingRecognition=null;
+ const gradedBridge=document.getElementById('gradedStockBridge');
+ if(gradedBridge){gradedBridge.hidden=true;gradedBridge.innerHTML='';}
  setAiRecognitionPanel('idle');
  clearMarketPricing();refreshSequencePreview();
  if($('pn'))$('pn').value='';
@@ -3128,7 +3130,7 @@ window.addEventListener('load',()=>{
 </script>
 
 <script src="graded-market-engine.js?v=1.0.0" data-gengrail-graded-market="1"></script>
-<script src="graded-integration.js?v=23.9.0" data-gengrail-graded-main="1"></script>
+<script src="graded-integration.js?v=24.0.0" data-gengrail-graded-main="1"></script>
 <script src="graded-stock-ui.js?v=2" data-gengrail-graded-stock-ui="1"></script>
 <script src="grail-hub.js?v=23.8.0" data-gengrail-grail-hub="1"></script>
 </body></html>
