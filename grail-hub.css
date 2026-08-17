@@ -39,7 +39,7 @@
 .grail-stream-toolbar{border:1px solid #4b3b17;border-radius:14px;background:linear-gradient(160deg,#151109,#090909);padding:12px}
 .grail-stream-toolbar label{display:block;color:#d1c59f;font-size:9px;font-weight:950;letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px}
 .grail-stream-search{display:grid;grid-template-columns:1fr auto;gap:7px}
-.grail-stream-search input{min-width:0;background:#070707!important;border:1px solid #3b3320!important;color:#fff!important;border-radius:9px!important;padding:11px!important;font-size:15px!important}
+.grail-stream-search input{width:100%!important;max-width:100%!important;min-width:0;background:#070707!important;border:1px solid #3b3320!important;color:#fff!important;border-radius:9px!important;padding:11px!important;font-size:16px!important}
 .grail-stream-search button{margin:0!important;background:var(--gh-gold)!important;color:#080808!important;border:1px solid var(--gh-gold-hi)!important;border-radius:9px!important;padding:0 14px!important;font-weight:950!important;white-space:nowrap}
 .grail-stream-hint{color:#8d8981;font-size:9.5px;line-height:1.35;margin-top:7px}
 .grail-stream-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-top:10px}

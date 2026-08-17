@@ -161,3 +161,13 @@ body.home-page .gengrail-ticker-item b{
   body.home-page .home-menu .home-label{font-size:18px !important}
   body.home-page .home-menu .home-sub{font-size:9.5px !important}
 }
+
+/* Tall-phone tile height correction v2.1 */
+@media (max-width:520px) and (min-height:850px){
+  body.home-page .brand img{height:136px !important;max-height:136px !important}
+  body.home-page .home-menu button{min-height:100px !important}
+}
+@media (max-width:520px) and (min-height:900px){
+  body.home-page .brand img{height:142px !important;max-height:142px !important}
+  body.home-page .home-menu button{min-height:106px !important}
+}
