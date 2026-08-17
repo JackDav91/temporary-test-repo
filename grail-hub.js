@@ -1,4 +1,4 @@
-/* GENGRAIL GRAIL HUB v1.6 — daily discovery foundation + layout restore
+/* GENGRAIL GRAIL HUB v1.7 — identity-hardened discovery
    Consumes Profit Engine state and the existing Opportunity Finder economics.
    Active listings are evidence only; no sold-price or sell-through data is fabricated.
 */
@@ -12,7 +12,7 @@ const num=v=>Number.isFinite(Number(v))?Number(v):0;
 const clean=v=>String(v||'').toLowerCase().replace(/[’']/g,'').replace(/[^a-z0-9./]+/g,' ').replace(/\s+/g,' ').trim();
 const DAILY_SHEET_KEY='gengrail_grail_daily_sheet_v1';
 const DISCOVERY_CONFIG=Object.freeze({
-  version:3,
+  version:4,
   refreshHours:24,
   // Discovery works best when each lane creates a genuine peer-priced set rather than a broad character soup.
   lanes:['Pokemon Charizard 4/102','Pokemon Pikachu 58/102','Pokemon Blastoise 2/102','Pokemon Venusaur 15/102','Pokemon Lugia 9/111','Pokemon Umbreon 13/75'],
@@ -67,14 +67,30 @@ function percentile(values=[],q=.5){const a=values.filter(x=>x>0).slice().sort((
 function listingPrice(item){const p=num(item?.price?.value||item?.priceGbp);const c=String(item?.price?.currency||item?.currency||'GBP').toUpperCase();return c==='GBP'?p:0}
 function shippingPrice(item){const rows=Array.isArray(item?.shippingOptions)?item.shippingOptions:[];for(const row of rows){const p=num(row?.shippingCost?.value);const c=String(row?.shippingCost?.currency||'GBP').toUpperCase();if(c==='GBP'&&p>=0)return p}return 0}
 function obviousReject(t){return /\b(proxy|replica|reproduction|custom|fan art|fanart|digital|code card|empty slab|slab only|case only|repack|mystery|orica|lot|bundle|collection|job lot|break|metal card|gold card|keychain|key chain|keyring|key ring|novelty|magnetic case|extended artwork|display case|display frame|card holder|card stand|protective case|acrylic case|card not included|card is not included|no card included|without card|empty case|case for|frame for|holder for)\b/.test(t)}
+const COLLISION_PRONE_NUMBERS=new Set(['2/102','4/102','15/102']);
 function printingFamily(t,cardNumber){
-  if(/\b(celebrations|25th anniversary)\b/.test(t))return 'CELEBRATIONS';
-  if(/\b(evolutions|xy evolutions|2016)\b/.test(t))return 'EVOLUTIONS';
+  // Printing/set evidence outranks character name and shared collector number.
+  // Modern reprints must be identified before any WOTC/Base Set fallback.
+  const celebrations=/\b(celebrations|25th anniversary|25th anniversary collection|classic collection|pokemon 25|pok[eé]mon 25|2021 celebrations)\b/.test(t);
+  const classic2021=/\b2021\b/.test(t)&&COLLISION_PRONE_NUMBERS.has(cardNumber);
+  if(celebrations||classic2021)return 'CELEBRATIONS';
+  if(/\b(evolutions|xy evolutions)\b/.test(t))return 'EVOLUTIONS';
   if(/\b(base set 2|base set ii)\b/.test(t))return 'BASE_SET_2';
+  if(/\b(neo genesis)\b/.test(t))return 'NEO_GENESIS';
+  if(/\b(neo discovery)\b/.test(t))return 'NEO_DISCOVERY';
   if(/\b(shadowless)\b/.test(t))return 'BASE_SET_SHADOWLESS';
   if(/\b(base set|wotc|wizards of the coast|1999)\b/.test(t))return 'BASE_SET';
   if(cardNumber==='4/102'&&/\b(wizards|wizard|vintage)\b/.test(t))return 'BASE_SET';
   return 'UNKNOWN';
+}
+function identityStatus(t,cardNumber,family){
+  // Blastoise 2/102, Charizard 4/102 and Venusaur 15/102 collide between
+  // original Base Set and Celebrations Classic Collection. Never rank those
+  // cards from name/number alone: explicit set/era evidence is required.
+  if(COLLISION_PRONE_NUMBERS.has(cardNumber)&&family==='UNKNOWN')return 'UNCERTAIN';
+  if(family==='BASE_SET'&&/\b(2021|celebrations|25th anniversary|classic collection)\b/.test(t))return 'CONFLICT';
+  if(family==='CELEBRATIONS'&&/\b(1999|wotc|wizards of the coast)\b/.test(t)&&!/\b(celebrations|25th anniversary|classic collection|2021)\b/.test(t))return 'CONFLICT';
+  return 'CONFIRMED';
 }
 function rawCondition(title,itemCondition=''){
   const t=clean(`${title} ${itemCondition}`);
@@ -103,8 +119,8 @@ function parseListing(item){
   if(grader&&!grade)return null;
   if(!grader&&/\bgraded|slab\b/.test(t))return null;
   const ask=listingPrice(item);if(!(ask>0))return null;
-  const type=grader?'GRADED':'RAW',family=printingFamily(t,cardNumber),condition=type==='RAW'?rawCondition(title,item?.condition||''):'GRADED';
-  return {item,title,t,cardNumber,grader,grade,type,printingFamily:family,condition,ask,inbound:shippingPrice(item),tokens:tokensFor(title)};
+  const type=grader?'GRADED':'RAW',family=printingFamily(t,cardNumber),identity=identityStatus(t,cardNumber,family),condition=type==='RAW'?rawCondition(title,item?.condition||''):'GRADED';
+  return {item,title,t,cardNumber,grader,grade,type,printingFamily:family,identityStatus:identity,condition,ask,inbound:shippingPrice(item),tokens:tokensFor(title)};
 }
 function peerRows(row,all){
   return all.filter(x=>{
@@ -147,7 +163,10 @@ function rankListings(items,g){
   const outbound=num(localStorage.getItem('gengrailOpp_oppOutbound'))||4.10;
   const pack=num(localStorage.getItem('gengrailOpp_oppPack'))||.30;
   for(const r of parsed){
-    const peers=peerRows(r,parsed);if(peers.length<3)continue;
+    // Ambiguous or cross-era identities remain diagnostic evidence only.
+    // They cannot seed pricing peers, rankings or Grail Plan candidates.
+    if(r.identityStatus!=='CONFIRMED')continue;
+    const peers=peerRows(r,parsed).filter(x=>x.identityStatus==='CONFIRMED');if(peers.length<3)continue;
     const simAvg=peers.reduce((s,x)=>s+similarity(r.tokens,x.tokens),0)/peers.length;
     const peerPrices=peers.map(x=>x.ask),marketMedian=median(peerPrices),lowerBand=percentile(peerPrices,.35),resale=((marketMedian+lowerBand)/2);if(!(resale>r.ask))continue;
     const confidence=confidenceFor(peers.length,simAvg,r);if(!(confidence>0))continue;
