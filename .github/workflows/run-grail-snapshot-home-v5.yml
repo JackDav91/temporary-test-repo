@@ -1,0 +1,25 @@
+name: Run Grail snapshot invalidation and Home fill v5
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/run-grail-snapshot-home-v5.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 10
+      - name: Apply guarded snapshot and Home patch
+        run: python3 .github/scripts/apply_grail_snapshot_home_v5.py
+      - name: Commit app files
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add grail-hub.js home-compact.css index.html sw.js
+          git commit -m 'Invalidate stale Grail sheets and finish Home viewport fill'
+          git push origin HEAD:main
