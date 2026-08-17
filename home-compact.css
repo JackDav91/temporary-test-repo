@@ -163,12 +163,15 @@ body.home-page .gengrail-ticker-item b{
 }
 
 
-/* Viewport-fill correction: preserve v1 card proportions; distribute spare height instead of redesigning tiles. */
+/* Viewport-fill correction v1.2: preserve the restored design and consume spare phone height. */
 @media (max-width:520px) and (min-height:821px){
-  body.home-page .home-screen{min-height:calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 160px) !important}
-  body.home-page .home-menu{align-content:stretch !important}
-  body.home-page .home-menu button{min-height:96px !important}
+  body.home-page .app{min-height:calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 10px) !important}
+  body.home-page .home-screen{flex:1 1 auto !important;min-height:0 !important}
+  body.home-page .home-menu{flex:1 1 auto !important;grid-template-rows:repeat(3,minmax(108px,1fr)) !important;align-content:stretch !important}
+  body.home-page .home-menu button{min-height:108px !important}
+  body.home-page .gengrail-performance-ticker{margin-top:8px !important}
 }
 @media (max-width:520px) and (min-height:900px){
-  body.home-page .home-menu button{min-height:104px !important}
+  body.home-page .home-menu{grid-template-rows:repeat(3,minmax(118px,1fr)) !important}
+  body.home-page .home-menu button{min-height:118px !important}
 }

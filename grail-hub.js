@@ -58,7 +58,7 @@ function median(values=[]){const a=values.filter(x=>x>0).slice().sort((a,b)=>a-b
 function percentile(values=[],q=.5){const a=values.filter(x=>x>0).slice().sort((a,b)=>a-b);if(!a.length)return 0;if(a.length===1)return a[0];const pos=(a.length-1)*Math.max(0,Math.min(1,q)),lo=Math.floor(pos),hi=Math.ceil(pos),w=pos-lo;return a[lo]*(1-w)+a[hi]*w}
 function listingPrice(item){const p=num(item?.price?.value||item?.priceGbp);const c=String(item?.price?.currency||item?.currency||'GBP').toUpperCase();return c==='GBP'?p:0}
 function shippingPrice(item){const rows=Array.isArray(item?.shippingOptions)?item.shippingOptions:[];for(const row of rows){const p=num(row?.shippingCost?.value);const c=String(row?.shippingCost?.currency||'GBP').toUpperCase();if(c==='GBP'&&p>=0)return p}return 0}
-function obviousReject(t){return /\b(proxy|custom|fan art|digital|code card|empty slab|slab only|case only|repack|mystery|orica|lot|bundle|collection|job lot|break|metal card|gold card)\b/.test(t)}
+function obviousReject(t){return /\b(proxy|replica|reproduction|custom|fan art|fanart|digital|code card|empty slab|slab only|case only|repack|mystery|orica|lot|bundle|collection|job lot|break|metal card|gold card|keychain|key chain|keyring|key ring|novelty|magnetic case|extended artwork|display case|display frame|card holder|card stand|protective case|acrylic case|card not included|card is not included|no card included|without card|empty case|case for|frame for|holder for)\b/.test(t)}
 function printingFamily(t,cardNumber){
   if(/\b(celebrations|25th anniversary)\b/.test(t))return 'CELEBRATIONS';
   if(/\b(evolutions|xy evolutions|2016)\b/.test(t))return 'EVOLUTIONS';
@@ -87,6 +87,10 @@ function parseListing(item){
   if(!/pokemon|pokémon/i.test(title))return null;
   const n=title.match(/\b(\d{1,4})\s*\/\s*(\d{1,4})\b/);if(!n)return null;
   const cardNumber=`${Number(n[1])}/${Number(n[2])}`;
+  // Collector number is necessary but not sufficient: require positive evidence that the listing is the card itself.
+  const actualCardSignal=/\b(card|tcg|holo|holofoil|rare|unlimited|1st edition|first edition|shadowless|wotc|pokemon)\b/.test(t);
+  const accessoryNoun=/\b(case|keychain|key ring|keyring|frame|holder|stand|display|novelty|magnet|magnetic|acrylic|artwork)\b/.test(t);
+  if(!actualCardSignal||accessoryNoun)return null;
   const grader=graderFrom(t),grade=gradeFrom(t,grader);
   if(grader&&!grade)return null;
   if(!grader&&/\bgraded|slab\b/.test(t))return null;
@@ -140,7 +144,7 @@ function rankListings(items,g){
     const confidence=confidenceFor(peers.length,simAvg,r);if(!(confidence>0))continue;
     const e=existingEconomics({id:r.item.itemId||'',title:r.title,source:'eBay live',confidence,ask:r.ask,inbound:r.inbound,resale,sellPlatform:'ebay',outbound,pack,minRoi:DISCOVERY_CONFIG.floorRoi,minProfit:1,url:String(r.item.itemWebUrl||'')});
     e.cardNumber=r.cardNumber;e.grader=r.grader;e.grade=r.grade;e.type=r.type;e.printingFamily=r.printingFamily;e.condition=r.condition;e.peerCount=peers.length;e.marketMedian=marketMedian;e.conservativeAnchor=resale;e.lowerBand=lowerBand;e.image=String(r.item?.image?.imageUrl||'');e.seller=r.item?.seller||null;e.similarity=simAvg;
-    const conditionKnown=e.type!=='RAW'||e.condition!=='UNKNOWN';
+    const conditionKnown=e.type!=='RAW'||e.condition!=='UNKNOWN'; // UNKNOWN raw condition remains REVIEW-only and cannot enter Grail Plan.
     e.discoveryPass=conditionKnown&&e.profit>0&&e.roi>=DISCOVERY_CONFIG.floorRoi&&e.margin>=DISCOVERY_CONFIG.floorMargin&&confidence>=num(g.minimumConfidence);
     e.preferredPass=e.discoveryPass&&e.roi>=DISCOVERY_CONFIG.preferredRoi;
     // Grail Plan may use viable 10%+ candidates, but ranking explicitly favours 20%+ opportunities.
