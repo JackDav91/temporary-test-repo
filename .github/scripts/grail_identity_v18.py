@@ -7,7 +7,7 @@ s=p.read_text()
 s=s.replace('GENGRAIL GRAIL HUB v1.7 — identity-hardened discovery','GENGRAIL GRAIL HUB v1.8 — language + era identity hardening')
 s=s.replace('version:4,','version:5,',1)
 
-replacement="""function languageFrom(t){
+identity_block="""function languageFrom(t){
   if(/\b(japanese|japan|jp|jpn|giapponese)\b/.test(t))return 'JA';
   if(/\b(italian|italiano|italiana|italia)\b/.test(t))return 'IT';
   if(/\b(german|deutsch|deutsche|deutschland)\b/.test(t))return 'DE';
@@ -34,11 +34,16 @@ function identityStatus(t,cardNumber,family,language){
   return 'CONFIRMED';
 }
 """
-start=s.find('function identityStatus(')
-end=s.find('function rawCondition',start)
-if start<0 or end<0: raise SystemExit(f'identity block anchors not found: {start=} {end=}')
-s=s[:start]+replacement+s[end:]
 
+start=s.find('function languageFrom(')
+if start<0:
+    start=s.find('function identityStatus(')
+end=s.find('function rawCondition',start)
+if start<0 or end<0:
+    raise SystemExit(f'identity anchors not found: {start=} {end=}')
+s=s[:start]+identity_block+s[end:]
+
+# Ensure parseListing carries language through identity and result objects.
 parse_start=s.find("const type=grader?'GRADED':'RAW',family=printingFamily(t,cardNumber)")
 if parse_start<0: raise SystemExit('parseListing type anchor not found')
 parse_end=s.find("\n  return {item,title,t,cardNumber",parse_start)
@@ -50,25 +55,30 @@ ret_end=s.find(';',ret_start)+1
 if ret_start<0 or ret_end<=0: raise SystemExit('parseListing return not found')
 s=s[:ret_start]+"return {item,title,t,cardNumber,grader,grade,type,printingFamily:family,language,identityStatus:identity,condition,ask,inbound:shippingPrice(item),tokens:tokensFor(title)};"+s[ret_end:]
 
+# Strict pricing peer key: same card no., printing, language, grader/grade and raw condition.
 peer_start=s.find('if(x.printingFamily!==row.printingFamily')
 if peer_start<0: raise SystemExit('peer language anchor not found')
 peer_end=s.find(';',peer_start)+1
 s=s[:peer_start]+"if(x.printingFamily!==row.printingFamily||x.language!==row.language)return false;"+s[peer_end:]
 
-s=s.replace("${esc(r.type)} · ${esc(r.condition)} · ${esc(r.printingFamily.replaceAll('_',' '))}","${esc(r.type)} · ${esc(r.condition)} · ${esc(r.language)} · ${esc(r.printingFamily.replaceAll('_',' '))}")
+# Surface language in ranked metadata if not already present.
+old_meta="${esc(r.type)} · ${esc(r.condition)} · ${esc(r.printingFamily.replaceAll('_',' '))}"
+new_meta="${esc(r.type)} · ${esc(r.condition)} · ${esc(r.language)} · ${esc(r.printingFamily.replaceAll('_',' '))}"
+s=s.replace(old_meta,new_meta)
 p.write_text(s)
 
 sw=Path('sw.js')
 w=sw.read_text()
-w,n=re.subn(r"const C='[^']+';","const C='gengrail-log-v24.9.0-grail-identity-v18';",w,count=1)
+w,n=re.subn(r"const C='[^']+';","const C='gengrail-log-v24.9.1-grail-identity-v18';",w,count=1)
 if n!=1: raise SystemExit('service worker cache anchor not found')
 sw.write_text(w)
 
 out=p.read_text()
+assert out.count('function languageFrom(')==1
+assert out.count('function eraStatus(')==1
+assert out.count('function identityStatus(')==1
 assert 'version:5' in out
-assert 'function languageFrom' in out
-assert 'function eraStatus' in out
 assert 'x.language!==row.language' in out
 assert "identityStatus!=='CONFIRMED'" in out
 assert 'floorRoi:10' in out and 'preferredRoi:20' in out and 'floorMargin:10' in out
-print('Grail Hub identity v1.8 validated')
+print('Grail Hub identity v1.8 idempotent validation passed')
