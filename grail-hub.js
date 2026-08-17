@@ -12,9 +12,13 @@ const num=v=>Number.isFinite(Number(v))?Number(v):0;
 const clean=v=>String(v||'').toLowerCase().replace(/[’']/g,'').replace(/[^a-z0-9./]+/g,' ').replace(/\s+/g,' ').trim();
 const DAILY_SHEET_KEY='gengrail_grail_daily_sheet_v1';
 const DISCOVERY_CONFIG=Object.freeze({
-  version:1,
+  version:2,
   refreshHours:24,
-  lanes:['Pokemon TCG Charizard','Pokemon TCG Pikachu','Pokemon TCG Umbreon','Pokemon TCG Lugia','Pokemon TCG Eevee','Pokemon TCG PSA']
+  // Discovery works best when each lane creates a genuine peer-priced set rather than a broad character soup.
+  lanes:['Pokemon Charizard 4/102','Pokemon Pikachu 58/102','Pokemon Blastoise 2/102','Pokemon Venusaur 15/102','Pokemon Lugia 9/111','Pokemon Umbreon 13/75'],
+  floorRoi:10,
+  preferredRoi:20,
+  floorMargin:10
 });
 let streamState={query:'Pokemon TCG card',rows:[],safe:[],lastPlan:null,loading:false,error:'',discoveryLoading:false,dailySheet:null};
 let layoutLock=null;
@@ -134,12 +138,16 @@ function rankListings(items,g){
     const simAvg=peers.reduce((s,x)=>s+similarity(r.tokens,x.tokens),0)/peers.length;
     const peerPrices=peers.map(x=>x.ask),marketMedian=median(peerPrices),lowerBand=percentile(peerPrices,.35),resale=((marketMedian+lowerBand)/2);if(!(resale>r.ask))continue;
     const confidence=confidenceFor(peers.length,simAvg,r);if(!(confidence>0))continue;
-    const e=existingEconomics({id:r.item.itemId||'',title:r.title,source:'eBay live',confidence,ask:r.ask,inbound:r.inbound,resale,sellPlatform:'ebay',outbound,pack,minRoi:num(g.minimumROI),minProfit:1,url:String(r.item.itemWebUrl||'')});
+    const e=existingEconomics({id:r.item.itemId||'',title:r.title,source:'eBay live',confidence,ask:r.ask,inbound:r.inbound,resale,sellPlatform:'ebay',outbound,pack,minRoi:DISCOVERY_CONFIG.floorRoi,minProfit:1,url:String(r.item.itemWebUrl||'')});
     e.cardNumber=r.cardNumber;e.grader=r.grader;e.grade=r.grade;e.type=r.type;e.printingFamily=r.printingFamily;e.condition=r.condition;e.peerCount=peers.length;e.marketMedian=marketMedian;e.conservativeAnchor=resale;e.lowerBand=lowerBand;e.image=String(r.item?.image?.imageUrl||'');e.seller=r.item?.seller||null;e.similarity=simAvg;
     const conditionKnown=e.type!=='RAW'||e.condition!=='UNKNOWN';
-    e.qualityPass=conditionKnown&&e.profit>0&&e.roi>=num(g.minimumROI)&&e.margin>=num(g.minimumNetMargin)&&confidence>=num(g.minimumConfidence);
+    e.discoveryPass=conditionKnown&&e.profit>0&&e.roi>=DISCOVERY_CONFIG.floorRoi&&e.margin>=DISCOVERY_CONFIG.floorMargin&&confidence>=num(g.minimumConfidence);
+    e.preferredPass=e.discoveryPass&&e.roi>=DISCOVERY_CONFIG.preferredRoi;
+    // Grail Plan may use viable 10%+ candidates, but ranking explicitly favours 20%+ opportunities.
+    e.qualityPass=e.discoveryPass;
     e.liquidityPass=e.landed<=num(g.availableGrailPlanLiquidity);
     e.safe=e.qualityPass&&e.liquidityPass;
+    if(e.preferredPass)e.rankScore=Math.min(100,(e.rankScore||0)+8);
     e.rankScore=modeScore(e,g);
     rows.push(e);
   }

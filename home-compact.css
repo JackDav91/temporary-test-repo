@@ -1,4 +1,4 @@
-/* GENGRAIL HOME COMPACT v2 — responsive full-height command centre
+/* GENGRAIL HOME COMPACT v1.1 — restored command centre with viewport fill
    Presentation-only overrides. No navigation or business logic changes.
 */
 body.home-page{
@@ -7,9 +7,9 @@ body.home-page{
   padding-bottom:calc(env(safe-area-inset-bottom) + 4px) !important;
 }
 body.home-page .app{
-  height:calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 10px);
-  min-height:0;
-  overflow:hidden;
+  min-height:calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 10px);
+  height:auto;
+  overflow:visible;
   display:flex;
   flex-direction:column;
   max-width:840px;
@@ -81,8 +81,8 @@ body.home-page .home-menu{
 }
 body.home-page .home-menu button{
   min-height:0 !important;
-  height:100% !important;
-  padding:10px 30px 10px 9px !important;
+  height:auto !important;
+  padding:8px 30px 8px 9px !important;
   border-radius:14px !important;
   border-width:1.5px !important;
   box-shadow:0 0 8px rgba(225,160,10,.30),3px 4px 9px rgba(0,0,0,.65) !important;
@@ -162,12 +162,13 @@ body.home-page .gengrail-ticker-item b{
   body.home-page .home-menu .home-sub{font-size:9.5px !important}
 }
 
-/* Tall-phone tile height correction v2.1 */
-@media (max-width:520px) and (min-height:850px){
-  body.home-page .brand img{height:136px !important;max-height:136px !important}
-  body.home-page .home-menu button{min-height:100px !important}
+
+/* Viewport-fill correction: preserve v1 card proportions; distribute spare height instead of redesigning tiles. */
+@media (max-width:520px) and (min-height:821px){
+  body.home-page .home-screen{min-height:calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 160px) !important}
+  body.home-page .home-menu{align-content:stretch !important}
+  body.home-page .home-menu button{min-height:96px !important}
 }
 @media (max-width:520px) and (min-height:900px){
-  body.home-page .brand img{height:142px !important;max-height:142px !important}
-  body.home-page .home-menu button{min-height:106px !important}
+  body.home-page .home-menu button{min-height:104px !important}
 }
