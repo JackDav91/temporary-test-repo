@@ -1,4 +1,4 @@
-/* GENGRAIL GRAIL HUB v2.1 — lean buying workspace + stable discovery universe
+/* GENGRAIL GRAIL HUB v2.2 — lean buying workspace + stable discovery universe
    Opportunity Stream discovers from a stable market universe; liquidity controls affordability, not visibility.
 */
 (function(){
@@ -8,12 +8,10 @@ const esc=v=>String(v??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&g
 let layoutLock=null;
 
 /*
- Discovery fix:
- The selectable stream still passes current liquidity as max_price. Previously this changed the
- remote eBay result universe, so increasing owner capital could reveal cheap opportunities that
- were already affordable at lower liquidity. Keep the remote discovery universe stable at a
- minimum £6,000 ceiling, while the stream's local shortlist still filters against actual liquidity.
- Targeted searches have no max_price and remain untouched.
+ Direct Opportunity Stream discovery must remain responsive on mobile.
+ Keep the remote discovery universe broad, but tag these requests so the legacy visual gate
+ does not run expensive image verification on the whole result set. The stream itself still
+ applies collector-number, accessory, vintage and grader/raw filtering before comping.
 */
 (function installStableDiscoveryUniverse(){
  if(window.__gengrailStableDiscoveryUniverseInstalled)return;
@@ -26,13 +24,14 @@ let layoutLock=null;
    const raw=input instanceof URL?input.toString():(typeof input==='string'?input:String(input?.url||''));
    if(raw&&raw.includes(SEARCH_PATH)){
     const u=new URL(raw,location.href),requested=Number(u.searchParams.get('max_price')||0);
+    u.searchParams.set('_gengrail_stream','direct');
     if(requested>0){
      const discoveryCeiling=Math.max(STABLE_MIN_CEILING,requested);
      u.searchParams.set('max_price',String(discoveryCeiling));
      window.__gengrailDiscoveryUniverse={requestedLiquidityCeiling:requested,remoteDiscoveryCeiling:discoveryCeiling,principle:'liquidity_controls_affordability_not_visibility'};
-     if(input instanceof Request)return upstreamFetch(new Request(u.toString(),input),init);
-     return upstreamFetch(u.toString(),init);
     }
+    if(input instanceof Request)return upstreamFetch(new Request(u.toString(),input),init);
+    return upstreamFetch(u.toString(),init);
    }
   }catch(e){console.warn('[Gengrail] discovery universe patch fallback',e)}
   return upstreamFetch(input,init);
