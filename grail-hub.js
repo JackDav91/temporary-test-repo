@@ -4,8 +4,19 @@
 (function(){
 'use strict';
 const money=v=>new Intl.NumberFormat('en-GB',{style:'currency',currency:'GBP'}).format(Number(v)||0);
-const esc=v=>String(v??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]||c));
+const esc=v=>String(v??'').replace(/[&<>\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[c]||c));
 let layoutLock=null;
+
+/* TEST-REPO ONLY: load isolated listing policy globally because grail-hub.js is loaded by the app shell. */
+(function loadSeedListingPolicy(){
+ if(window.__gengrailSeedListingPolicyLoader)return;
+ window.__gengrailSeedListingPolicyLoader=true;
+ const s=document.createElement('script');
+ s.src='gengrail-seed-listing-policy.js?v=1.0.0';
+ s.async=false;
+ s.dataset.gengrailSeedListingPolicy='1';
+ document.head.appendChild(s);
+})();
 
 /*
  Direct Opportunity Stream discovery must remain responsive on mobile.
